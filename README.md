@@ -31,9 +31,14 @@ Needs: Python 3.10+, and for building videos the `line-boil` Claude Code skill p
 youtube/
 ├── start.bat              double-click to run
 ├── app/                   the web studio (Flask + one HTML page)
+│   ├── server.py          routes, jobs, settings        ytstate.py / ytdata.py   live YouTube data
+│   ├── analytics.py       numbers + the analyst agent   topics.py                topic scout + video wizard
+│   └── store.py / planner.py   safe JSON files, one cached planner reader
 ├── tools/
 │   ├── yt_upload.py       YouTube Data API uploader (see tools/yt_upload.md for one-time setup)
-│   └── build_planner.py   rebuilds bean-planner.xlsx (overwrites it)
+│   ├── build_planner.py   rebuilds bean-planner.xlsx (overwrites it)
+│   └── test_app.py, test_ytdata.py   tests (no network): .venv\Scripts\python tools\test_app.py
+├── docs/AUDIT.md          bugs found and fixed, simplifications, and the feature backlog
 ├── bean-planner.xlsx      schedule, idea bank, video types, analytics log
 ├── line-boil/<project>/   one folder per video: script, cast, shots, thumb.js, upload sheet
 │                          (.mp4 / .png / audio stay on disk, not in git)
@@ -42,8 +47,8 @@ youtube/
 
 ## Customize
 
-- **Slots, paths, port**: the Settings tab, or create `config.json` with any keys from `DEFAULTS` in
-  `app/server.py`. It's ignored by git, so it's yours.
+- **Slots, paths, port, models, source channels**: the Settings tab (validated; a `.bak` of the old file is kept).
+  Only the settings you change are stored in `config.json` (ignored by git), so new defaults in updates still reach you.
 - **Agent command**: `agent_command` in Settings. The default is
   `["claude", "-p", "--permission-mode", "acceptEdits"]`; the prompt is added as the last argument.
 - **Quick prompts**: the `QUICK` list in `app/static/index.html`.
@@ -51,7 +56,10 @@ youtube/
 
 ## Safety
 
-- The server listens on `127.0.0.1` only, so nothing else on your network can reach it.
+- The server listens on `127.0.0.1` only, and also refuses requests whose Host or Origin isn't localhost, so a web page
+  you visit can't drive it (DNS rebinding / cross-site requests).
+- Running a job twice (double click) returns the running one, and the uploader holds a lock per video, so nothing posts twice.
+- If code changes while Bean Studio is running, a yellow banner tells you to restart it; starting it twice opens the running copy.
 - **Upload + schedule** and **Post now** ask for confirmation first, and the uploader refuses to upload the same project twice.
 - YouTube OAuth secrets live in `tools/.secrets/` and are git-ignored. Never commit them.
 - Until your Google API project passes YouTube's audit, API uploads are locked Private (see `tools/yt_upload.md`).

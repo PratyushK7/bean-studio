@@ -12,6 +12,9 @@ import concurrent.futures as cf, datetime as dt, difflib, json, random, re, stat
 from pathlib import Path
 from flask import abort, jsonify, request
 
+import planner, store
+from ytstate import norm
+
 TYPES = ["What if", "Myth test", "Why", "True story", "Versus", "Ranking", "Levels", "Paradox", "Puzzle",
          "How it works", "Superlative", "How many", "Map/scale"]
 FMT = [("What if", r"^what if|^what would happen|^what happens"), ("How many", r"^how (many|much|long|far|big|fast|hot|cold|deep|high|old)"),
@@ -24,17 +27,14 @@ FMT = [("What if", r"^what if|^what would happen|^what happens"), ("How many", r
        ("Myth test", r"^(is|are|can|could|does|do)\b|myth|actually|really|truth")]
 OFF_BRAND = re.compile(r"soldier|military|bomber|\bwar\b|russia|ukrain|israel|taliban|\bgun\b|shot\b|kill|murder|suicide|\bsex|porn|terror|nazi|trump|biden", re.I)
 STOP = set("what if you your the a an of to how would it take and is are do does why can could in on for with from at".split())
-VOICES = ["af_heart", "am_michael", "bf_emma", "bm_george"]
+VOICES = [["af_heart", "Heart · warm female (channel default)"], ["am_michael", "Michael · male"], ["bf_emma", "Emma · British female"], ["bm_george", "George · British male"]]
+VOICE_IDS = [v[0] for v in VOICES]
 
 
 def classify(title):
     for name, pat in FMT:
         if re.search(pat, title, re.I): return name
     return "Other"
-
-
-def norm(t):
-    return re.sub(r"[^a-z0-9 ]", "", (t or "").lower()).strip()
 
 
 def too_close(title, others, cutoff=0.72):
@@ -52,12 +52,7 @@ def register(app, ROOT, cfg, start_job, JOBS):
     st = {"refreshing": False, "progress": "", "error": None, "batches": {}}
     lock = threading.Lock()
 
-    def load_json(p, default):
-        try: return json.loads(p.read_text(encoding="utf-8"))
-        except Exception: return default
-
-    def save_json(p, obj):
-        DATA.mkdir(exist_ok=True); p.write_text(json.dumps(obj, indent=1, ensure_ascii=False), encoding="utf-8")
+    load_json, save_json = store.read, store.write
 
     # ---------- 1. the pool of outliers ----------
     def fetch_channel(handle):
@@ -102,13 +97,7 @@ def register(app, ROOT, cfg, start_job, JOBS):
             m = re.search(r"== TITLE ==\s*\n(.+)", sheet.read_text(encoding="utf-8"))
             if m: names.append(m.group(1).strip())
         names += [p.name.replace("-", " ") for p in Path(c["projects_dir"]).iterdir() if p.is_dir()]
-        try:
-            import openpyxl
-            ws = openpyxl.load_workbook(c["planner"], read_only=True, data_only=True)["Schedule"]
-            head = [x.value for x in next(ws.iter_rows(min_row=3, max_row=3))]
-            ti = head.index("Working title")
-            names += [str(r[ti]) for r in ws.iter_rows(min_row=4, values_only=True) if r[ti]]
-        except Exception: pass
+        names += planner.titles(c["planner"])
         try:
             import ytstate
             names += [v["title"] for v in ytstate.STATE["videos"]]
@@ -231,11 +220,15 @@ Do not use any other tool than reading that file and writing that file. When don
         t, a, c = b.get("topic") or {}, b.get("answers") or {}, cfg()
         title = clean(t.get("title"), 120)
         if not title: abort(400, "no topic")
-        dur = min(60, max(25, int(a.get("duration") or 40)))
+        def number(v, default, lo, hi):
+            try: return min(hi, max(lo, float(v)))
+            except (TypeError, ValueError): return default
+        dur = int(number(a.get("duration"), 40, 25, 60))
         words = round(dur * 2.8)
-        voice = a.get("voice") if a.get("voice") in VOICES else "af_heart"
-        speed = min(1.15, max(0.9, float(a.get("speed") or 1.0)))
+        voice = a.get("voice") if a.get("voice") in VOICE_IDS else "af_heart"
+        speed = round(number(a.get("speed"), 1.0, 0.9, 1.15), 2)
         slug = slug_for(title)
+        (Path(c["projects_dir"]) / slug).mkdir(parents=True, exist_ok=True)     # reserve the name: a second click can't pick it too
         src = t.get("inspired_by") or {}
         prompt = f"""Make a new Short with the line-boil skill. Read ~/.claude/skills/line-boil/SKILL.md and the files it points to (references/api.md, references/style.md, references/youtube.md) first, and ~/.claude/youtube/voice.md for the channel voice.
 

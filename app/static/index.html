@@ -68,9 +68,14 @@
   button.del { font:inherit; font-size:12px; border:2px solid var(--ink); background:#fff; color:#c0262d; padding:3px 9px; border-radius:8px; cursor:pointer; }
   button.del:hover { background:#c0262d; color:#fff; }
   .making { border-style:dashed; background:#fffbe8; }
+  #toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%) translateY(90px); background:var(--ink); color:#fff; padding:10px 16px; border-radius:12px; font-size:13px; max-width:min(560px,92vw); opacity:0; transition:.25s; z-index:90; pointer-events:none; }
+  #toast.on { opacity:1; transform:translateX(-50%); }
+  .banner { background:var(--yel); border-bottom:3px solid var(--ink); padding:8px 24px; font-weight:600; font-size:13px; }
 </style>
 </head>
 <body>
+<div class="banner" id="stale" style="display:none">⚠ The studio's code changed after it started. Close its console window and run <code>start.bat</code> again to use the new version.</div>
+<div id="toast"></div>
 <header>
   <h1>🫘 Bean <span>Studio</span></h1>
   <nav>
@@ -137,7 +142,6 @@
     <span style="flex:1"></span>
     <button class="act sec" id="connbtn" onclick="run({action:'auth'})" style="display:none">Connect YouTube</button>
     <button class="act" id="syncbtn" onclick="syncNow()">⟳ Sync now</button>
-    <button class="act sec" onclick="saveAnalytics()" title="Saves the slot, type, project and notes you changed">Save edits</button>
   </div>
   <div class="card" id="anstatus" style="margin-bottom:12px"></div>
   <div class="card" style="padding:0; overflow:auto; max-height:46vh"><table id="antable"></table></div>
@@ -169,7 +173,6 @@
 <section id="jobs" class="tab">
   <h2>Activity</h2>
   <div class="row" style="margin-bottom:10px">
-    <button class="act sec" onclick="run({action:'status'})">Upload status</button>
     <button class="act sec" onclick="run({action:'auth'})">YouTube sign-in</button>
   </div>
   <div class="jobs" id="joblist"></div>
@@ -179,7 +182,7 @@
 
 <section id="settings" class="tab">
   <h2>Settings</h2>
-  <p class="muted">Saved to <code>config.json</code> in the repo. Paths, posting slots, the agent command and the port. Restart <code>start.bat</code> after changing the port.</p>
+  <p class="muted">Paths, posting slots, models, source channels and the port. Only what you change is stored in <code>config.json</code> (a backup of the old one is kept), so new defaults in updates still reach you. Restart <code>start.bat</code> after changing the port.</p>
   <textarea id="cfg" rows="22"></textarea>
   <div class="row" style="margin-top:10px"><button class="act" onclick="saveCfg()">Save settings</button><span class="muted" id="cfgmsg"></span></div>
 </section>
@@ -189,15 +192,33 @@
 <script>
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-async function api(url, opt = {}) {
+let TOAST_T = null;
+function toast(msg, ms = 7000) { const el = $('#toast'); el.textContent = msg; el.classList.add('on'); clearTimeout(TOAST_T); TOAST_T = setTimeout(() => el.classList.remove('on'), ms); }
+async function api(url, opt = {}) {      // opt.silent: background polls don't pop up errors
+  const silent = opt.silent; delete opt.silent;
   if (opt.body && typeof opt.body !== 'string') { opt.body = JSON.stringify(opt.body); opt.headers = {'Content-Type': 'application/json'}; }
-  const r = await fetch(url, opt);
+  let r;
+  try { r = await fetch(url, opt); } catch (e) { if (!silent) toast('Cannot reach Bean Studio. Is its console window still open?'); throw e; }
   if (!r.ok) {
     const t = await r.text();
-    alert(r.status === 404 && t.trim().startsWith('<!doctype') ? 'Bean Studio is running older code than this page.\n\nClose its console window (or press Ctrl+C there) and run start.bat again, then refresh with Ctrl+F5.' : t);
-    throw new Error(r.status);
+    let msg = t;
+    if (t.trim().startsWith('<!doctype')) {      // Flask's HTML error page: show just its message
+      const m = t.match(/<p>([\s\S]*?)<\/p>/);
+      msg = t.includes('The requested URL was not found') ? 'This page is newer than the running Bean Studio. Close its console window and run start.bat again.'
+          : (m ? new DOMParser().parseFromString(m[1], 'text/html').body.textContent : 'Error ' + r.status);
+    }
+    if (!silent) toast(msg);
+    const err = new Error(msg); err.status = r.status; throw err;
   }
   return r.json();
+}
+const istDate = (add = 0) => new Intl.DateTimeFormat('en-CA', {timeZone: 'Asia/Kolkata'}).format(new Date(Date.now() + add * 864e5));   // YYYY-MM-DD in IST
+let TYPES = [], VOICES = [], META = null;       // shared lists come from the server, so they exist in one place only
+async function initMeta() { await checkMeta(); setInterval(checkMeta, 60000); }
+async function checkMeta() {
+  const m = await api('/api/meta', {silent: true}).catch(() => null); if (!m) return;
+  if (!META) { META = m; TYPES = m.types; VOICES = m.voices; if (m.config_problem) toast('⚠ ' + m.config_problem, 15000); }
+  $('#stale').style.display = m.current > m.started + 1 ? '' : 'none';
 }
 let CFG = {};
 document.querySelectorAll('nav button').forEach(b => b.onclick = () => show(b.dataset.tab));
@@ -211,14 +232,14 @@ function show(tab) {
 const STEPS = [['script','Script'],['video','Video'],['srt','Captions'],['thumbnail','Thumbnail'],['sheet','Upload sheet'],['uploaded','Uploaded']];
 const YT = {live: 'LIVE', scheduled: 'SCHEDULED', private: 'PRIVATE', unlisted: 'UNLISTED'};
 const ytBadge = y => y ? `<span class="stt ${y.state}" title="${esc(y.when)}">${YT[y.state] || y.state.toUpperCase()}${y.state === 'scheduled' ? ' · ' + esc(y.when.slice(5, 16).replace('T', ' ')) + ' IST' : ''}</span>` : '';
-let MAKEPOLL = null;
+let MAKEPOLL = null, GRIDSIG = '';
 async function loadProjects() {
   $('#detail').style.display = 'none'; $('#list').style.display = '';
-  api('/api/youtube/videos?refresh=1').catch(() => {});          // keeps the badges current (the server throttles this)
+  api('/api/youtube/videos?refresh=1', {silent: true}).catch(() => {});          // keeps the badges current (the server throttles this)
   const [ps, jobs] = await Promise.all([api('/api/projects'), api('/api/jobs')]);
   const making = jobs.filter(j => !j.done && j.label.startsWith('make · '));
   $('#count').textContent = `${ps.length} videos · ${ps.filter(p => p.ready && !p.steps.uploaded).length} ready to upload · ${ps.filter(p => p.yt && p.yt.state === 'live').length} live`;
-  $('#grid').innerHTML = making.map(j => { const slug = j.label.slice(7), p = ps.find(x => x.name === slug);
+  const html = making.map(j => { const slug = j.label.slice(7), p = ps.find(x => x.name === slug);
     return `<div class="card making"><div class="ph" style="border-style:dashed"><div style="text-align:center"><div class="spin" style="font-size:28px">⟳</div><div>the agent is making<br><b>${esc(slug)}</b></div></div></div>
       <h3>${p && p.title ? esc(p.title) : esc(slug)}</h3><div class="slug">usually 10–25 minutes · <a href="#" onclick="show('jobs');watch('${j.id}');return false">watch the log</a></div>
       <div class="chips">${STEPS.slice(0, 5).map(([k, l]) => `<span class="chip ${p && p.steps[k] ? 'y' : 'n'}">${p && p.steps[k] ? '✓' : '·'} ${l}</span>`).join('')}</div></div>`; }).join('') +
@@ -231,20 +252,22 @@ async function loadProjects() {
         <button class="del" style="float:right" title="Delete from disk" onclick="event.stopPropagation(); deleteProject('${p.name}', ${p.yt ? "'" + p.yt.state + "'" : 'null'})">🗑 Delete</button></div>
       <div class="chips">${STEPS.map(([k, l]) => `<span class="chip ${p.steps[k] ? 'y' : 'n'}">${p.steps[k] ? '✓' : '·'} ${l}</span>`).join('')}</div>
     </div>`).join('');
-  clearInterval(MAKEPOLL); if (making.length) MAKEPOLL = setInterval(() => { if ($('#projects').classList.contains('on') && $('#detail').style.display === 'none') loadProjects(); else clearInterval(MAKEPOLL); }, 5000);
+  const sig = JSON.stringify([making.map(j => j.id), ps.map(p => [p.name, p.modified, p.title, p.yt && p.yt.state + p.yt.when, p.steps])]);
+  if (sig !== GRIDSIG) { GRIDSIG = sig; $('#grid').innerHTML = html; }       // only redraw when something changed (no flicker while a video is being made)
+  clearInterval(MAKEPOLL); if (making.length) MAKEPOLL = setInterval(() => { if ($('#projects').classList.contains('on') && $('#detail').style.display === 'none') loadProjects(); else clearInterval(MAKEPOLL); }, 6000);
 }
 async function deleteProject(name, ytState) {
   const live = ytState ? `\n\nIt is ${ytState.toUpperCase()} on YouTube. Deleting here does NOT remove it from YouTube.` : '';
   if (!confirm(`Delete "${name}" from this computer?\n\nThe video, thumbnail, script and all files in its folder are removed permanently (not sent to the Recycle Bin).${live}`)) return;
   const r = await api('/api/projects/' + name, {method: 'DELETE'});
+  toast(`Deleted ${name} (${r.freed_mb} MB freed).`);
   loadProjects();
 }
 async function openProject(name) {
   const p = await api('/api/projects/' + name);
   CFG = await api('/api/config');
   $('#list').style.display = 'none'; const d = $('#detail'); d.style.display = '';
-  const tomorrow = new Date(Date.now() + 864e5).toISOString().slice(0, 10);
-  setTimeout(whenHint, 0);
+  setTimeout(() => useNextSlot(true), 0);
   d.innerHTML = `
     <span class="back" onclick="loadProjects()">← all videos</span>
     <div class="detail">
@@ -270,8 +293,9 @@ async function openProject(name) {
         <h4>Upload &amp; schedule</h4>
         <div class="card">
           <div class="row">
-            <label>Date <input type="date" id="update" value="${tomorrow}" onchange="whenHint()"></label>
+            <label>Date <input type="date" id="update" value="${istDate(1)}" onchange="whenHint()"></label>
             <label>Time (IST) <select id="uptime" onchange="whenHint()">${timeOptions()}</select></label>
+            <button class="act sec" onclick="useNextSlot()" title="The first slot with nothing live or scheduled around it">⏭ Next free slot</button>
             <span class="muted" id="whenhint"></span>
           </div>
           <div class="row" style="margin-top:10px">
@@ -292,8 +316,8 @@ async function openProject(name) {
       </div>
     </div>`;
 }
-async function saveScript(n) { await api(`/api/projects/${n}/script`, {method: 'PUT', body: {sentences: $('#script').value.split('\n')}}); alert('Script saved. Run Voice to re-record.'); }
-async function saveSheet(n) { await api(`/api/projects/${n}/sheet`, {method: 'PUT', body: {text: $('#sheet').value}}); alert('Upload sheet saved.'); }
+async function saveScript(n) { await api(`/api/projects/${n}/script`, {method: 'PUT', body: {sentences: $('#script').value.split('\n')}}); toast('Script saved. Run Voice to re-record it.'); }
+async function saveSheet(n) { await api(`/api/projects/${n}/sheet`, {method: 'PUT', body: {text: $('#sheet').value}}); toast('Upload sheet saved.'); }
 // every 15 minutes, IST; the channel's slots come first
 function timeOptions() {
   const slots = Object.entries(CFG.slots).sort((x, y) => x[1].localeCompare(y[1]));
@@ -307,7 +331,14 @@ function whenHint() {   // what the chosen IST time is for viewers in the US and
   const f = tz => at.toLocaleString('en-US', {timeZone: tz, weekday: 'short', hour: 'numeric', minute: '2-digit'});
   $('#whenhint').textContent = `= ${f('America/New_York')} ET · ${f('America/Los_Angeles')} PT`;
 }
+async function useNextSlot(quiet) {
+  const s = await api('/api/next-slot', {silent: quiet});
+  if (!s.at) return quiet || toast('No free slot found in the next 30 days.');
+  $('#update').value = s.date; $('#uptime').value = s.time; whenHint();
+  if (!quiet) toast(`Next free slot: ${s.date} ${s.time} IST (slot ${s.slot})` + (s.checked_youtube ? '' : '. YouTube is not connected, so this only skips times that have passed.'));
+}
 function upload(n, mode) {
+  if (mode !== 'now' && !$('#update').value) return toast('Pick a date first.');
   const at = `${$('#update').value} ${$('#uptime').value}`;
   if (mode === 'now' && !confirm(`Post "${n}" to YouTube right now? It becomes public immediately.`)) return;
   if (mode === 'schedule' && !confirm(`Upload "${n}" and schedule it for ${at} IST?`)) return;
@@ -315,28 +346,32 @@ function upload(n, mode) {
 }
 async function newProject() {
   const s = $('#newslug').value.trim();
-  if (!/^[a-z0-9][a-z0-9-]*$/.test(s)) return alert('Use a lowercase slug like why-onions-cry');
+  if (!/^[a-z0-9][a-z0-9-]*$/.test(s)) return toast('Use a lowercase slug like why-onions-cry');
   await run({action: 'new', project: s});
 }
 function agentFor(n) { show('agent'); $('#prompt').value = `For the line-boil project ${n}: `; $('#prompt').focus(); }
 
 // ---------- jobs ----------
-let CUR = null, POLL = null;
+let CUR = null; const POLLS = {};
 async function run(body) { const j = await api('/api/run', {method: 'POST', body}); show('jobs'); watch(j.id); }
 async function loadJobs() {
-  const js = await api('/api/jobs');
+  const js = await api('/api/jobs', {silent: true});
   $('#joblist').innerHTML = js.map(j => `<div class="job ${j.id === CUR ? 'sel' : ''}" onclick="watch('${j.id}')"><span>${esc(j.label)}</span><span>${j.done ? (j.code === 0 ? '✓ done' : '✗ exit ' + j.code) : '… running'}</span></div>`).join('') || '<span class="muted">Nothing run yet.</span>';
 }
-function watch(id, target = '#joblog', onDone) {
-  CUR = id; let n = 0; clearInterval(POLL); $(target).textContent = '';
+function watch(id, target = '#joblog', onDone) {       // each log pane has its own poller, so watching one job never cancels another's callback
+  if (target === '#joblog') CUR = id;
+  clearInterval(POLLS[target]); let n = 0; $(target).textContent = '';
   const tick = async () => {
-    const j = await api(`/api/jobs/${id}?since=${n}`); n = j.n;
+    let j;
+    try { j = await api(`/api/jobs/${id}?since=${n}`, {silent: true}); }
+    catch (e) { clearInterval(POLLS[target]); $(target).textContent += '\n(that job is no longer known: the studio was restarted)'; if (onDone) onDone({code: -1}); return; }
+    n = j.n;
     if (target === '#joblog') { $('#jobtitle').textContent = j.label; $('#stopbtn').style.display = j.done ? 'none' : ''; }
     if (j.log.length) { const el = $(target); el.textContent += j.log.join('\n') + '\n'; el.scrollTop = el.scrollHeight; }
-    if (j.done) { clearInterval(POLL); $(target).textContent += j.code === 0 ? '\n✓ finished' : `\n✗ exited with ${j.code}`; if (onDone) onDone(j); }
-    loadJobs();
+    if (j.done) { clearInterval(POLLS[target]); $(target).textContent += j.code === 0 ? '\n✓ finished' : `\n✗ exited with ${j.code}`; if (onDone) onDone(j); }
+    if (target === '#joblog' || j.done) loadJobs().catch(() => {});
   };
-  tick(); POLL = setInterval(tick, 1000);
+  tick(); POLLS[target] = setInterval(tick, 1000);
 }
 async function stopJob() { if (CUR) await api(`/api/jobs/${CUR}/stop`, {method: 'POST'}); }
 
@@ -377,7 +412,9 @@ async function getIdeas(reroll) {
   let r; try { r = await api('/api/topics/options', {method: 'POST'}); } catch (e) { $('#tpgo').disabled = false; $('#tpreroll').disabled = false; $('#tpstatus').textContent = ''; return; }
   TPBATCH = r.batch; clearInterval(TPPOLL);
   TPPOLL = setInterval(async () => {
-    const b = await api('/api/topics/batch/' + TPBATCH);
+    let b;
+    try { b = await api('/api/topics/batch/' + TPBATCH, {silent: true}); }
+    catch (e) { clearInterval(TPPOLL); $('#tpstatus').textContent = 'Lost track of that request (the studio restarted?). Press the button to try again.'; $('#tpgo').disabled = false; $('#tpreroll').disabled = false; return; }
     if (b.status === 'running') { $('#tpstatus').innerHTML = `<span class="spin">⟳</span> The agent is adapting the best performers into ideas… ${b.seconds}s`; return; }
     clearInterval(TPPOLL); TOPT = b.options; $('#tpstatus').textContent = '';
     $('#tpgo').style.display = 'none'; $('#tpreroll').style.display = ''; $('#tpreroll').disabled = false;
@@ -390,7 +427,6 @@ async function getIdeas(reroll) {
       <div style="margin-top:8px"><span class="act" style="display:inline-block;font-size:12px;padding:4px 10px">Pick this →</span></div></div>`).join('');
   }, 2000);
 }
-const VOICES = [['af_heart', 'Heart · warm female (channel default)'], ['am_michael', 'Michael · male'], ['bf_emma', 'Emma · British female'], ['bm_george', 'George · British male']];
 function openWizard(i) {
   const o = TOPT[i];
   $('#wizbox').innerHTML = `<h2 style="margin:0 0 4px">Make this video</h2><p class="muted" style="margin:0">A few questions, then the agent writes the script, fact-checks it, draws and renders the video, and makes the thumbnail and upload sheet. You can watch it in Videos.</p>
@@ -404,7 +440,7 @@ function openWizard(i) {
     <div class="row" style="margin-top:12px"><label style="margin:0"><input type="checkbox" id="w_music" checked> Background music</label><label style="margin:0"><input type="checkbox" id="w_outro" checked> Channel outro (3.5 s)</label></div>
     <label>Thumbnail text <span class="muted">(optional, up to 3 words; blank = the agent chooses)</span></label><input type="text" id="w_thumb" maxlength="24" placeholder="e.g. TOO TALL?">
     <label>Anything else? <span class="muted">(optional)</span></label><textarea id="w_notes" rows="3" placeholder="e.g. keep it gentle, include the 1982 lawn chair story, avoid mentioning X"></textarea>
-    <div class="row" style="margin-top:16px; justify-content:flex-end"><button class="act sec" onclick="closeWizard()">Cancel</button><button class="act red" onclick="makeVideo(${i})">🎬 Make the video</button></div>`;
+    <div class="row" style="margin-top:16px; justify-content:flex-end"><button class="act sec" onclick="closeWizard()">Cancel</button><button class="act red" id="wizgo" onclick="makeVideo(${i})">🎬 Make the video</button></div>`;
   $('#wiz').classList.add('on');
 }
 function closeWizard() { $('#wiz').classList.remove('on'); }
@@ -412,12 +448,12 @@ async function makeVideo(i) {
   const o = Object.assign({}, TOPT[i], {title: $('#w_title').value.trim()});
   const answers = {duration: +$('#w_dur').value, voice: $('#w_voice').value, speed: +$('#w_speed').value, tone: $('#w_tone').value, cast: $('#w_cast').value, ending: $('#w_end').value,
     music: $('#w_music').checked, outro: $('#w_outro').checked, thumb_text: $('#w_thumb').value.trim(), notes: $('#w_notes').value.trim()};
-  const r = await api('/api/topics/make', {method: 'POST', body: {topic: o, answers}});
-  closeWizard(); show('projects');
+  const btn = $('#wizgo'); btn.disabled = true; btn.textContent = 'Starting…';          // a second click would start a second video
+  try { await api('/api/topics/make', {method: 'POST', body: {topic: o, answers}}); closeWizard(); show('projects'); }
+  finally { btn.disabled = false; btn.textContent = '🎬 Make the video'; }
 }
 
 // ---------- analytics ----------
-const TYPES = ['What if','Myth test','Why','True story','Versus','Ranking','Levels','Paradox','Puzzle','How it works','Superlative','How many','Map/scale'];
 let AN = [], PROJ = [];
 const AN_COLS = [['title','Video',240,'ro'],['posted','Posted',78,'ro'],['slot','Slot',54,'sel'],['type','Type',100,'sel'],['project','Project',100,'sel'],
   ['views','Views',58,'ro'],['engaged_pct','Engaged %',66,'ro'],['avg_pct','% watched',68,'ro'],['avd_s','AVD s',54,'ro'],['likes','Likes',46,'ro'],
@@ -427,7 +463,11 @@ let ANST = null, ANPOLL = null;
 async function loadAnalytics() {
   const [a, ps] = await Promise.all([api('/api/analytics'), api('/api/projects')]);
   AN = a.rows; PROJ = ps.map(p => p.name); ANST = a.status; drawAnalytics(a.summary); drawStatus(); loadReports();
-  clearInterval(ANPOLL); if (a.status.syncing) ANPOLL = setInterval(loadAnalytics, 4000);
+  clearInterval(ANPOLL);
+  if (a.status.syncing) ANPOLL = setInterval(async () => {          // while a sync runs, refresh only the status line (the table keeps your edits)
+    const x = await api('/api/analytics', {silent: true}).catch(() => null);
+    if (x && !x.status.syncing) { clearInterval(ANPOLL); loadAnalytics(); } else if (x) { ANST = x.status; drawStatus(); }
+  }, 4000);
 }
 function ago(iso) {
   if (!iso) return 'never';
@@ -443,21 +483,16 @@ function drawStatus() {
     (st.error ? `<div style="color:#c0262d;margin-top:6px">⚠ ${esc(st.error)}</div>` : '') +
     ((st.info && st.info.warnings && st.info.warnings.length) ? `<div class="muted" style="margin-top:4px">Some per-video details were skipped (usually videos with too few views): ${esc(st.info.warnings[0])}</div>` : '');
 }
-async function syncNow() {
-  $('#syncbtn').disabled = true; $('#syncbtn').textContent = '⟳ Syncing…';
-  try { const r = await api('/api/analytics/sync', {method: 'POST'}); AN = r.rows; ANST = r.status; drawAnalytics(r.summary); drawStatus(); }
-  finally { loadAnalytics(); }
-}
 function drawAnalytics(summary) {
   $('#ancount').textContent = `${AN.length} videos · ${AN.filter(r => r.views != null).length} with numbers`;
   const fmt = (k, v) => v == null || v === '' ? '<span class="muted">–</span>' : k === 'posted' ? esc(String(v).slice(5)) : typeof v === 'number' ? (k === 'views' || k === 'likes' || k === 'comments' || k === 'shares' || k === 'subs' ? v.toLocaleString() : (Math.round(v * 10) / 10)) : esc(v);
   const cell = (r, i, [k, , w, kind]) => {
     const v = r[k] ?? '';
     if (kind === 'ro') return `<div style="min-width:${w}px;max-width:${w + 40}px;padding:4px 6px;${k === 'title' ? 'font-weight:600;' : ''}">${fmt(k, r[k])}</div>`;
-    if (k === 'project') return `<select style="width:${w}px" onchange="AN[${i}].project=this.value||null"><option value=""></option>${PROJ.map(p => `<option ${p === v ? 'selected' : ''}>${p}</option>`).join('')}</select>`;
-    if (k === 'slot') return `<select style="width:${w}px" onchange="AN[${i}].slot=this.value||null">${['', 'A', 'B', 'Long'].map(o => `<option ${o === v ? 'selected' : ''}>${o}</option>`).join('')}</select>`;
-    if (k === 'type') return `<select style="width:${w}px" onchange="AN[${i}].type=this.value||null"><option value=""></option>${TYPES.map(o => `<option ${o === v ? 'selected' : ''}>${o}</option>`).join('')}</select>`;
-    return `<input style="width:${w}px" value="${esc(v)}" oninput="AN[${i}]['${k}']=this.value">`;
+    if (k === 'project') return `<select style="width:${w}px" onchange="AN[${i}].project=this.value||null;queueSave()"><option value=""></option>${PROJ.map(p => `<option ${p === v ? 'selected' : ''}>${p}</option>`).join('')}</select>`;
+    if (k === 'slot') return `<select style="width:${w}px" onchange="AN[${i}].slot=this.value||null;queueSave()">${['', 'A', 'B', 'Long'].map(o => `<option ${o === v ? 'selected' : ''}>${o}</option>`).join('')}</select>`;
+    if (k === 'type') return `<select style="width:${w}px" onchange="AN[${i}].type=this.value||null;queueSave()"><option value=""></option>${TYPES.map(o => `<option ${o === v ? 'selected' : ''}>${o}</option>`).join('')}</select>`;
+    return `<input style="width:${w}px" value="${esc(v)}" oninput="AN[${i}]['${k}']=this.value;queueSave()">`;
   };
   $('#antable').innerHTML = `<tr>${AN_COLS.map(c => `<th>${c[1]}</th>`).join('')}</tr>` +
     (AN.length ? AN.map((r, i) => `<tr>${AN_COLS.map(c => `<td style="padding:3px">${cell(r, i, c)}</td>`).join('')}</tr>`).join('')
@@ -468,7 +503,17 @@ function drawAnalytics(summary) {
     $('#ansum').innerHTML = tbl(summary.by_slot, 'slot', 'By slot') + tbl(summary.by_type, 'type', 'By type') + `<div class="muted" style="align-self:center">⚠️ = fewer than 5 videos, a hint rather than a result.</div>`;
   }
 }
-async function saveAnalytics() { await api('/api/analytics', {method: 'PUT', body: {rows: AN}}); const a = await api('/api/analytics'); AN = a.rows; drawAnalytics(a.summary); }
+let SAVET = null;
+function queueSave() { clearTimeout(SAVET); SAVET = setTimeout(saveAnalytics, 700); }
+async function saveAnalytics() {        // sends the editable fields only; the server merges them into the current data
+  clearTimeout(SAVET);
+  await api('/api/analytics', {method: 'PUT', body: {rows: AN.map(r => ({id: r.id, title: r.title, project: r.project, slot: r.slot, type: r.type, notes: r.notes, viewed_pct: r.viewed_pct, drop_note: r.drop_note}))}, silent: true}).catch(() => toast('Could not save your edits.'));
+}
+async function syncNow() {
+  $('#syncbtn').disabled = true; $('#syncbtn').textContent = '⟳ Syncing…';
+  try { await saveAnalytics(); const r = await api('/api/analytics/sync', {method: 'POST'}); AN = r.rows; ANST = r.status; drawAnalytics(r.summary); drawStatus(); }
+  finally { loadAnalytics(); }
+}
 async function analyze() {
   await saveAnalytics();
   const j = await api('/api/analytics/analyze', {method: 'POST', body: {question: $('#anq').value}});
@@ -506,11 +551,14 @@ async function openReport(name) {
 // ---------- schedule ----------
 async function loadSchedule(refresh) {
   const d = await api('/api/schedule' + (refresh ? '?refresh=1' : ''));
-  const today = new Date().toISOString().slice(0, 10);
+  const today = istDate();
   $('#schedmeta').textContent = d.last ? `YouTube data from ${ago(d.last)}` : 'from YouTube';
   const warn = $('#schedwarn');
-  warn.style.display = d.connected && !d.error ? 'none' : '';
-  warn.innerHTML = !d.connected ? `<b>● Not connected to YouTube.</b> Open the Analytics tab and press <b>Connect YouTube</b>; then this table shows what is really live and scheduled.` : `⚠ ${esc(d.error)}`;
+  const msgs = [];
+  if (!d.connected) msgs.push('<b>● Not connected to YouTube.</b> Open the Analytics tab and press <b>Connect YouTube</b>; then this table shows what is really live and scheduled.');
+  else if (d.error) msgs.push(`⚠ ${esc(d.error)}`);
+  if (d.planner_error) msgs.push(`📋 ${esc(d.planner_error)}`);
+  warn.style.display = msgs.length ? '' : 'none'; warn.innerHTML = msgs.join('<br>');
   const order = {scheduled: 0, live: 1, private: 2, unlisted: 3};
   const yt = d.youtube.slice().sort((a, b) => (order[a.state] - order[b.state]) || (a.state === 'scheduled' ? a.when.localeCompare(b.when) : b.when.localeCompare(a.when)));
   $('#schedyt').innerHTML = `<tr><th>State</th><th>When (IST)</th><th>Title</th><th>Views</th><th></th></tr>` +
@@ -524,11 +572,11 @@ async function loadSchedule(refresh) {
 // ---------- settings ----------
 async function loadCfg() { $('#cfg').value = JSON.stringify(await api('/api/config'), null, 2); }
 async function saveCfg() {
-  let v; try { v = JSON.parse($('#cfg').value); } catch (e) { return alert('That is not valid JSON: ' + e.message); }
-  const r = await api('/api/config', {method: 'PUT', body: v}); $('#cfgmsg').textContent = 'Saved. ' + r.note;
+  let v; try { v = JSON.parse($('#cfg').value); } catch (e) { return toast('That is not valid JSON: ' + e.message); }
+  const r = await api('/api/config', {method: 'PUT', body: v}); $('#cfgmsg').textContent = r.note; toast(r.note);
 }
 
-loadProjects();
+initMeta().then(loadProjects);
 </script>
 </body>
 </html>

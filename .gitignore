@@ -14,6 +14,7 @@ __pycache__/
 line-boil/*/seg/
 line-boil/*/audio/
 line-boil/*/stills/
+line-boil/*/*.lock
 line-boil/*/web/engine/
 line-boil/*/web/index.html
 line-boil/*/web/thumb.html

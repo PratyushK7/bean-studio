@@ -4,9 +4,11 @@ register(app, ROOT, cfg) adds GET /api/youtube/videos[?refresh=1]. The Videos, S
 so what you see is what is on the channel, not what a spreadsheet says. Refreshed on tab open (at most every 45 s),
 every 5 minutes in the background, and right after an upload.
 """
-import difflib, json, re, threading, time
+import difflib, re, threading, time
 from pathlib import Path
 from flask import jsonify, request
+
+import store
 
 STATE = {"at": 0.0, "videos": [], "connected": False, "error": None, "last": None}
 LOCK = threading.Lock()
@@ -31,15 +33,12 @@ def badge_for(project_dir):
     """the live state of a project's video on YouTube: by the id the uploader logged, else by title"""
     vids = STATE["videos"]
     if not vids: return None
-    up = Path(project_dir) / f"{Path(project_dir).name}-upload.json"
+    p = Path(project_dir)
     v = None
-    if up.exists():
-        try:
-            vid = json.loads(up.read_text(encoding="utf-8")).get("id")
-            v = next((x for x in vids if x["id"] == vid), None)
-        except Exception: pass
+    vid = (store.read(p / f"{p.name}-upload.json", {}) or {}).get("id")
+    if vid: v = next((x for x in vids if x["id"] == vid), None)
     if not v:
-        sheet = Path(project_dir) / f"{Path(project_dir).name}-youtube.txt"
+        sheet = p / f"{p.name}-youtube.txt"
         if sheet.exists():
             m = re.search(r"== TITLE ==\s*\n(.+)", sheet.read_text(encoding="utf-8"))
             if m: v = match_title(m.group(1), vids, 0.9)
@@ -48,19 +47,19 @@ def badge_for(project_dir):
 
 def register(app, ROOT, cfg):
     FILE = ROOT / "data" / "youtube-videos.json"
-    if FILE.exists():
-        try: STATE.update(json.loads(FILE.read_text(encoding="utf-8")))
-        except Exception: pass
+    cached = store.read(FILE, {}) or {}
+    STATE.update(videos=cached.get("videos", []), last=cached.get("last"))
 
     def refresh(force=False):
+        """force=True always asks YouTube, except when another refresh finished in the last 5 s (a burst of tabs opening)"""
         if not force and time.time() - STATE["at"] < 45: return
         import ytdata
         with LOCK:
+            if time.time() - STATE["at"] < (5 if force else 45): return
             try:
                 vids = ytdata.channel_videos(ROOT)
                 STATE.update(videos=vids, at=time.time(), connected=True, error=None, last=time.strftime("%Y-%m-%dT%H:%M:%S"))
-                FILE.parent.mkdir(exist_ok=True)
-                FILE.write_text(json.dumps({"videos": vids, "last": STATE["last"]}), encoding="utf-8")
+                store.write(FILE, {"videos": vids, "last": STATE["last"]}, indent=None)
             except ytdata.NotConnected:
                 STATE.update(connected=False, error=None)
             except Exception as e:

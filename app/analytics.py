@@ -1,45 +1,26 @@
-"""Analytics for Bean Studio: your numbers in (by hand, Studio CSV export or the planner), the agent's report out.
+"""Analytics for Bean Studio: numbers pulled from YouTube by the server, and the agent's report on them.
 
-register(app, ROOT, cfg, start_job) adds /api/analytics*, /api/reports* to the Flask app.
+register(app, ROOT, cfg, start_job) adds /api/analytics*, /api/reports*.
 Data lives in data/analytics.json, reports in reports/analysis-<date>.md (both tracked in git, both private).
+Only slot, type, project, notes and the Studio-only "viewed %" / drop note are editable by hand; everything else is replaced by each sync.
 """
-import csv, datetime as dt, io, json, re, threading, time
-from pathlib import Path
+import datetime as dt, json, re, threading, time
+
 from flask import abort, jsonify, request
 
-FIELDS = ["id", "project", "title", "posted", "duration_s", "slot", "type", "checked", "views", "engaged_pct", "viewed_pct", "avg_pct",
-          "avd_s", "likes", "comments", "shares", "subs", "drop_s", "retention", "drop_note", "geo", "notes"]
-NUMERIC = ("views", "engaged_pct", "viewed_pct", "avg_pct", "avd_s", "likes", "comments", "shares", "subs", "drop_s", "duration_s")
+import store
 
-# YouTube Studio export headers -> our fields (matched by prefix, case-insensitive)
-CSV_MAP = {
-    "title": ("video title", "title", "content"),
-    "views": ("views",),
-    "avg_pct": ("average percentage viewed", "avg % viewed", "average view percentage"),
-    "avd_s": ("average view duration", "avg view duration"),
-    "likes": ("likes",),
-    "comments": ("comments added", "comments"),
-    "shares": ("shares",),
-    "subs": ("subscribers gained", "subscribers"),
-    "viewed_pct": ("viewed vs swiped away", "stayed to watch", "viewed"),
-    "posted": ("video publish time", "publish time", "published", "date"),
-}
+FIELDS = ["id", "project", "title", "posted", "duration_s", "slot", "type", "checked", "detail_checked", "views", "engaged_pct", "viewed_pct",
+          "avg_pct", "avd_s", "likes", "comments", "shares", "subs", "drop_s", "retention", "drop_note", "geo", "notes"]
+EDITABLE = ("project", "slot", "type", "notes", "viewed_pct", "drop_note")
 
 
 def num(v):
     if v in (None, ""): return None
     try:
-        s = str(v).replace(",", "").replace("%", "").strip()
-        return float(s) if s not in ("", "-", "—") else None
+        return float(str(v).replace(",", "").replace("%", "").strip())
     except ValueError:
         return None
-
-
-def duration(v):
-    s = str(v).strip()
-    if ":" in s:
-        return sum((num(x) or 0) * 60 ** i for i, x in enumerate(reversed(s.split(":"))))
-    return num(s)
 
 
 def summarize(rows):
@@ -60,41 +41,47 @@ def summarize(rows):
     return {"by_slot": agg("slot"), "by_type": agg("type")}
 
 
+def apply_edits(rows, current):
+    """copy the hand-set fields of `current` onto `rows` (matched by id, else title), so a sync that took a minute
+    never overwrites something you changed while it ran"""
+    by_id = {r.get("id"): r for r in current if r.get("id")}
+    by_title = {(r.get("title") or "").lower(): r for r in current}
+    for r in rows:
+        src = by_id.get(r.get("id")) or by_title.get((r.get("title") or "").lower())
+        if src:
+            for k in EDITABLE:
+                if src.get(k) not in (None, ""): r[k] = src[k]
+    return rows
+
+
 def register(app, ROOT, cfg, start_job):
     DATA, REPORTS = ROOT / "data", ROOT / "reports"
-    FILE = DATA / "analytics.json"
-
-    def load():
-        return json.loads(FILE.read_text(encoding="utf-8")) if FILE.exists() else []
-
-    def save(rows):
-        DATA.mkdir(exist_ok=True)
-        FILE.write_text(json.dumps(rows, indent=1, ensure_ascii=False), encoding="utf-8")
-
-    META = DATA / "analytics-meta.json"
-    state = {"syncing": False, "error": None, "last_sync": None, "info": None}
-    if META.exists():
-        try: state.update(json.loads(META.read_text(encoding="utf-8")))
-        except Exception: pass
-    lock = threading.Lock()
+    FILE, META = DATA / "analytics.json", DATA / "analytics-meta.json"
+    load = lambda: store.read(FILE, [])
+    state = {"syncing": False, "error": None, "last_sync": None, "info": None, **(store.read(META, {}) or {})}
+    state.update(syncing=False, error=None)
+    sync_lock = threading.Lock()
 
     def do_sync():
         """pull everything from YouTube; keeps the slot/type/project/notes you set by hand"""
-        import ytdata
-        with lock:
-            state["syncing"] = True
-            try:
-                rows, info = ytdata.sync(ROOT, cfg(), load())
-                save(rows)
-                state.update(error=None, last_sync=dt.datetime.now().isoformat(timespec="seconds"), info=info)
-            except ytdata.NotConnected:
-                state["error"] = "not connected"
-            except Exception as e:
-                state["error"] = ytdata.friendly(e)
-            finally:
-                state["syncing"] = False
-                DATA.mkdir(exist_ok=True)
-                META.write_text(json.dumps({k: state[k] for k in ("last_sync", "info")}), encoding="utf-8")
+        import ytdata, ytstate
+        if not sync_lock.acquire(blocking=False):
+            return state["error"] is None                 # one is already running
+        state["syncing"] = True
+        try:
+            fresh = ytstate.STATE["videos"] if ytstate.STATE["videos"] and time.time() - ytstate.STATE["at"] < 600 else None
+            rows, info = ytdata.sync(ROOT, cfg(), load(), videos=fresh)
+            with store.lock_for(FILE):
+                store.write(FILE, apply_edits(rows, load()))
+            state.update(error=None, last_sync=dt.datetime.now().isoformat(timespec="seconds"), info=info)
+        except ytdata.NotConnected:
+            state["error"] = "not connected"
+        except Exception as e:
+            state["error"] = ytdata.friendly(e)
+        finally:
+            state["syncing"] = False
+            store.write(META, {"last_sync": state["last_sync"], "info": state["info"]})
+            sync_lock.release()
         return state["error"] is None
 
     def auto_sync():
@@ -123,75 +110,33 @@ def register(app, ROOT, cfg, start_job):
     @app.get("/api/analytics")
     def analytics_get():
         rows = load()
-        return jsonify(rows=rows, fields=FIELDS, summary=summarize(rows), status=status())
+        return jsonify(rows=rows, summary=summarize(rows), status=status())
 
     @app.put("/api/analytics")
     def analytics_put():
-        clean = []
-        for r in request.json.get("rows", []):
-            c = {k: r.get(k) for k in FIELDS}
-            for k in NUMERIC: c[k] = num(c[k])
-            if c["title"] or c["project"]: clean.append(c)
-        save(clean)
-        return jsonify(ok=True, n=len(clean))
-
-    @app.post("/api/analytics/import-csv")
-    def analytics_csv():
-        rdr = csv.DictReader(io.StringIO(request.json.get("text", "").lstrip("﻿")))
-        if not rdr.fieldnames: abort(400, "no header row")
-        low = {h: h.strip().lower() for h in rdr.fieldnames}
-        pick = {f: next((h for h, l in low.items() if any(l.startswith(a) for a in alts)), None) for f, alts in CSV_MAP.items()}
-        if not pick["title"] or not pick["views"]: abort(400, "need at least a title column and a Views column")
-        have = {(r.get("title") or "").strip().lower(): r for r in load()}
-        for rec in rdr:
-            t = (rec.get(pick["title"]) or "").strip()
-            if not t or t.lower() in ("total", "totals"): continue
-            row = have.get(t.lower()) or {k: None for k in FIELDS}
-            row["title"] = t
-            for f in ("views", "avg_pct", "likes", "comments", "shares", "subs", "viewed_pct"):
-                if pick[f] and num(rec.get(pick[f])) is not None: row[f] = num(rec[pick[f]])
-            if pick["avd_s"] and rec.get(pick["avd_s"]): row["avd_s"] = duration(rec[pick["avd_s"]])
-            if pick["posted"] and rec.get(pick["posted"]): row["posted"] = str(rec[pick["posted"]])[:10]
-            row["checked"] = dt.date.today().isoformat()
-            have[t.lower()] = row
-        save(list(have.values()))
-        return jsonify(ok=True, n=len(have), matched={k: v for k, v in pick.items() if v})
-
-    @app.post("/api/analytics/import-planner")
-    def analytics_planner():
-        import openpyxl
-        f = Path(cfg()["planner"])
-        if not f.exists(): abort(404, "no planner file")
-        ws = openpyxl.load_workbook(f, read_only=True, data_only=True)["Analytics"]
-        head = [c.value for c in next(ws.iter_rows(min_row=3, max_row=3))]
-        ix = {h: i for i, h in enumerate(head) if h}
-        want = {"Title": "title", "Posted (IST)": "posted", "Slot": "slot", "Video type": "type", "Views": "views",
-                "Viewed vs swiped %": "viewed_pct", "Avg % viewed": "avg_pct", "Avg view duration (s)": "avd_s", "Likes": "likes",
-                "Comments": "comments", "Shares": "shares", "Subs gained": "subs", "Biggest drop at (s)": "drop_s",
-                "Line / shot at the drop": "drop_note", "Notes": "notes"}
-        have = {(r.get("title") or "").strip().lower(): r for r in load()}
-        added = 0
-        for r in ws.iter_rows(min_row=4, values_only=True):
-            t = r[ix["Title"]] if "Title" in ix else None
-            if not t or r[ix["Views"]] in (None, ""): continue
-            key = str(t).strip().lower()
-            row = have.get(key) or {k: None for k in FIELDS}
-            for h, k in want.items():
-                if h in ix and r[ix[h]] not in (None, ""):
-                    v = r[ix[h]]
-                    if isinstance(v, (dt.date, dt.datetime)): v = v.date().isoformat() if isinstance(v, dt.datetime) else v.isoformat()
-                    if k in ("viewed_pct", "avg_pct") and isinstance(v, (int, float)) and v <= 1: v = v * 100
-                    row[k] = v
-            if key not in have: added += 1
-            have[key] = row
-        save(list(have.values()))
-        return jsonify(ok=True, n=len(have), added=added)
+        """saves only the fields you can edit, merged into the CURRENT data, so a sync that ran since you opened the tab keeps its numbers"""
+        incoming = (request.get_json(silent=True) or {}).get("rows")
+        if not isinstance(incoming, list): abort(400, "rows must be a list")
+        with store.lock_for(FILE):
+            rows = load()
+            by_id = {r.get("id"): r for r in rows if r.get("id")}
+            by_title = {(r.get("title") or "").lower(): r for r in rows}
+            changed = 0
+            for inc in incoming:
+                tgt = by_id.get(inc.get("id")) or by_title.get((inc.get("title") or "").lower())
+                if not tgt: continue
+                for k in EDITABLE:
+                    if k in inc:
+                        v = num(inc[k]) if k == "viewed_pct" else (inc[k] or None)
+                        if tgt.get(k) != v: tgt[k] = v; changed += 1
+            if changed: store.write(FILE, rows)
+        return jsonify(ok=True, changed=changed)
 
     @app.post("/api/analytics/analyze")
     def analytics_analyze():
         rows = [r for r in load() if r.get("views") is not None]
-        if len(rows) < 2: abort(400, "add numbers for at least 2 videos first")
-        question = ((request.json or {}).get("question") or "").strip()
+        if len(rows) < 2: abort(400, "no numbers yet: connect YouTube and sync first (at least 2 videos needed)")
+        question = str((request.get_json(silent=True) or {}).get("question") or "").strip()[:500]
         REPORTS.mkdir(exist_ok=True)
         out = REPORTS / f"analysis-{dt.datetime.now():%Y-%m-%d-%H%M}.md"
         c = cfg()

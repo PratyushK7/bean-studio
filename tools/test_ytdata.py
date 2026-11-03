@@ -20,6 +20,7 @@ class Req:
 
 
 class Fake:
+    calls = {}
     def __init__(self, kind): self.kind = kind
     def channels(self): return self
     def playlistItems(self): return self
@@ -35,6 +36,7 @@ class Fake:
                                        "contentDetails": {"duration": PUBLISHED[i][2]},
                                        "status": {"privacyStatus": "private" if i == "v3" else "public"}} for i in ids]})
     def query(self, **kw):
+        Fake.calls[kw.get("dimensions")] = Fake.calls.get(kw.get("dimensions"), 0) + 1
         def run():
             if kw.get("dimensions") == "video":
                 return {"columnHeaders": [{"name": n} for n in ["video"] + kw["metrics"].split(",")],
@@ -68,6 +70,14 @@ def main():
     by["v2"]["type"] = "Levels"
     rows2, _ = ytdata.sync(ROOT, cfg, list(by.values()))
     assert len(rows2) == 3 and {r["id"]: r for r in rows2}["v2"]["type"] == "Levels"
+    # incremental details: an old video that was checked today is not queried again; a new one still is
+    old = {r["id"]: r for r in rows2}
+    ytdata.FRESH_DAYS = -1                                   # the fake videos are days old; treat them as "old" here
+    old["v1"]["detail_checked"] = dt.date.today().isoformat()
+    for k in ("v2", "v4"): old[k]["detail_checked"] = None
+    Fake.calls.clear(); ytdata.sync(ROOT, cfg, list(old.values()))
+    assert Fake.calls.get("elapsedVideoTimeRatio") == 2, Fake.calls      # v2 and v4 refreshed, v1 skipped
+    print("incremental details ok:", Fake.calls)
     print("resync ok, rows:", len(rows2))
     assert ytdata.seconds("PT1H2M3S") == 3723 and ytdata.seconds("PT44S") == 44 and ytdata.seconds("PT7M12S") == 432
     print("all passed")

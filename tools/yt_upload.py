@@ -19,10 +19,11 @@ Nothing is uploaded without the `upload` command; --dry-run shows exactly what w
 Not possible through the API, so do these by hand in Studio: pin the comment and the Education fields
 (Type: Concept overview, Academic system: None, Level: None), plus anything marked "your call".
 """
-import argparse, datetime as dt, json, re, sys
+import argparse, datetime as dt, json, os, re, sys, time
 from pathlib import Path
 
-ROOT = Path(r"C:\Users\praty\youtube\line-boil")
+# the projects folder: Bean Studio passes it in BEAN_PROJECTS_DIR; run by hand it is the line-boil folder next to tools/
+ROOT = Path(os.environ.get("BEAN_PROJECTS_DIR") or Path(__file__).resolve().parent.parent / "line-boil")
 SECRETS = Path(__file__).resolve().parent / ".secrets"
 CLIENT = SECRETS / "client_secret.json"
 TOKEN = SECRETS / "token.json"
@@ -107,11 +108,8 @@ def cmd_upload(a):
     t = dt.datetime.now(IST) if a.now else when(a)
     status = {"selfDeclaredMadeForKids": meta["kids"], "containsSyntheticMedia": meta["synthetic"],
               "embeddable": True, "license": "youtube"}
-    if a.now:   # publish immediately: public, no schedule
-        status.update(privacyStatus="public", publishAt=t.astimezone(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"))
-        status.pop("publishAt")
-    else:       # private until publishAt, then YouTube flips it to public
-        status.update(privacyStatus="private", publishAt=t.astimezone(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"))
+    if a.now: status["privacyStatus"] = "public"                      # publish immediately
+    else: status.update(privacyStatus="private", publishAt=t.astimezone(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"))   # private until then
     body = {
         "snippet": {"title": meta["title"], "description": meta["description"], "tags": meta["tags"],
                     "categoryId": EDUCATION, "defaultLanguage": "en", "defaultAudioLanguage": "en"},
@@ -127,14 +125,35 @@ def cmd_upload(a):
     if a.dry_run:
         print("\n  dry run - nothing sent"); return
 
+    from googleapiclient.errors import HttpError
     from googleapiclient.http import MediaFileUpload
-    yt = service()
-    req = yt.videos().insert(part="snippet,status", body=body,
-                             media_body=MediaFileUpload(str(files["video"]), chunksize=8 * 1024 * 1024, resumable=True))
-    resp = None
-    while resp is None:
-        st, resp = req.next_chunk()
-        if st: print(f"  uploading {int(st.progress() * 100)}%")
+    lock = proj / f"{a.project}-upload.lock"          # one upload of a video at a time: a double click or a second window is refused
+    try:                                               # O_EXCL: creating the lock is atomic, so two processes can't both get it
+        os.close(os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY))
+    except FileExistsError:
+        if time.time() - lock.stat().st_mtime < 3 * 3600:
+            sys.exit("another upload of this video is already running (delete " + lock.name + " if it crashed)")
+        lock.write_text(str(os.getpid()))              # a lock left by a crash hours ago: take over
+    try:
+        yt = service()
+        req = yt.videos().insert(part="snippet,status", body=body,
+                                 media_body=MediaFileUpload(str(files["video"]), chunksize=8 * 1024 * 1024, resumable=True))
+        resp, tries = None, 0
+        while resp is None:
+            try:
+                st, resp = req.next_chunk()
+                tries = 0
+                if st: print(f"  uploading {int(st.progress() * 100)}%")
+            except HttpError as e:                       # temporary server trouble: wait and resume where it stopped
+                if e.resp.status in (500, 502, 503, 504) and tries < 5:
+                    tries += 1; print(f"  YouTube said {e.resp.status}; retrying ({tries}/5)"); time.sleep(2 ** tries)
+                else: raise
+        return finish_upload(a, yt, files, resp, meta, t, log)
+    finally:
+        lock.unlink(missing_ok=True)
+
+def finish_upload(a, yt, files, resp, meta, t, log):
+    from googleapiclient.http import MediaFileUpload
     vid = resp["id"]
     print(f"  uploaded   https://youtu.be/{vid}")
     out = {"id": vid, "url": f"https://youtu.be/{vid}", "studio": f"https://studio.youtube.com/video/{vid}/edit",
