@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bean Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root { --paper:#fffaf0; --ink:#1c1c1c; --red:#ff595e; --blue:#1982c4; --yel:#ffca3a; --soft:#f1eadb; --mute:#6b6b6b; --ok:#c9e8c9; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: Poppins, system-ui, sans-serif; background: var(--paper); color: var(--ink); }
+  header { display:flex; align-items:center; gap:16px; padding:14px 24px; border-bottom:3px solid var(--ink); background: var(--blue); color:#fff; }
+  header h1 { margin:0; font-size:20px; letter-spacing:.3px; }
+  header h1 span { color: var(--yel); }
+  nav { display:flex; gap:6px; margin-left:auto; flex-wrap:wrap; }
+  nav button { font:inherit; font-weight:600; border:2px solid var(--ink); background:var(--paper); color:var(--ink); padding:6px 14px; border-radius:999px; cursor:pointer; box-shadow:2px 2px 0 var(--ink); }
+  nav button.on { background: var(--yel); }
+  main { padding: 20px 24px; max-width: 1280px; margin: 0 auto; }
+  .tab { display:none; } .tab.on { display:block; }
+  .card { background:#fff; border:2px solid var(--ink); border-radius:14px; padding:14px; box-shadow:3px 3px 0 var(--ink); }
+  .grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap:16px; }
+  .proj { cursor:pointer; transition: transform .08s; } .proj:hover { transform: translate(-1px,-1px); }
+  .proj img { width:100%; aspect-ratio: 9/16; object-fit: cover; border-radius:8px; border:2px solid var(--ink); background: var(--soft); display:block; }
+  .proj .ph { width:100%; aspect-ratio:9/16; border-radius:8px; border:2px dashed var(--mute); display:grid; place-items:center; color:var(--mute); font-size:13px; }
+  .proj h3 { font-size:14px; margin:10px 0 4px; line-height:1.3; }
+  .slug { font-size:12px; color:var(--mute); }
+  .chips { display:flex; flex-wrap:wrap; gap:4px; margin-top:8px; }
+  .chip { font-size:11px; padding:2px 8px; border-radius:999px; border:1.5px solid var(--ink); background: var(--soft); }
+  .chip.y { background: var(--ok); } .chip.n { background:#fff; color:var(--mute); border-color:#bbb; }
+  .badge { display:inline-block; font-size:11px; font-weight:700; padding:2px 8px; border-radius:6px; background:var(--red); color:#fff; }
+  .badge.ok { background:#2f8f3a; } .badge.up { background: var(--blue); }
+  button.act { font:inherit; font-weight:600; font-size:13px; border:2px solid var(--ink); background:var(--yel); padding:6px 12px; border-radius:10px; cursor:pointer; box-shadow:2px 2px 0 var(--ink); }
+  button.act.sec { background:#fff; } button.act.red { background: var(--red); color:#fff; } button.act.blue { background: var(--blue); color:#fff; }
+  button.act:active { transform: translate(1px,1px); box-shadow:1px 1px 0 var(--ink); }
+  button:disabled { opacity:.5; cursor: default; }
+  .row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  textarea, input, select { font: inherit; font-size:13px; border:2px solid var(--ink); border-radius:10px; padding:8px 10px; background:#fff; color:var(--ink); }
+  textarea { width:100%; resize: vertical; font-family: ui-monospace, Consolas, monospace; }
+  .detail { display:grid; grid-template-columns: 300px 1fr; gap:20px; }
+  .detail video, .detail img.thumb { width:100%; border-radius:10px; border:2px solid var(--ink); background:#000; display:block; }
+  h2 { font-size:18px; margin: 0 0 12px; } h4 { margin: 16px 0 8px; font-size:14px; }
+  .log { background: var(--ink); color: #eee; font: 12px/1.45 ui-monospace, Consolas, monospace; padding:12px; border-radius:10px; height: 300px; overflow:auto; white-space: pre-wrap; }
+  table { width:100%; border-collapse: collapse; font-size:13px; background:#fff; }
+  th, td { text-align:left; padding:7px 8px; border-bottom:1px solid #e4dccb; vertical-align: top; }
+  th { background: var(--blue); color:#fff; position: sticky; top:0; }
+  tr.Long td { background:#ffe2e3; font-weight:600; } tr.today td:first-child { border-left:5px solid var(--yel); }
+  .st-Posted { color:#2f8f3a; font-weight:700; } .st-Ready, .st-Scheduled { color: var(--blue); font-weight:700; }
+  .muted { color: var(--mute); font-size:12px; }
+  .jobs { display:flex; flex-direction:column; gap:6px; margin-bottom:10px; max-height:160px; overflow:auto; }
+  .job { font-size:12px; padding:6px 10px; border:1.5px solid var(--ink); border-radius:8px; background:#fff; cursor:pointer; display:flex; justify-content:space-between; }
+  .job.sel { background: var(--yel); }
+  .quick button { margin: 0 6px 6px 0; }
+  .back { cursor:pointer; color: var(--blue); font-weight:600; font-size:13px; margin-bottom:12px; display:inline-block; }
+  @media (max-width: 800px) { .detail { grid-template-columns: 1fr; } header { flex-wrap: wrap; } main { padding: 16px; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>🫘 Bean <span>Studio</span></h1>
+  <nav>
+    <button data-tab="projects" class="on">Videos</button>
+    <button data-tab="schedule">Schedule</button>
+    <button data-tab="agent">Agent</button>
+    <button data-tab="jobs">Activity</button>
+    <button data-tab="settings">Settings</button>
+  </nav>
+</header>
+<main>
+
+<section id="projects" class="tab on">
+  <div id="list">
+    <div class="row" style="margin-bottom:16px">
+      <h2 style="margin:0">Videos</h2>
+      <span class="muted" id="count"></span>
+      <span style="flex:1"></span>
+      <input id="newslug" placeholder="new-project-slug" pattern="[a-z0-9-]+">
+      <button class="act" onclick="newProject()">+ New project</button>
+    </div>
+    <div class="grid" id="grid"></div>
+  </div>
+  <div id="detail" style="display:none"></div>
+</section>
+
+<section id="schedule" class="tab">
+  <div class="row" style="margin-bottom:12px">
+    <h2 style="margin:0">Schedule</h2><span class="muted">from bean-planner.xlsx · read-only here</span>
+    <span style="flex:1"></span><button class="act sec" onclick="api('/api/open-planner',{method:'POST'})">Open in Excel</button>
+  </div>
+  <div class="card" style="padding:0; max-height:70vh; overflow:auto"><table id="sched"></table></div>
+</section>
+
+<section id="agent" class="tab">
+  <h2>Ask the agent</h2>
+  <p class="muted">Runs Claude Code in your youtube folder with the command from Settings. It can use the line-boil and yt-* skills. Output appears below and in Activity.</p>
+  <div class="quick" id="quick"></div>
+  <textarea id="prompt" rows="5" placeholder="e.g. Make a new Short with the line-boil skill about why onions make you cry. Go straight through without waiting for my OK."></textarea>
+  <div class="row" style="margin:10px 0"><button class="act blue" onclick="askAgent()">Run agent</button><span class="muted">Long jobs keep running if you switch tabs.</span></div>
+  <div class="log" id="agentlog"></div>
+</section>
+
+<section id="jobs" class="tab">
+  <h2>Activity</h2>
+  <div class="row" style="margin-bottom:10px">
+    <button class="act sec" onclick="run({action:'status'})">Upload status</button>
+    <button class="act sec" onclick="run({action:'auth'})">YouTube sign-in</button>
+  </div>
+  <div class="jobs" id="joblist"></div>
+  <div class="row" style="margin-bottom:6px"><b id="jobtitle" style="font-size:13px"></b><span style="flex:1"></span><button class="act red" id="stopbtn" onclick="stopJob()" style="display:none">Stop</button></div>
+  <div class="log" id="joblog"></div>
+</section>
+
+<section id="settings" class="tab">
+  <h2>Settings</h2>
+  <p class="muted">Saved to <code>config.json</code> in the repo. Paths, posting slots, the agent command and the port. Restart <code>start.bat</code> after changing the port.</p>
+  <textarea id="cfg" rows="22"></textarea>
+  <div class="row" style="margin-top:10px"><button class="act" onclick="saveCfg()">Save settings</button><span class="muted" id="cfgmsg"></span></div>
+</section>
+
+</main>
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+async function api(url, opt = {}) {
+  if (opt.body && typeof opt.body !== 'string') { opt.body = JSON.stringify(opt.body); opt.headers = {'Content-Type': 'application/json'}; }
+  const r = await fetch(url, opt);
+  if (!r.ok) { alert(await r.text()); throw new Error(r.status); }
+  return r.json();
+}
+let CFG = {};
+document.querySelectorAll('nav button').forEach(b => b.onclick = () => show(b.dataset.tab));
+function show(tab) {
+  document.querySelectorAll('nav button').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('on', t.id === tab));
+  ({projects: loadProjects, schedule: loadSchedule, jobs: loadJobs, settings: loadCfg}[tab] || (() => {}))();
+}
+
+// ---------- videos ----------
+const STEPS = [['script','Script'],['video','Video'],['srt','Captions'],['thumbnail','Thumbnail'],['sheet','Upload sheet'],['uploaded','Uploaded']];
+async function loadProjects() {
+  $('#detail').style.display = 'none'; $('#list').style.display = '';
+  const ps = await api('/api/projects');
+  $('#count').textContent = `${ps.length} projects · ${ps.filter(p => p.ready).length} ready to upload`;
+  $('#grid').innerHTML = ps.map(p => `
+    <div class="card proj" onclick="openProject('${p.name}')">
+      ${p.steps.thumbnail ? `<img loading="lazy" src="/media/${p.name}/${p.name}-thumbnail.png?${p.modified}">` : `<div class="ph">no thumbnail yet</div>`}
+      <h3>${esc(p.title || p.name)}</h3>
+      <div class="slug">${p.name} · ${p.words} words</div>
+      <div style="margin-top:6px">${p.steps.uploaded ? '<span class="badge up">UPLOADED</span>' : p.ready ? '<span class="badge ok">READY</span>' : '<span class="badge">IN PROGRESS</span>'}</div>
+      <div class="chips">${STEPS.map(([k, l]) => `<span class="chip ${p.steps[k] ? 'y' : 'n'}">${p.steps[k] ? '✓' : '·'} ${l}</span>`).join('')}</div>
+    </div>`).join('');
+}
+async function openProject(name) {
+  const p = await api('/api/projects/' + name);
+  CFG = await api('/api/config');
+  $('#list').style.display = 'none'; const d = $('#detail'); d.style.display = '';
+  const tomorrow = new Date(Date.now() + 864e5).toISOString().slice(0, 10);
+  d.innerHTML = `
+    <span class="back" onclick="loadProjects()">← all videos</span>
+    <div class="detail">
+      <div>
+        ${p.steps.video ? `<video controls preload="metadata" src="/media/${name}/${name}.mp4?${p.modified}"></video>` : '<div class="card muted">No video yet. Run Voice, then Build video.</div>'}
+        ${p.steps.thumbnail ? `<h4>Thumbnail</h4><img class="thumb" src="/media/${name}/${name}-thumbnail.png?${p.modified}">` : ''}
+      </div>
+      <div>
+        <h2>${esc(p.title || name)}</h2>
+        <div class="chips" style="margin-bottom:14px">${STEPS.map(([k, l]) => `<span class="chip ${p.steps[k] ? 'y' : 'n'}">${p.steps[k] ? '✓' : '·'} ${l}</span>`).join('')}</div>
+        ${p.upload ? `<div class="card" style="margin-bottom:14px">Uploaded: <a href="${p.upload.url}" target="_blank">${p.upload.url}</a> · goes live ${new Date(p.upload.publishAt).toLocaleString()} · <a href="${p.upload.studio}" target="_blank">open in Studio</a></div>` : ''}
+        <h4>Build</h4>
+        <div class="row">
+          <button class="act sec" onclick="run({action:'voice',project:'${name}'})">1 · Voice</button>
+          <button class="act sec" onclick="run({action:'check',project:'${name}'})">2 · Check</button>
+          <button class="act" onclick="run({action:'video',project:'${name}'})">3 · Build video</button>
+          <button class="act sec" onclick="run({action:'thumb',project:'${name}'})">4 · Thumbnail</button>
+          <button class="act sec" onclick="run({action:'sheet',project:'${name}'})">Contact sheet</button>
+          <button class="act blue" onclick="agentFor('${name}')">Ask agent…</button>
+        </div>
+        <h4>Upload &amp; schedule</h4>
+        <div class="card">
+          <div class="row">
+            <label>Date <input type="date" id="update" value="${tomorrow}"></label>
+            <label>Slot <select id="upslot">${Object.entries(CFG.slots).map(([k, v]) => `<option value="${k}">${k} · ${v} IST</option>`).join('')}</select></label>
+            <span class="muted">or exact time</span><input id="upat" placeholder="2026-11-05 18:00" style="width:150px">
+          </div>
+          <div class="row" style="margin-top:10px">
+            <button class="act sec" onclick="upload('${name}', true)">Dry run</button>
+            <button class="act red" onclick="upload('${name}', false)" ${p.ready ? '' : 'disabled title="needs video, captions, thumbnail and upload sheet"'}>Upload + schedule</button>
+            <button class="act sec" onclick="run({action:'comment',project:'${name}'})" ${p.upload ? '' : 'disabled'}>Post pinned comment</button>
+          </div>
+          <p class="muted" style="margin:8px 0 0">Sets title, description, tags, Education, not made for kids, altered content No, thumbnail and captions. Pin the comment and the Education "Type" in Studio.</p>
+        </div>
+        <h4>Script <span class="muted">(one sentence per line · re-run Voice after editing)</span></h4>
+        <textarea id="script" rows="8">${esc(p.script.join('\n'))}</textarea>
+        <div class="row" style="margin-top:6px"><button class="act sec" onclick="saveScript('${name}')">Save script</button></div>
+        <h4>Upload sheet <span class="muted">(${name}-youtube.txt)</span></h4>
+        <textarea id="sheet" rows="16" placeholder="No sheet yet. Ask the agent to write one.">${esc(p.sheet_text)}</textarea>
+        <div class="row" style="margin-top:6px"><button class="act sec" onclick="saveSheet('${name}')">Save sheet</button></div>
+      </div>
+    </div>`;
+}
+async function saveScript(n) { await api(`/api/projects/${n}/script`, {method: 'PUT', body: {sentences: $('#script').value.split('\n')}}); alert('Script saved. Run Voice to re-record.'); }
+async function saveSheet(n) { await api(`/api/projects/${n}/sheet`, {method: 'PUT', body: {text: $('#sheet').value}}); alert('Upload sheet saved.'); }
+function upload(n, dry) {
+  const at = $('#upat').value.trim();
+  if (!dry && !confirm(`Upload "${n}" to YouTube and schedule it? This publishes to your channel.`)) return;
+  run({action: dry ? 'upload-dry' : 'upload', project: n, slot: $('#upslot').value, date: $('#update').value, at});
+}
+async function newProject() {
+  const s = $('#newslug').value.trim();
+  if (!/^[a-z0-9][a-z0-9-]*$/.test(s)) return alert('Use a lowercase slug like why-onions-cry');
+  await run({action: 'new', project: s});
+}
+function agentFor(n) { show('agent'); $('#prompt').value = `For the line-boil project ${n}: `; $('#prompt').focus(); }
+
+// ---------- jobs ----------
+let CUR = null, POLL = null;
+async function run(body) { const j = await api('/api/run', {method: 'POST', body}); show('jobs'); watch(j.id); }
+async function loadJobs() {
+  const js = await api('/api/jobs');
+  $('#joblist').innerHTML = js.map(j => `<div class="job ${j.id === CUR ? 'sel' : ''}" onclick="watch('${j.id}')"><span>${esc(j.label)}</span><span>${j.done ? (j.code === 0 ? '✓ done' : '✗ exit ' + j.code) : '… running'}</span></div>`).join('') || '<span class="muted">Nothing run yet.</span>';
+}
+function watch(id, target = '#joblog') {
+  CUR = id; let n = 0; clearInterval(POLL); $(target).textContent = '';
+  const tick = async () => {
+    const j = await api(`/api/jobs/${id}?since=${n}`); n = j.n;
+    if (target === '#joblog') { $('#jobtitle').textContent = j.label; $('#stopbtn').style.display = j.done ? 'none' : ''; }
+    if (j.log.length) { const el = $(target); el.textContent += j.log.join('\n') + '\n'; el.scrollTop = el.scrollHeight; }
+    if (j.done) { clearInterval(POLL); $(target).textContent += j.code === 0 ? '\n✓ finished' : `\n✗ exited with ${j.code}`; }
+    loadJobs();
+  };
+  tick(); POLL = setInterval(tick, 1000);
+}
+async function stopJob() { if (CUR) await api(`/api/jobs/${CUR}/stop`, {method: 'POST'}); }
+
+// ---------- agent ----------
+const QUICK = [
+  ['New Short', 'Make a new Short with the line-boil skill about TOPIC. Write the script, fact-check it, build the video, render the thumbnail and write the upload sheet. Go straight through without waiting for my OK.'],
+  ['Upload sheet', 'Write the YouTube upload sheet for the line-boil project SLUG, following the skill\'s references/youtube.md.'],
+  ['Thumbnail', 'Write web/thumb.js and render the thumbnail for the line-boil project SLUG, following SKILL.md step 9.'],
+  ['Rebuild old Short', 'Rebuild the line-boil project SLUG with the current engine so it has captions, the .srt and the outro. Check caption placement on a still per shot.'],
+  ['Idea batch', 'Suggest 10 new Short ideas for The Bean With Bad Ideas across different video types (see the Types tab in bean-planner.xlsx), avoiding topics already in the planner.'],
+];
+$('#quick').innerHTML = QUICK.map(([l, t], i) => `<button class="act sec" onclick="$('#prompt').value=QUICK[${i}][1]">${l}</button>`).join('');
+async function askAgent() {
+  const prompt = $('#prompt').value.trim(); if (!prompt) return;
+  const j = await api('/api/agent', {method: 'POST', body: {prompt}});
+  watch(j.id, '#agentlog');
+}
+
+// ---------- schedule ----------
+async function loadSchedule() {
+  const {rows, error} = await api('/api/schedule');
+  const today = new Date().toISOString().slice(0, 10);
+  $('#sched').innerHTML = `<tr><th>Date</th><th>Slot</th><th>IST</th><th>Type</th><th>Working title</th><th>Status</th><th>Notes</th></tr>` +
+    (error ? `<tr><td colspan=7>${esc(error)}</td></tr>` : rows.map(r => `<tr class="${r.format} ${r.date === today ? 'today' : ''}">
+      <td>${r.day} ${r.date.slice(5)}</td><td>${esc(r.slot)}</td><td>${esc(r.time)}</td><td>${esc(r.type)}</td>
+      <td>${esc(r.title)}</td><td class="st-${esc(r.status)}">${esc(r.status)}</td><td class="muted">${esc(r.notes)}</td></tr>`).join(''));
+}
+
+// ---------- settings ----------
+async function loadCfg() { $('#cfg').value = JSON.stringify(await api('/api/config'), null, 2); }
+async function saveCfg() {
+  let v; try { v = JSON.parse($('#cfg').value); } catch (e) { return alert('That is not valid JSON: ' + e.message); }
+  const r = await api('/api/config', {method: 'PUT', body: v}); $('#cfgmsg').textContent = 'Saved. ' + r.note;
+}
+
+loadProjects();
+</script>
+</body>
+</html>

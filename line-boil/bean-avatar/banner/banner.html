@@ -1,0 +1,135 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  @font-face { font-family: 'PoppinsB'; src: url('Poppins-Bold.ttf'); font-weight: 700; }
+  html, body { margin: 0; background: #1c1c1c; }
+  canvas { width: 100vw; display: block; }
+</style>
+</head>
+<body>
+<canvas id="c" width="2560" height="1440"></canvas>
+<script>let NOW = 0, DRAWING = 0; const CUES = []; function cue() {}</script>
+<script src="../web/engine/ink.js"></script>
+<script src="../web/engine/props.js"></script>
+<script src="../web/engine/rig.js"></script>
+<script src="../web/cast.js"></script>
+<script>
+// Banner world: 1280 x 720 drawn at 2x. Safe area on every device: x 253..1027, y 254..466.
+const BW = 1280, BH = 720;
+
+// ---- props borrowed from the first two videos ----
+function balloonB(x, y, r, color, seed, face, string) {
+  const w = clamp(r * 0.09, 1.8, 3.4), by = y + r * 1.15;
+  if (string) line([[x, by + 6], [(x + string[0]) / 2 + 6, (by + string[1]) / 2], string], 2, seed + 5, INK, 0.8, false);
+  shape(blobPts(x, y, r, r * 1.15, seed, 9, 0.04), color, w, seed, 1.2);
+  shape([[x - r * 0.12, by + r * 0.16], [x, by - 2], [x + r * 0.12, by + r * 0.16]], color, w * 0.8, seed + 1, 0.5, 2);
+  line([[x - r * 0.5, y - r * 0.6], [x - r * 0.64, y - r * 0.1]], Math.max(2, r * 0.11), seed + 2, color === PAPER ? BLUE : PAPER, 0.6);
+  if (face) miniFace(x, y + r * 0.1, r / 30, 0, seed + 3, face);
+}
+function bunchB(cx, cy, n, rad, hand, seed) {
+  const cols = [RED, YEL, RED, BLUE, YEL, RED, PAPER], items = [];
+  for (let i = 0; i < n; i++) { const rr = 13 * Math.sqrt(i) * rad / 20, a = i * 2.39996; items.push({ i, x: cx + Math.cos(a) * rr * 1.15, y: cy + Math.sin(a) * rr * 0.9 }); }
+  items.slice().sort((a, b) => b.y - a.y).slice(0, 7).forEach((b, k) => line([[b.x, b.y + rad * 1.2], [(b.x + hand[0]) / 2, (b.y + hand[1]) / 2], hand], 1.8, seed + 900 + k, INK, 0.6, false));
+  items.sort((a, b) => a.y - b.y).forEach(b => balloonB(b.x, b.y, rad, cols[b.i % cols.length], seed + b.i * 7, b.i % 9 === 0 ? 'smile' : null));
+}
+function colaDropB(x, y, r, seed) {
+  drop(x, y, r, seed, INK);
+  line([[x - r * 0.42, y - r * 0.7], [x - r * 0.55, y]], Math.max(1.6, r * 0.12), seed + 1, PAPER, 0.4);
+  [[0.3, -0.25, 0.15], [0.1, 0.5, 0.11], [-0.25, 0.42, 0.09]].forEach(([fx, fy, rr], i) =>
+    shape(blobPts(x + fx * r, y + fy * r, rr * r, rr * r, seed + 3 + i, 6), YEL, Math.max(1.2, r * 0.04), seed + 3 + i, 0.3));
+}
+function waspB(x, y, s, seed, dir = 1) {
+  const X = dx => x + dx * s * dir;
+  shape(blobPts(X(-4), y - 17 * s, 8 * s, 14 * s, seed + 1, 7, 0.1, -0.4 * dir), PAPER, 2.4, seed + 1, 0.8);
+  shape(blobPts(X(6), y - 18 * s, 7 * s, 13 * s, seed + 2, 7, 0.1, 0.4 * dir), PAPER, 2.4, seed + 2, 0.8);
+  line([[X(-19), y + 1 * s], [X(-30), y + 4 * s]], 2.8, seed + 5);
+  shape(blobPts(x, y, 20 * s, 13 * s, seed, 9), YEL, 3, seed, 1);
+  line([[X(-7), y - 12 * s], [X(-9), y + 12 * s]], 3.6, seed + 3, INK, 0.6);
+  line([[X(3), y - 13 * s], [X(1), y + 12 * s]], 3.6, seed + 4, INK, 0.6);
+  miniFace(X(12), y, 0.5 * s, 0, seed + 6, 'happy');
+}
+function antB(x, y, s, seed) {
+  [-10, 0, 11].forEach((dx, i) => fillOnly(blobPts(x + dx * s, y - 6 * s, (i === 1 ? 5 : 6.5) * s, 5 * s, seed + i, 6), INK, seed + i, 0.6));
+  for (let k = 0; k < 3; k++) line([[x + (-5 + k * 5) * s, y - 6 * s], [x + (-8 + k * 5 + (k % 2 ? 3 : -3)) * s, y + 2 * s]], 1.8, seed + 10 + k, INK, 0.4);
+  line([[x + 15 * s, y - 9 * s], [x + 21 * s, y - 18 * s]], 1.8, seed + 14, INK, 0.4);
+}
+function canB(x, y, s, seed, rot) {
+  shape(boxPts(x - 18 * s, y - 52 * s, 36 * s, 52 * s, seed, rot), RED, 3.4, seed, 1);
+  line(wavePts(x - 15 * s, y - 26 * s, x + 15 * s, y - 28 * s, 1, 4 * s), 5 * s, seed + 1, PAPER, 0.6, false);
+}
+// hand-lettered title: each letter tipped and bobbed, filled and outlined in ink
+function letters(text, x, y, size, fill, seed, o = {}) {
+  ctx.save();
+  ctx.font = `700 ${size}px PoppinsB`;
+  ctx.lineJoin = 'round';
+  let cx = x;
+  const track = o.track ?? size * 0.02;
+  [...text].forEach((ch, i) => {
+    const w = ctx.measureText(ch).width;
+    if (ch !== ' ') {
+      const rot = (rnd(seed, i) - 0.5) * 0.16, dy = (rnd(seed, i + 50) - 0.5) * size * 0.08;
+      ctx.save();
+      ctx.translate(cx + w / 2, y + dy);
+      ctx.rotate(rot);
+      ctx.lineWidth = size * 0.16; ctx.strokeStyle = INK; ctx.strokeText(ch, -w / 2, 0);
+      ctx.fillStyle = o.shadow || INK; ctx.fillText(ch, -w / 2 + size * 0.03, size * 0.04);
+      ctx.fillStyle = fill; ctx.fillText(ch, -w / 2, 0);
+      ctx.restore();
+    }
+    cx += w + track;
+  });
+  ctx.restore();
+  return cx;
+}
+function measure(text, size, track) { ctx.font = `700 ${size}px PoppinsB`; return [...text].reduce((s, ch) => s + ctx.measureText(ch).width + track, -track); }
+
+const VARIANTS = [
+  { bg: BLUE, glow: PAPER, top: PAPER, big: YEL, tag: PAPER, ground: PAPER },
+  { bg: YEL, glow: PAPER, top: PAPER, big: RED, tag: INK, ground: PAPER },
+  { bg: PAPER, glow: YEL, top: BLUE, big: RED, tag: INK, ground: BLUE },
+];
+
+function draw(v) {
+  const V0 = VARIANTS[v];
+  ctx.setTransform(2, 0, 0, 2, 0, 0);
+  ctx.fillStyle = V0.bg; ctx.fillRect(0, 0, BW, BH);
+  // clouds up top, outside the safe area
+  [[170, 110, 70], [560, 70, 50], [900, 120, 64], [1170, 80, 46]].forEach(([x, y, r], i) => cloud(x, y, r, r * 0.38, 8000 + i, v === 2 ? PAPER : PAPER));
+  // ground across the bottom
+  const gy = 600;
+  const gpts = []; for (let i = 0; i <= 12; i++) gpts.push([-20 + 1320 * i / 12, gy + (rnd(8100, i) - .5) * 5]);
+  fillDense(prep([...gpts, [1300, 900], [-20, 900]], true, 8101, 1.4, 4), V0.ground);
+  line(gpts, 4, 8100, INK, 1.4, false);
+  [80, 300, 520, 760, 980, 1200].forEach((x, i) => { line([[x - 6, gy + 1], [x - 9, gy - 12]], 2.4, 8110 + i * 3); line([[x, gy + 1], [x + 1, gy - 16]], 2.4, 8111 + i * 3); line([[x + 6, gy + 1], [x + 10, gy - 10]], 2.4, 8112 + i * 3); });
+  // left: the balloon bunch, tied to a rock
+  bunchB(150, 250, 34, 17, [150, 585], 8200);
+  rock(150, gy, 0.9, 8250);
+  // left: coins
+  [[60, 580], [92, 588]].forEach(([x, y], i) => shape(blobPts(x, y, 18, 6, 8260 + i, 8), YEL, 2.6, 8260 + i, 0.6));
+  // right: cola drops raining, a wasp, two cans, ants, the stubborn sugar cube
+  [[1090, 170, 12], [1150, 250, 9], [1225, 190, 14], [1110, 330, 10], [1240, 360, 8], [1180, 120, 8]].forEach(([x, y, r], i) => colaDropB(x, y, r, 8300 + i * 9));
+  waspB(1150, 455, 1.6, 8360, -1);
+  canB(1215, gy + 2, 1.3, 8380, 0.1);
+  canB(1170, gy + 2, 1.1, 8390, -0.25);
+  const cube = makeChar({ shape: 'box', color: PAPER, size: 0.75, seed: 21 });
+  drawChar(cube, poseAt([{ t: 0, x: 1100, y: gy, expr: 'smug', arms: 'hips', look: [-3, 0], breathe: 0, blink: false }], 0), { t: 0 });
+  for (let i = 0; i < 5; i++) antB(860 + i * 38, gy - 1, 1.7, 8400 + i * 20);
+  // centre: the bean and the title, inside the safe area
+  const host = poseAt([{ t: 0, x: 375, y: 452, size: 0.55, scarf: -22, expr: 'smug', eyes: 'half', brow: 0.7, browY: -2, mouth: 'smirk', arms: 'chin', look: [3, -2], breathe: 0, blink: false }], 0);
+  fillOnly(blobPts(377, 456, 56, 7, 8500, 10), v === 0 ? INK : BLUE, 8500);
+  drawChar(BEAN, host, { t: 0, shadow: false });
+  badBulb(438, 300, 18, 8510, V0.glow);
+  const tx = 488;
+  letters('THE BEAN WITH', tx + 4, 345, 40, V0.top, 8600, { track: 3 });
+  letters('BAD IDEAS', tx, 425, 86, V0.big, 8700, { track: 4 });
+  const w = measure('BAD IDEAS', 86, 4);
+  line([[tx + 6, 444], [tx + w * 0.5, 449], [tx + w, 441]], 7, 8800, INK, 1.2);
+}
+window.renderBanner = v => { draw(v); return document.getElementById('c').toDataURL('image/png'); };
+ctx = document.getElementById('c').getContext('2d');
+document.fonts.load('700 40px PoppinsB').then(() => { window.READY = true; if (!navigator.webdriver) draw(0); });
+</script>
+</body>
+</html>

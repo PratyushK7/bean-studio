@@ -1,0 +1,587 @@
+<title>Pip and the Star</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* One stage, centred on paper. Canvas does all the drawing; two hand-drawn buttons below. */
+:root {
+  --paper: #fffaf0;
+  --ink: #1c1c1c;
+  --red: #ff595e;
+  --blue: #1982c4;
+  --yellow: #ffca3a;
+  color-scheme: light;
+}
+html, body { height: 100%; }
+body {
+  background: var(--paper);
+  color: var(--ink);
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 16px;
+}
+main {
+  width: 100%;
+  max-width: min(1040px, calc((100vh - 110px) * 1.6));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+canvas {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  aspect-ratio: 8 / 5;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.ctrls { display: flex; gap: 14px; }
+button {
+  appearance: none;
+  width: 58px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  background: var(--paper);
+  color: var(--ink);
+  border: 2.5px solid var(--ink);
+  border-radius: 255px 18px 225px 18px / 18px 225px 18px 255px;
+  cursor: pointer;
+  transition: transform .08s;
+}
+button:nth-child(2) { border-radius: 20px 225px 18px 255px / 225px 18px 255px 20px; }
+button:hover { background: var(--yellow); }
+button:active { transform: translateY(2px) rotate(-3deg); }
+button:focus-visible { outline: 3px solid var(--blue); outline-offset: 3px; }
+button svg { width: 34px; height: 30px; overflow: visible; }
+</style>
+
+<main>
+  <canvas id="stage" aria-label="Cartoon loop: a red bean named Pip jumps to catch a star, celebrates, and watches it float away"></canvas>
+  <div class="ctrls">
+    <button id="play" type="button" aria-label="Pause"></button>
+    <button id="step" type="button" aria-label="Step one drawing">
+      <svg viewBox="0 0 44 40" fill="none" stroke="#1c1c1c" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round">
+        <path fill="#ffca3a" d="M9 10 C 10 17, 9 24, 10 30 L 15 30 C 15 23, 16 16, 15 10 Z"/>
+        <path fill="#ffca3a" d="M20 9 C 21 16, 20 24, 21 31 C 26 27, 31 23, 35 20 C 30 16, 25 12, 20 9 Z"/>
+      </svg>
+    </button>
+  </div>
+</main>
+
+<script>
+(() => {
+const W = 800, H = 500, LOOP = 90;
+const INK = '#1c1c1c', PAPER = '#fffaf0', RED = '#ff595e', BLUE = '#1982c4', YEL = '#ffca3a';
+const TAU = Math.PI * 2;
+const cvs = document.getElementById('stage');
+const ctx = cvs.getContext('2d');
+let V = 0; // boil variant 0..2
+
+// ---------- noise ----------
+function hash(a, b, c) {
+  let h = Math.imul(a | 0, 0x27d4eb2d) ^ Math.imul((b | 0) + 0x3c6ef372, 0x165667b1) ^ Math.imul((c | 0) + 0x5bd1e995, 0x9e3779b1);
+  h = Math.imul(h ^ (h >>> 15), 0x85ebca6b);
+  h = Math.imul(h ^ (h >>> 13), 0xc2b2ae35);
+  h ^= h >>> 16;
+  return (h >>> 0) / 4294967296;
+}
+function vnoise(seed, x, period) {
+  const i = Math.floor(x), f = x - i, u = f * f * (3 - 2 * f);
+  const i0 = period ? ((i % period) + period) % period : i;
+  const i1 = period ? (i0 + 1) % period : i + 1;
+  const a = hash(seed, i0, V + 31), b = hash(seed, i1, V + 31);
+  return a + (b - a) * u;
+}
+const lerp = (a, b, t) => a + (b - a) * t;
+const easeIO = t => t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+const easeOut = t => 1 - Math.pow(1 - t, 3);
+
+// ---------- ink ----------
+function catmull(p, closed, sub) {
+  const out = [], n = p.length;
+  const get = i => closed ? p[(i + n) % n] : p[Math.max(0, Math.min(n - 1, i))];
+  const segs = closed ? n : n - 1;
+  for (let i = 0; i < segs; i++) {
+    const p0 = get(i - 1), p1 = get(i), p2 = get(i + 1), p3 = get(i + 2);
+    for (let s = 0; s < sub; s++) {
+      const t = s / sub, t2 = t * t, t3 = t2 * t;
+      const f = k => 0.5 * (2 * p1[k] + (-p0[k] + p2[k]) * t + (2 * p0[k] - 5 * p1[k] + 4 * p2[k] - p3[k]) * t2 + (-p0[k] + 3 * p1[k] - 3 * p2[k] + p3[k]) * t3);
+      out.push([f(0), f(1)]);
+    }
+  }
+  if (!closed) out.push(p[n - 1]);
+  return out;
+}
+// jitter control points per boil variant, then smooth
+function prep(pts, closed, seed, amp, sub) {
+  const j = pts.map((p, i) => [
+    p[0] + (hash(seed, i * 2, V + 7) - .5) * 2 * amp,
+    p[1] + (hash(seed, i * 2 + 1, V + 7) - .5) * 2 * amp
+  ]);
+  return catmull(j, closed, sub);
+}
+// variable-width stroke built as a filled ribbon
+function ribbon(p, closed, w, seed, taper, color) {
+  const n = p.length, L = [], R = [], per = closed ? 4 : 3;
+  for (let i = 0; i < n; i++) {
+    const a = closed ? p[(i - 1 + n) % n] : p[Math.max(0, i - 1)];
+    const b = closed ? p[(i + 1) % n] : p[Math.min(n - 1, i + 1)];
+    const tx = b[0] - a[0], ty = b[1] - a[1], l = Math.hypot(tx, ty) || 1;
+    const nx = -ty / l, ny = tx / l;
+    const t = closed ? i / n : i / (n - 1);
+    let ww = w * (0.5 + 0.95 * vnoise(seed + 13, t * per, closed ? per : 0));
+    if (!closed && taper) ww *= 0.18 + 0.82 * Math.pow(Math.sin(Math.PI * t), 0.55);
+    L.push([p[i][0] + nx * ww / 2, p[i][1] + ny * ww / 2]);
+    R.push([p[i][0] - nx * ww / 2, p[i][1] - ny * ww / 2]);
+  }
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  if (closed) {
+    ctx.moveTo(L[0][0], L[0][1]);
+    for (let i = 1; i < n; i++) ctx.lineTo(L[i][0], L[i][1]);
+    ctx.closePath();
+    ctx.moveTo(R[n - 1][0], R[n - 1][1]);
+    for (let i = n - 2; i >= 0; i--) ctx.lineTo(R[i][0], R[i][1]);
+    ctx.closePath();
+  } else {
+    ctx.moveTo(L[0][0], L[0][1]);
+    for (let i = 1; i < n; i++) ctx.lineTo(L[i][0], L[i][1]);
+    for (let i = n - 1; i >= 0; i--) ctx.lineTo(R[i][0], R[i][1]);
+    ctx.closePath();
+  }
+  ctx.fill('nonzero');
+}
+function fillDense(p, color, dx, dy) {
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(p[0][0] + dx, p[0][1] + dy);
+  for (let i = 1; i < p.length; i++) ctx.lineTo(p[i][0] + dx, p[i][1] + dy);
+  ctx.closePath();
+  ctx.fill();
+}
+function shape(pts, color, w, seed, amp = 1.6, sub = 6) {
+  const p = prep(pts, true, seed, amp, sub);
+  const dx = (hash(seed, 1, V + 50) - .5) * 2.6, dy = (hash(seed, 2, V + 50) - .5) * 2.2;
+  fillDense(p, color, dx, dy);
+  ribbon(p, true, w, seed, false, INK);
+}
+function fillOnly(pts, color, seed, amp = 1.3) {
+  fillDense(prep(pts, true, seed, amp, 5), color, 0, 0);
+}
+function line(pts, w, seed, color = INK, amp = 1.6, taper = true) {
+  ribbon(prep(pts, false, seed, amp, 6), false, w, seed, taper, color);
+}
+function blobPts(cx, cy, rx, ry, seed, n = 9, irr = 0.06, rot = 0) {
+  const pts = [], c = Math.cos(rot), s = Math.sin(rot);
+  for (let i = 0; i < n; i++) {
+    const a = i / n * TAU + (hash(seed, i, 99) - .5) * 0.3;
+    const r = 1 + (hash(seed, i, 98) - .5) * irr * 2;
+    const x = Math.cos(a) * rx * r, y = Math.sin(a) * ry * r;
+    pts.push([cx + x * c - y * s, cy + x * s + y * c]);
+  }
+  return pts;
+}
+function plus(x, y, s, seed) {
+  line([[x - s, y], [x + s, y + 1]], 2.6, seed);
+  line([[x, y - s], [x + 1, y + s]], 2.6, seed + 1);
+}
+
+// ---------- background ----------
+function cloudPts(cx, cy, rx, ry, seed) {
+  const pts = [];
+  for (let i = 0; i < 14; i++) {
+    const a = i / 14 * TAU;
+    const r = (i % 2 ? 0.8 : 1.05) * (1 + (hash(seed, i, 3) - .5) * 0.15);
+    pts.push([cx + Math.cos(a) * rx * r, cy + Math.sin(a) * ry * r * (Math.sin(a) > 0 ? 0.6 : 1)]);
+  }
+  return pts;
+}
+function background(boil) {
+  // sketchy frame
+  line([[4, 12], [400, 9], [796, 11]], 3, 901, INK, 1.2);
+  line([[6, 490], [400, 492], [794, 489]], 3, 902, INK, 1.2);
+  line([[11, 5], [9, 250], [12, 496]], 3, 903, INK, 1.2);
+  line([[789, 4], [791, 250], [788, 495]], 3, 904, INK, 1.2);
+  // clouds drift with the real clock, not the loop
+  const c1 = ((150 + boil * 0.5) % 1000) - 100, c2 = ((620 + boil * 0.32) % 1000) - 100;
+  shape(cloudPts(c1, 108, 54, 22, 301), PAPER, 2.6, 301, 1.4);
+  shape(cloudPts(c2, 72, 40, 16, 302), PAPER, 2.6, 302, 1.4);
+  // hills
+  line([[-10, 402], [70, 330], [170, 302], [270, 332], [345, 418]], 2.8, 201);
+  line([[470, 418], [560, 318], [660, 296], [745, 316], [812, 360]], 2.8, 202);
+  [[110, 352], [138, 344], [200, 350], [610, 340], [640, 332], [700, 346]].forEach(([x, y], i) =>
+    line([[x, y + 10], [x + 9, y]], 2, 210 + i));
+}
+function ground() {
+  line([[-20, 419], [100, 417], [220, 420], [340, 418], [460, 419], [580, 417], [700, 420], [820, 418]], 3.8, 220, INK, 1.4, false);
+  [70, 190, 585, 690, 740].forEach((x, i) => {
+    line([[x - 6, 419], [x - 9, 406]], 2.4, 230 + i * 3);
+    line([[x, 419], [x + 1, 402]], 2.4, 231 + i * 3);
+    line([[x + 6, 419], [x + 10, 408]], 2.4, 232 + i * 3);
+  });
+  fillOnly(blobPts(268, 425, 6, 3.5, 240), INK, 240);
+  fillOnly(blobPts(540, 427, 4, 2.5, 241), INK, 241);
+}
+
+// ---------- Pip ----------
+const BODY = (() => {
+  const pts = [];
+  for (let i = 0; i < 12; i++) {
+    const a = i / 12 * TAU + 0.13, s = Math.sin(a), r = 1 + (hash(1, i, 90) - .5) * 0.05;
+    pts.push([Math.cos(a) * 50 * (1 + 0.1 * s) * r, -62 + s * 62 * r]);
+  }
+  return pts;
+})();
+const T = (P, px, py) => [P.x + px * P.sx + P.lean * (-py) * P.sy, P.y + py * P.sy];
+
+function pose(d) {
+  const P = { x: 400, y: 410, sx: 1, sy: 1, lean: 0, eyes: 'open', browY: 0, brow: 0, mouth: 'smile',
+    aL: -0.35, aR: 0.35, bend: -0.5, reach: 0.72, scarf: 6, look: [3, 0.5], lookStar: false };
+  const up = () => { P.aL = -2.9; P.aR = 2.9; P.bend = 0.7; P.reach = 1; };
+  if (d < 30) {                                   // idle, humming, looking the wrong way
+    const b = Math.sin(d * 0.55) * 0.028;
+    P.sy = 1 + b; P.sx = 1 - b * 0.9; P.aL -= b * 3; P.aR += b * 3; P.scarf = 6 + Math.sin(d * 0.55 + 1) * 3;
+    if (d < 5) P.mouth = 'flat';
+    if (d === 9 || d === 24) P.eyes = 'closed';
+    if (d >= 4 && d < 12) P.look = [3.5, 0.5];
+    else if (d >= 12 && d < 28) { P.look = [-3.5, 0.3]; P.lean = -0.02; }
+    if (d >= 28) { P.lookStar = true; P.mouth = 'flat'; P.browY = -3; }
+  } else if (d < 34) {                            // the take
+    const k = d - 30; P.lookStar = true;
+    if (k === 0) { P.sy = 0.9; P.sx = 1.08; P.eyes = 'pinch'; P.mouth = 'flat'; P.browY = 5; P.brow = 0.4; }
+    else {
+      const s = [0, 1.2, 1.1, 1.04][k];
+      P.sy = s; P.sx = 1 / Math.sqrt(s); P.eyes = 'wide'; P.browY = -13 + k * 2; P.mouth = 'o';
+      P.aL = -1.9 + (k - 1) * 0.35; P.aR = 1.9 - (k - 1) * 0.35; P.bend = 0.2; P.reach = 0.8; P.take = k < 3;
+    }
+  } else if (d < 42) {                            // anticipation: 6 drawings down, 2 held with a tremble
+    const t = easeIO(Math.min(1, (d - 33) / 6)); P.lookStar = true;
+    P.sy = lerp(1.02, 0.62, t); P.sx = lerp(1, 1.3, t); P.lean = lerp(0, -0.14, t);
+    P.eyes = 'squint'; P.brow = lerp(0.3, 1, t); P.browY = lerp(0, 5, t); P.mouth = 'grit';
+    P.aL = lerp(-0.4, -1.25, t); P.aR = lerp(0.3, -0.55, t); P.bend = -0.2; P.reach = 0.78;
+    P.scarf = lerp(6, 14, t);
+    if (d >= 40) P.x += d % 2 ? 1.8 : -1.8;
+  } else if (d === 42) {                          // smear
+    P.smear = true; P.y = 392; P.sy = 1.95; P.sx = 0.6; P.lean = 0.04; P.lookStar = true; P.mouth = 'o';
+    up(); P.reach = 0.92; P.scarf = 34;
+  } else if (d < 48) {                            // rise and catch
+    const k = d - 43;
+    P.y = [330, 305, 297, 295, 296][k]; P.sy = [1.32, 1.14, 1.05, 1, 0.98][k]; P.sx = 1 / Math.sqrt(P.sy); P.lookStar = true;
+    up(); P.reach = [0.94, 0.97, 1, 1, 1][k];
+    P.eyes = k >= 3 ? 'wide' : 'open'; P.mouth = k >= 3 ? 'grin' : 'o'; P.browY = k >= 3 ? -10 : -4;
+    P.scarf = [26, 16, 8, 2, -2][k]; P.catch = k === 3 || k === 4;
+  } else if (d < 54) {                            // fall
+    const t = (d - 47) / 7;
+    P.y = 296 + 114 * t * t; P.sy = d === 53 ? 1.25 : 1 + 0.06 * t; P.sx = 1 / Math.sqrt(P.sy);
+    up(); P.eyes = 'happy'; P.mouth = 'grin'; P.scarf = -8 - 28 * t; P.fallStreak = d === 53;
+  } else if (d < 58) {                            // land
+    const k = d - 54;
+    P.sy = [0.6, 1.14, 0.96, 1][k]; P.sx = [1.4, 0.9, 1.03, 1][k]; up();
+    P.eyes = k === 0 ? 'squeeze' : 'happy'; P.mouth = 'grin'; P.scarf = [-30, -6, 10, 6][k]; P.dust = k;
+  } else if (d < 76) {                            // two happy hops
+    const k = d - 58;
+    const yo = [0, 0, -18, -26, -18, 0, 0, 0, -18, -26, -18, 0, 0, 0, 0, 0, 0, 0][k];
+    const sy = [1, 0.86, 1.1, 1.03, 1.05, 0.84, 1.04, 0.86, 1.1, 1.03, 1.05, 0.84, 1.06, 0.98, 1, 1, 1, 1][k];
+    P.y = 410 + yo; P.sy = sy; P.sx = 1 / Math.sqrt(sy); up(); P.eyes = 'happy'; P.mouth = 'grin';
+    if (k >= 12) P.lean = Math.sin(k * 1.2) * 0.05;
+    P.scarf = yo < 0 ? (k % 6 < 3 ? 14 : -10) : 6;
+  } else if (d < 81) {                            // the star wriggles free
+    P.lookStar = true; up();
+    if (d < 78) {
+      P.eyes = 'open'; P.mouth = 'o'; P.browY = -6;
+      P.aL += d % 2 ? 0.07 : -0.07; P.aR += d % 2 ? -0.07 : 0.07;
+    } else {
+      P.eyes = 'wide'; P.mouth = 'o'; P.browY = -12; P.aL = -3.0; P.aR = 3.0;
+      P.sy = d === 78 ? 1.1 : 1.05; P.sx = 1 / Math.sqrt(P.sy);
+    }
+  } else if (d < 86) {                            // arms droop
+    const t = (d - 80) / 5;
+    P.lookStar = d < 84; P.look = [2, -1];
+    P.aL = lerp(-3.0, -0.35, easeIO(t)); P.aR = lerp(3.0, 0.35, easeIO(t)); P.bend = lerp(0.7, -0.5, t); P.reach = lerp(1, 0.72, t);
+    P.brow = -1; P.browY = -2; P.mouth = 'frown'; P.sy = lerp(1.03, 0.95, t); P.sx = 1 / Math.sqrt(P.sy);
+  } else {                                        // sigh
+    const k = d - 86;
+    P.sy = [0.92, 0.9, 0.95, 0.98][k]; P.sx = [1.06, 1.08, 1.03, 1.01][k];
+    P.eyes = k === 1 || k === 2 ? 'closed' : 'open'; P.brow = -0.8; P.mouth = k < 2 ? 'sigh' : 'flat'; P.look = [0, 1];
+    P.scarf = [10, 12, 8, 6][k];
+  }
+  return P;
+}
+
+function arms(P) {
+  return [-1, 1].map(side => {
+    const a = side < 0 ? P.aL : P.aR, a2 = a + side * P.bend;
+    const s = T(P, side * 40, -60);
+    const e = [s[0] + Math.sin(a) * 32 * P.reach, s[1] + Math.cos(a) * 32 * P.reach];
+    const h = [e[0] + Math.sin(a2) * 30 * P.reach, e[1] + Math.cos(a2) * 30 * P.reach];
+    return { s, e, h, side };
+  });
+}
+
+function starState(d, A) {
+  if (d < 18 || d > 85) return null;
+  if (d < 30) {
+    const t = (d - 18) / 11, e = easeOut(t);
+    return { x: lerp(560, 402, e), y: lerp(-60, 162, e) - Math.sin(t * Math.PI) * 30, r: 27, rot: Math.sin(d * 0.9) * 0.35 * (1 - t) + (1 - e) * 2 };
+  }
+  if (d < 46) return { x: 402, y: 162 + Math.sin(d * 0.6) * 4, r: 27, rot: Math.sin(d * 0.45) * 0.1, sparkle: true };
+  if (d < 78) {
+    const hx = (A[0].h[0] + A[1].h[0]) / 2, hy = (A[0].h[1] + A[1].h[1]) / 2;
+    let rot = Math.sin(d * 0.7) * 0.06, ox = 0;
+    if (d >= 76) { rot = d % 2 ? 0.35 : -0.35; ox = d % 2 ? 3 : -3; }
+    return { x: hx + ox, y: hy - 8, r: 27, rot, held: true };
+  }
+  const t = (d - 78) / 7;
+  const S = { x: lerp(400, 640, t * t), y: lerp(168, -80, easeOut(t)), r: 27, rot: t * 5, escape: true };
+  if (d === 79) S.stretch = { dir: [0.25, -0.97], k: 1.7 };
+  return S;
+}
+
+function drawStar(S) {
+  const pts = [];
+  for (let i = 0; i < 10; i++) {
+    const a = S.rot - Math.PI / 2 + i * Math.PI / 5;
+    const rr = (i % 2 ? S.r * 0.52 : S.r) * (1 + (hash(71, i, 77) - .5) * 0.14);
+    let x = Math.cos(a) * rr, y = Math.sin(a) * rr;
+    if (S.stretch) {
+      const [ux, uy] = S.stretch.dir, k = S.stretch.k;
+      const al = (x * ux + y * uy) * k, pe = (-x * uy + y * ux) / Math.sqrt(k);
+      x = al * ux - pe * uy; y = al * uy + pe * ux;
+    }
+    pts.push([S.x + x, S.y + y]);
+  }
+  shape(pts, YEL, 3.8, 71, 1.4, 3);
+  if (S.stretch) return;
+  const c = Math.cos(S.rot), s = Math.sin(S.rot);
+  const R = (x, y) => [S.x + x * c - y * s, S.y + x * s + y * c];
+  const e1 = R(-6, -2), e2 = R(6, -2);
+  fillOnly(blobPts(e1[0], e1[1], 2.6, 3, 72, 6), INK, 72, 0.5);
+  fillOnly(blobPts(e2[0], e2[1], 2.6, 3, 73, 6), INK, 73, 0.5);
+  line([R(-4.5, 4), R(0, 7.5), R(4.5, 4)], 2.4, 74, INK, 0.6);
+}
+
+function eye(P, ex, ey, side, look) {
+  const c = T(P, ex, ey), sx = P.sx, sy = P.sy, seed = 500 + (side + 1) * 10, x = c[0], y = c[1];
+  const kind = P.eyes;
+  if (kind === 'open' || kind === 'wide' || kind === 'squint') {
+    const wide = kind === 'wide', sq = kind === 'squint';
+    const rx = (wide ? 12.5 : 9) * sx, ry = (wide ? 16 : 12) * sy * (sq ? 0.5 : 1);
+    const cy = y + (sq ? 4 * sy : 0);
+    shape(blobPts(x, cy, rx, ry, seed, 8, 0.07), PAPER, 3, seed, 1);
+    const pr = wide ? 3.6 : 4.8;
+    const lx = look[0] * (rx / 10), ly = sq ? 0 : look[1] * (ry / 12);
+    fillOnly(blobPts(x + lx, cy + ly, pr * Math.sqrt(sx), pr * 1.15 * Math.sqrt(sy), seed + 3, 7, 0.1), INK, seed + 3, 0.6);
+    fillOnly(blobPts(x + lx - 1.6, cy + ly - 2, 1.5, 1.5, seed + 4, 5), PAPER, seed + 4, 0.3);
+    if (sq) {
+      const t = side < 0 ? [-3, 3] : [3, -3];
+      line([[x - rx - 3, cy - ry + t[0]], [x + rx + 3, cy - ry + t[1]]], 4.6, seed + 5, INK, 0.8);
+    }
+  } else if (kind === 'happy') {
+    line([[x - 9 * sx, y + 3 * sy], [x, y - 6 * sy], [x + 9 * sx, y + 3 * sy]], 3.8, seed + 6, INK, 0.8);
+  } else if (kind === 'closed') {
+    line([[x - 9 * sx, y], [x, y + 3 * sy], [x + 9 * sx, y]], 3.6, seed + 7, INK, 0.8);
+  } else if (kind === 'squeeze') {
+    const f = side < 0 ? 1 : -1;
+    line([[x - 8 * f * sx, y - 7 * sy], [x + 6 * f * sx, y], [x - 8 * f * sx, y + 7 * sy]], 3.8, seed + 8, INK, 0.6);
+  } else if (kind === 'pinch') {
+    fillOnly(blobPts(x + look[0] * 0.4, y, 2.6, 2.6, seed + 9, 6), INK, seed + 9, 0.4);
+  }
+  // brow: brow>0 angry (inner end down), brow<0 worried
+  if (kind !== 'squeeze') {
+    const by = y - 20 * sy + P.browY * sy, k = P.brow * 4.5;
+    const inner = side < 0 ? 1 : -1;
+    line([[x - 10 * sx, by + (inner < 0 ? k : -k)], [x + 10 * sx, by + (inner > 0 ? k : -k)]], 3.4, seed + 11, INK, 0.9);
+  }
+}
+
+function mouth(P) {
+  const c = T(P, 7, -58), sx = P.sx, sy = P.sy;
+  const m = (dx, dy) => [c[0] + dx * sx, c[1] + dy * sy];
+  switch (P.mouth) {
+    case 'smile': line([m(-9, -2), m(0, 4), m(9, -2)], 3.4, 601, INK, 0.8); break;
+    case 'flat': line([m(-7, 0), m(7, 1)], 3.2, 602, INK, 0.8); break;
+    case 'frown': line([m(-9, 4), m(0, -2), m(9, 4)], 3.4, 603, INK, 0.8); break;
+    case 'o': fillOnly(blobPts(c[0], c[1] + 2 * sy, 6 * sx, 8 * sy, 604, 7), INK, 604, 0.7); break;
+    case 'sigh': fillOnly(blobPts(c[0], c[1] + 1, 3.5 * sx, 4 * sy, 605, 6), INK, 605, 0.5); break;
+    case 'grin':
+      shape([m(-15, -4), m(15, -4), m(11, 8), m(0, 14), m(-11, 8)], INK, 2.6, 606, 0.9, 4);
+      fillOnly(blobPts(c[0] + 2 * sx, c[1] + 8 * sy, 6 * sx, 3.5 * sy, 607, 6), YEL, 607, 0.6);
+      break;
+    case 'grit':
+      shape([m(-14, -6), m(14, -7), m(15, 6), m(-13, 7)], PAPER, 3.2, 608, 0.9, 4);
+      line([m(-12, 0), m(13, 0)], 2.4, 609, INK, 0.6, false);
+      line([m(-4, -6), m(-4, 6)], 2.2, 610, INK, 0.5, false);
+      line([m(5, -6), m(5, 6)], 2.2, 611, INK, 0.5, false);
+      break;
+  }
+}
+
+function drawPip(P, A, S) {
+  const h = 410 - P.y;
+  // feet
+  [-1, 1].forEach(side => {
+    const f = T(P, side * 20, 0);
+    fillOnly(blobPts(f[0] + side * 4, f[1] - 3 + (h > 8 ? 9 : 0), 14 * Math.sqrt(P.sx), 7, 40 + side, 8, 0.1), INK, 41 + side);
+  });
+  // body
+  shape(BODY.map(p => T(P, p[0], p[1])), RED, 4.6, 1, 1.8, 6);
+  line([T(P, -32, -104), T(P, -39, -90), T(P, -41, -76)], 4.4, 2, PAPER, 1);
+  // scarf: tail first so the band wraps over it
+  const tl = P.scarf;
+  shape([[-40, -34], [-66, -30 + tl * 0.6], [-84, -22 + tl], [-78, -13 + tl], [-58, -18 + tl * 0.6], [-40, -22]].map(p => T(P, p[0], p[1])), BLUE, 3.4, 3, 1.4, 5);
+  shape([[-49, -40], [0, -33], [49, -40], [46, -26], [0, -19], [-45, -26]].map(p => T(P, p[0], p[1])), BLUE, 3.6, 4, 1.3, 5);
+  // face
+  let look = P.look;
+  const fc = T(P, 6, -84);
+  if (P.lookStar && S) {
+    const vx = S.x - fc[0], vy = S.y - fc[1], l = Math.hypot(vx, vy) || 1;
+    look = [vx / l * 4, vy / l * 4];
+  }
+  eye(P, -8, -84, -1, look);
+  eye(P, 20, -84, 1, look);
+  mouth(P);
+}
+
+function drawArms(A) {
+  A.forEach((a, i) => {
+    line([a.s, a.e, a.h], 4.6, 20 + i, INK, 1.4);
+    shape(blobPts(a.h[0], a.h[1], 7.5, 7, 24 + i, 7, 0.1), PAPER, 3, 24 + i, 1);
+  });
+}
+
+// ---------- effects ----------
+function effects(d, P, A, S) {
+  if (P.take) {
+    const hc = T(P, 8, -132);
+    [-2.4, -1.57, -0.75].forEach((a, i) => {
+      const r0 = d === 31 ? 10 : 18, r1 = d === 31 ? 30 : 34;
+      line([[hc[0] + Math.cos(a) * r0, hc[1] + Math.sin(a) * r0], [hc[0] + Math.cos(a) * r1, hc[1] + Math.sin(a) * r1]], 3.4, 700 + i);
+    });
+  }
+  if (P.catch && S) {
+    for (let i = 0; i < 7; i++) {
+      const a = i / 7 * TAU + 0.3, r0 = d === 46 ? 38 : 48, r1 = d === 46 ? 56 : 60;
+      line([[S.x + Math.cos(a) * r0, S.y + Math.sin(a) * r0], [S.x + Math.cos(a) * r1, S.y + Math.sin(a) * r1]], 3, 710 + i);
+    }
+  }
+  if (P.dust !== undefined) {
+    const k = P.dust, size = [10, 14, 10, 5][k];
+    [-1, 1].forEach(side => {
+      shape(blobPts(P.x + side * (52 + k * 20), 410 - k * 7, size * 1.3, size, 720 + side, 8, 0.2), PAPER, 2.8, 721 + side, 1.2);
+      if (k < 3) shape(blobPts(P.x + side * (80 + k * 26), 414 - k * 4, size * 0.8, size * 0.65, 725 + side, 7, 0.2), PAPER, 2.4, 726 + side, 1);
+    });
+    if (k === 0) {
+      line([[P.x - 120, 414], [P.x - 88, 412]], 3, 730);
+      line([[P.x + 88, 412], [P.x + 120, 414]], 3, 731);
+    }
+  }
+  if (S && S.sparkle) {
+    const alt = d % 4 < 2;
+    plus(S.x + (alt ? 42 : -40), S.y + (alt ? -18 : 14), alt ? 6 : 5, 740);
+    plus(S.x + (alt ? -30 : 36), S.y + (alt ? -34 : 30), 4, 742);
+  }
+  if (S && S.escape && d >= 80) {
+    const p = starState(d - 2, A), q = starState(d - 4, A);
+    if (p) plus(p.x - 6, p.y + 12, 5, 750);
+    if (q) plus(q.x + 8, q.y + 4, 3.5, 752);
+  }
+  if (d === 79 && S) {
+    for (let i = 0; i < 3; i++) line([[S.x - 18 + i * 16, S.y + 40], [S.x - 30 + i * 16, S.y + 100]], 2.6, 760 + i);
+  }
+}
+function streaksBehind(d, P) {
+  if (P.smear) {
+    for (let k = 0; k < 5; k++) {
+      const x = P.x - 34 + k * 17;
+      line([[x - 2, 420], [x, 330 - (k % 2) * 40]], k % 2 ? 2.4 : 3.2, 800 + k);
+    }
+  }
+  if (d === 43) {
+    [-24, 0, 22].forEach((dx, i) => line([[P.x + dx, 418], [P.x + dx + 1, 372 - i * 6]], 2.6, 810 + i));
+  }
+  if (P.fallStreak) {
+    [-26, -4, 20].forEach((dx, i) => line([[P.x + dx, 250 - i * 8], [P.x + dx, 190 - i * 10]], 2.6, 820 + i));
+  }
+}
+
+// ---------- frame ----------
+function render(d, boil) {
+  V = boil % 3;
+  ctx.setTransform(cvs.width / W, 0, 0, cvs.height / H, 0, 0);
+  ctx.fillStyle = PAPER;
+  ctx.fillRect(0, 0, W, H);
+  background(boil);
+  const P = pose(d), A = arms(P), S = starState(d, A);
+  const h = 410 - P.y;
+  fillOnly(blobPts(P.x + 4, 417, 56 * Math.max(0.3, 1 - h / 240) * Math.sqrt(P.sx), 7.5, 11, 9, 0.08), BLUE, 11);
+  ground();
+  streaksBehind(d, P);
+  if (S && !S.held) drawStar(S);
+  drawPip(P, A, S);
+  if (S && S.held) drawStar(S);
+  drawArms(A);
+  effects(d, P, A, S);
+}
+
+// ---------- clock: 24fps, a new drawing every 2 frames ----------
+const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+let d = reduce ? 62 : 0, boil = 0, playing = !reduce, boiling = !reduce;
+let start = null, lastTick = -1;
+function tick(ts) {
+  if (start === null) start = ts;
+  const frame = Math.floor((ts - start) / 1000 * 24);
+  const t = frame >> 1;
+  if (t !== lastTick) {
+    lastTick = t;
+    if (boiling) boil++;
+    if (playing) d = (d + 1) % LOOP;
+    if (boiling || playing) render(d, boil);
+  }
+  requestAnimationFrame(tick);
+}
+
+function resize() {
+  const r = cvs.getBoundingClientRect(), dpr = Math.min(window.devicePixelRatio || 1, 2);
+  cvs.width = Math.max(1, Math.round(r.width * dpr));
+  cvs.height = Math.max(1, Math.round(r.height * dpr));
+  render(d, boil);
+}
+new ResizeObserver(resize).observe(cvs);
+
+// ---------- controls ----------
+const playBtn = document.getElementById('play'), stepBtn = document.getElementById('step');
+const ICON_PAUSE = '<svg viewBox="0 0 44 40" fill="none" stroke="#1c1c1c" stroke-width="2.6" stroke-linejoin="round"><path fill="#1982c4" d="M12 10 C 12 17, 13 24, 12 30 L 18 30 C 18 23, 17 16, 18 10 Z"/><path fill="#1982c4" d="M25 10 C 26 17, 25 24, 26 30 L 32 30 C 31 23, 32 16, 31 10 Z"/></svg>';
+const ICON_PLAY = '<svg viewBox="0 0 44 40" fill="none" stroke="#1c1c1c" stroke-width="2.6" stroke-linejoin="round"><path fill="#ff595e" d="M13 8 C 14 15, 13 25, 14 32 C 21 28, 28 24, 33 20 C 27 16, 20 12, 13 8 Z"/></svg>';
+function syncBtn() {
+  playBtn.innerHTML = playing ? ICON_PAUSE : ICON_PLAY;
+  playBtn.setAttribute('aria-label', playing ? 'Pause' : 'Play');
+}
+function toggle() {
+  playing = !playing;
+  if (playing) boiling = true;
+  syncBtn();
+}
+function step() {
+  playing = false;
+  d = (d + 1) % LOOP;
+  boil++;
+  render(d, boil);
+  syncBtn();
+}
+playBtn.addEventListener('click', toggle);
+stepBtn.addEventListener('click', step);
+cvs.addEventListener('click', toggle);
+window.addEventListener('keydown', e => {
+  if (e.target.tagName === 'BUTTON') return;
+  if (e.key === ' ') { e.preventDefault(); toggle(); }
+  else if (e.key === 'ArrowRight') { e.preventDefault(); step(); }
+});
+syncBtn();
+requestAnimationFrame(tick);
+})();
+</script>

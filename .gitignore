@@ -1,0 +1,28 @@
+# secrets: OAuth client + token for the uploader
+.secrets/
+tools/.secrets/
+# environments
+.venv/
+tools/.venv/
+__pycache__/
+# big or generated media (kept on disk, not in git)
+*.mp4
+*.wav
+*.mp3
+*.png
+*.jpg
+line-boil/*/seg/
+line-boil/*/audio/
+line-boil/*/stills/
+line-boil/*/web/engine/
+line-boil/*/web/index.html
+line-boil/*/web/thumb.html
+line-boil/*/cues.json
+# raw research downloads
+research/**/shorts/
+research/**/long/
+# Excel lock files
+~$*
+
+# your local settings (made by the Settings tab)
+config.json

@@ -1,0 +1,46 @@
+YOUTUBE UPLOAD SHEET: mosquito-blood
+Video: mosquito-blood.mp4 (41 s, 9:16 Short)    Captions: mosquito-blood.srt    Thumbnail: mosquito-blood-thumbnail.png
+
+== TITLE ==
+Could 1 Million Mosquitoes Drain All Your Blood?
+
+Alternates:
+- How Many Mosquitoes to Drain Your Blood? (About 1 Million)  (score 98)
+- How Many Mosquitoes Would It Take to Drain All Your Blood?  (score 84, no number)
+
+== THUMBNAIL ==
+File: mosquito-blood-thumbnail.png
+Text: JUST ONE SIP?
+Still: 7.4 s is the matching moment in the video (Mozzie sipping, smug). The thumbnail is a dedicated render: Kit in a shocked take, holding out an arm, with Mozzie perched on the hand looking smug and a single red drop between them.
+Brief: Red sunburst with a paper blob behind the pair so the blue bean and the yellow mosquito pop. Words in the top third: "JUST ONE" in paper white, "SIP?" in yellow, thick ink outline. Both faces sit in the middle band, so they survive the 9:16 frame and a square crop.
+
+== DESCRIPTION ==
+How many mosquitoes would it take to drain all your blood? Roughly a million.
+How much blood does a mosquito drink? A drop smaller than a grain of rice, and the human body holds about five litres.
+
+An adult has about 5 litres of blood. A mosquito takes roughly 1 to 10 microlitres per bite, so at about 5 microlitres each, you'd need around a million bites to empty you. Only females bite. Danger comes much sooner: losing about 40% of your blood is life-threatening, which is roughly 400,000 bites. You'd swat long before that. 🫘
+
+Sources:
+- https://www.medicalnewstoday.com/articles/321122
+- https://cvmvcd.specialdistrict.org/how-much-blood-does-a-mosquito-take-in-a-meal
+
+#shorts #mosquito #science
+
+== TAGS ==
+mosquito, mosquitoes, mosquito bite, how much blood does a mosquito drink, how many mosquitoes to drain your blood, mosquito blood meal, blood volume, how much blood is in the human body, female mosquito, mosquito facts, science shorts, animated explainer, the bean with bad ideas
+
+== TARGET SEARCH QUERIES ==
+1. how many mosquitoes to drain all your blood
+2. how much blood does a mosquito drink
+3. how much blood is in the human body
+
+== PINNED COMMENT ==
+Only the females bite. What should we count in mosquitoes next? 💡
+
+== SETTINGS ==
+Audience: Not made for kids (your call; this is the usual choice for a general science Short)
+Category: Education
+Language / caption language: English
+Subtitles: upload mosquito-blood.srt (Subtitles > Upload file > With timing)
+Altered or synthetic content: No (an animated cartoon; the voice is TTS narration, not a real person)
+Visibility: your call
