@@ -1,0 +1,164 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>
+@font-face { font-family: 'PoppinsB'; src: url('Poppins-Bold.ttf'); font-weight: 700; }
+html,body{margin:0;background:#1c1c1c}canvas{width:100vw;display:block}</style></head>
+<body>
+<canvas id="c" width="2560" height="1440"></canvas>
+<script>let NOW = 0, DRAWING = 0; const CUES = []; function cue() {}</script>
+<script src="../web/engine/ink.js"></script>
+<script src="../web/engine/props.js"></script>
+<script src="../web/engine/rig.js"></script>
+<script src="../web/cast.js"></script>
+<script>
+// Banner world 1280 x 720 drawn at 2x. YouTube crops it per device:
+//   mobile  x 253..1027, y 254..466   desktop  x 0..1280, y 254..466   TV  everything
+// So: title + host in the middle band, the cast at both ends of the band, scenery above/below for TV.
+const BW = 1280, BH = 720;
+
+function balloonB(x, y, r, color, seed, face, string) {
+  const w = clamp(r * 0.09, 1.8, 3.4), by = y + r * 1.15;
+  if (string) line([[x, by + 6], [(x + string[0]) / 2 + 6, (by + string[1]) / 2], string], 2, seed + 5, INK, 0.8, false);
+  shape(blobPts(x, y, r, r * 1.15, seed, 9, 0.04), color, w, seed, 1.2);
+  shape([[x - r * 0.12, by + r * 0.16], [x, by - 2], [x + r * 0.12, by + r * 0.16]], color, w * 0.8, seed + 1, 0.5, 2);
+  line([[x - r * 0.5, y - r * 0.6], [x - r * 0.64, y - r * 0.1]], Math.max(2, r * 0.11), seed + 2, color === PAPER ? BLUE : PAPER, 0.6);
+  if (face) miniFace(x, y + r * 0.1, r / 30, 0, seed + 3, face);
+}
+function bunchB(cx, cy, n, rad, hand, seed) {
+  const cols = [RED, YEL, RED, BLUE, YEL, RED, PAPER], items = [];
+  for (let i = 0; i < n; i++) { const rr = 13 * Math.sqrt(i) * rad / 20, a = i * 2.39996; items.push({ i, x: cx + Math.cos(a) * rr * 1.15, y: cy + Math.sin(a) * rr * 0.9 }); }
+  items.slice().sort((a, b) => b.y - a.y).slice(0, 7).forEach((b, k) => line([[b.x, b.y + rad * 1.2], [(b.x + hand[0]) / 2, (b.y + hand[1]) / 2], hand], 1.8, seed + 900 + k, INK, 0.6, false));
+  items.sort((a, b) => a.y - b.y).forEach(b => balloonB(b.x, b.y, rad, cols[b.i % cols.length], seed + b.i * 7, b.i % 9 === 0 ? 'smile' : null));
+}
+function colaDropB(x, y, r, seed) {
+  drop(x, y, r, seed, INK);
+  line([[x - r * 0.42, y - r * 0.7], [x - r * 0.55, y]], Math.max(1.6, r * 0.12), seed + 1, PAPER, 0.4);
+  [[0.3, -0.25, 0.15], [0.1, 0.5, 0.11], [-0.25, 0.42, 0.09]].forEach(([fx, fy, rr], i) =>
+    shape(blobPts(x + fx * r, y + fy * r, rr * r, rr * r, seed + 3 + i, 6), YEL, Math.max(1.2, r * 0.04), seed + 3 + i, 0.3));
+}
+function waspB(x, y, s, seed, dir = 1) {
+  const X = dx => x + dx * s * dir;
+  shape(blobPts(X(-4), y - 17 * s, 8 * s, 14 * s, seed + 1, 7, 0.1, -0.4 * dir), PAPER, 2.4, seed + 1, 0.8);
+  shape(blobPts(X(6), y - 18 * s, 7 * s, 13 * s, seed + 2, 7, 0.1, 0.4 * dir), PAPER, 2.4, seed + 2, 0.8);
+  line([[X(-19), y + 1 * s], [X(-30), y + 4 * s]], 2.8, seed + 5);
+  shape(blobPts(x, y, 20 * s, 13 * s, seed, 9), YEL, 3, seed, 1);
+  line([[X(-7), y - 12 * s], [X(-9), y + 12 * s]], 3.6, seed + 3, INK, 0.6);
+  line([[X(3), y - 13 * s], [X(1), y + 12 * s]], 3.6, seed + 4, INK, 0.6);
+  miniFace(X(12), y, 0.5 * s, 0, seed + 6, 'happy');
+}
+function canB(x, y, s, seed, rot) {
+  shape(boxPts(x - 18 * s, y - 52 * s, 36 * s, 52 * s, seed, rot), RED, 3.4, seed, 1);
+  line(wavePts(x - 15 * s, y - 26 * s, x + 15 * s, y - 28 * s, 1, 4 * s), 5 * s, seed + 1, PAPER, 0.6, false);
+}
+// hand-lettered title: each letter tipped and bobbed, filled and outlined in ink
+function letters(text, x, y, size, fill, seed, o = {}) {
+  ctx.save();
+  ctx.font = `700 ${size}px PoppinsB`;
+  ctx.lineJoin = 'round';
+  let cx = x;
+  const track = o.track ?? size * 0.02;
+  [...text].forEach((ch, i) => {
+    const w = ctx.measureText(ch).width;
+    if (ch !== ' ') {
+      const rot = (rnd(seed, i) - 0.5) * 0.16, dy = (rnd(seed, i + 50) - 0.5) * size * 0.08;
+      ctx.save();
+      ctx.translate(cx + w / 2, y + dy);
+      ctx.rotate(rot);
+      ctx.lineWidth = size * 0.16; ctx.strokeStyle = INK; ctx.strokeText(ch, -w / 2, 0);
+      ctx.fillStyle = o.shadow || INK; ctx.fillText(ch, -w / 2 + size * 0.03, size * 0.04);
+      ctx.fillStyle = fill; ctx.fillText(ch, -w / 2, 0);
+      ctx.restore();
+    }
+    cx += w + track;
+  });
+  ctx.restore();
+  return cx;
+}
+function measure(text, size, track) { ctx.font = `700 ${size}px PoppinsB`; return [...text].reduce((s, ch) => s + ctx.measureText(ch).width + track, -track); }
+
+const BEANB = makeChar({ shape: 'bean', color: RED, size: 2.2, seed: 77, glasses: true, hair: 'tuft', scarf: YEL });
+const OLLIE = makeChar({ shape: 'pear', color: BLUE, size: 1.3, seed: 41, glasses: true, hair: 'tuft' });
+const JOB = makeChar({ shape: 'bean', color: YEL, size: 1.5, seed: 11, hat: { kind: 'cap', color: RED }, belly: PAPER });
+const MOZ = makeChar({ shape: 'tiny', color: YEL, legs: false, size: 1, seed: 5, eye: 1.15, hat: { kind: 'bow', color: RED } });
+
+const BV = [
+  { bg: BLUE, ray: '#2a8fd0', top: PAPER, big: YEL, glow: PAPER, ground: PAPER, badge: RED, badgeText: PAPER, dark: '#13699f', dot: '#2a8fd0' },
+  { bg: YEL,  ray: '#ffd966', top: PAPER, big: RED, glow: RED,   ground: PAPER, badge: BLUE, badgeText: PAPER, dark: '#e3a800', dot: '#ffd966' },
+  { bg: PAPER, ray: '#f7e6bd', top: RED, big: BLUE, glow: RED, ground: PAPER, badge: YEL, badgeText: RED, dark: '#1982c4', dot: '#2a8fd0', cloud: YEL },
+];
+
+function rays(cx, cy, n, color, seed) {
+  for (let i = 0; i < n; i += 2) {
+    const a0 = i / n * TAU, a1 = (i + 1) / n * TAU, R = 1500;
+    fillDense(prep([[cx, cy], [cx + Math.cos(a0) * R, cy + Math.sin(a0) * R], [cx + Math.cos(a1) * R, cy + Math.sin(a1) * R]], true, seed + i, 2, 2), color);
+  }
+}
+function sparkB(x, y, s, seed, c = PAPER) { shape([[x, y - s], [x + s * 0.28, y - s * 0.28], [x + s, y], [x + s * 0.28, y + s * 0.28], [x, y + s], [x - s * 0.28, y + s * 0.28], [x - s, y], [x - s * 0.28, y - s * 0.28]], c, 2.6, seed, 0.7); }
+function badge(x, y, r, fill, textFill, seed) {
+  const pts = []; for (let i = 0; i < 20; i++) { const a = i / 20 * TAU; pts.push([x + Math.cos(a) * r * (i % 2 ? 0.8 : 1), y + Math.sin(a) * r * (i % 2 ? 0.8 : 1)]); }
+  ctx.save(); ctx.translate(x, y); ctx.rotate(0.2); ctx.translate(-x, -y);
+  shape(pts, fill, 3.4, seed, 1.2);
+  const w1 = measure('NEW', 21, 1), w2 = measure('DAILY!', 21, 1);
+  letters('NEW', x - w1 / 2, y - 4, 21, textFill, seed + 1, { track: 1 });
+  letters('DAILY!', x - w2 / 2, y + 17, 21, textFill, seed + 2, { track: 1 });
+  ctx.restore();
+}
+
+function draw(v) {
+  const C = BV[v];
+  ctx.setTransform(2, 0, 0, 2, 0, 0);
+  ctx.fillStyle = C.bg; ctx.fillRect(0, 0, BW, BH);
+  rays(640, 360, 32, C.ray, 9000 + v * 50);
+  // sky (TV only): clouds
+  [[160, 70, 70], [520, 40, 50], [880, 90, 64], [1180, 50, 52]].forEach(([x, y, r], i) => cloud(x, y, r, r * 0.38, 9100 + i, C.cloud || PAPER));
+  // ground just under the band, so the cast stands inside it
+  const gy = 462, gpts = []; for (let i = 0; i <= 16; i++) gpts.push([-140 + 1560 * i / 16, gy + (rnd(9200, i) - .5) * 5]);
+  // dark earth below, with a cream path along the top and a scatter of bad ideas (TV only)
+  fillDense(prep([...gpts, [1420, 1000], [-160, 1000]], true, 9201, 1.4, 4), C.dark);
+  const lip = gpts.map(([x, y]) => [x, y + 20 + (rnd(9202, x) - .5) * 4]).reverse();
+  fillDense(prep([...gpts, ...lip], true, 9203, 1.4, 4), C.ground);
+  line(gpts, 4, 9200, INK, 1.4, false);
+  for (let i = 0; i < 26; i++) {
+    const x = 40 + rnd(9230, i) * 1200, y = 505 + rnd(9231, i) * 190, k = i % 4;
+    if (k === 0) sparkB(x, y, 7 + rnd(9232, i) * 5, 9240 + i, C.dot);
+    else if (k === 1) shape(blobPts(x, y, 6, 6.6, 9240 + i, 8), C.dot, 2, 9240 + i, 0.8);
+    else if (k === 2) { line([[x - 8, y], [x + 8, y]], 3, 9240 + i, C.dot, 0.5); line([[x, y - 8], [x, y + 8]], 3, 9250 + i, C.dot, 0.5); }
+    else shape(blobPts(x, y, 9, 4, 9240 + i, 7), C.dot, 2, 9240 + i, 0.6);
+  }
+  [30, 230, 330, 560, 760, 990, 1240].forEach((x, i) => { line([[x - 6, gy + 1], [x - 9, gy - 12]], 2.4, 9210 + i * 3); line([[x, gy + 1], [x + 1, gy - 16]], 2.4, 9211 + i * 3); line([[x + 6, gy + 1], [x + 10, gy - 10]], 2.4, 9212 + i * 3); });
+
+  // ---- left end: Ollie floating up on a bunch of balloons, a mosquito sizing him up ----
+  fillOnly(blobPts(150, 468, 46, 6, 9300, 10), v === 1 ? BLUE : INK, 9300);
+  const ol = drawChar(OLLIE, poseAt([{ t: 0, x: 150, y: 440, size: 0.62, expr: 'scared', arms: 'up', look: [0, -3], breathe: 0, blink: false, fL: 4, fR: 7 }], 0), { t: 0, shadow: false });
+  const oh = ol.hands[1] || ol.hands[0];
+  bunchB(oh[0] - 6, 236, 26, 13, oh, 9310);
+  drawChar(MOZ, poseAt([{ t: 0, x: 62, y: 395, size: 0.7, expr: 'smug', eyes: 'half', mouth: 'smirk', breathe: 0, blink: false, lean: 0.1 }], 0), { t: 0, shadow: false });
+  drop(98, 365, 7, 9330, RED);
+  speedLines(40, 372, [-1, 0.2], 26, 8, 9340, 3);
+
+  // ---- right end: Jo in a rain of cola, wasps closing in ----
+  fillOnly(blobPts(1150, 468, 48, 6, 9400, 10), INK, 9400);
+  drawChar(JOB, poseAt([{ t: 0, x: 1150, y: 458, size: 0.72, expr: 'shocked', eyes: 'wide', mouth: 'wavy', arms: 'up', fx: 'sweat', breathe: 0, blink: false, sy: 1.04, sx: 0.97 }], 0), { t: 0, shadow: false });
+  [[1100, 290, 10], [1170, 262, 8], [1255, 330, 11], [1070, 440, 8], [1250, 420, 9]].forEach(([x, y, r], i) => colaDropB(x, y, r, 9410 + i * 9));
+  waspB(1048, 372, 1.2, 9470, -1);
+  waspB(1222, 280, 0.95, 9480, -1);
+  canB(1050, gy + 2, 0.95, 9490, -0.25);
+
+  // ---- centre: the host holding up his bad idea, and the title ----
+  const hx = 382;
+  fillOnly(blobPts(hx + 2, gy - 4, 56, 7, 9500, 10), v === 0 ? INK : BLUE, 9500);
+  const hp = poseAt([{ t: 0, x: hx, y: gy - 8, size: 0.6, scarf: -22, eyes: 'half', mouth: 'grin', brow: 0.95, browY: -3, arms: 'pointUpR', look: [3.5, -4], breathe: 0, blink: false }], 0);
+  const ha = drawChar(BEANB, hp, { t: 0, shadow: false });
+  const hh = ha.hands[1] || ha.hands[0];
+  badBulb(hh[0] + 2, hh[1] - 22, 16, 9510, C.glow);
+  const tx = 472;
+  letters('THE BEAN WITH', tx + 4, 340, 40, C.top, 9600, { track: 3 });
+  letters('BAD IDEAS', tx, 432, 92, C.big, 9700, { track: 4 });
+  const w = measure('BAD IDEAS', 92, 4);
+  line([[tx + 6, 452], [tx + w * 0.5, 457], [tx + w, 449]], 7, 9800, INK, 1.2);
+  badge(tx + w - 6, 302, 38, C.badge, C.badgeText, 9900);
+  sparkB(300, 300, 9, 9910); sparkB(340, 268, 6, 9911, YEL); sparkB(990, 410, 8, 9912, YEL); sparkB(590, 285, 6, 9913, YEL);
+}
+window.renderBanner = v => { draw(v); return document.getElementById('c').toDataURL('image/png'); };
+ctx = document.getElementById('c').getContext('2d');
+document.fonts.load('700 40px PoppinsB').then(() => { window.READY = true; });
+</script></body></html>

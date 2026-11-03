@@ -1,0 +1,48 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>html,body{margin:0;background:#1c1c1c}canvas{width:800px;display:block}</style></head>
+<body>
+<canvas id="c" width="800" height="800"></canvas>
+<script>let NOW = 0, DRAWING = 0; const CUES = []; function cue() {}</script>
+<script src="../web/engine/ink.js"></script>
+<script src="../web/engine/props.js"></script>
+<script src="../web/engine/rig.js"></script>
+<script src="../web/cast.js"></script>
+<script>
+// World 400 x 400 drawn at 2x. The channel shows it in a circle, so everything that matters sits inside r 190.
+const AW = 400;
+const BEAN2 = makeChar({ shape: 'bean', color: RED, size: 1.95, seed: 77, glasses: true, hair: 'tuft', scarf: YEL });
+
+// each variant: background, sunburst ray colour, bulb glow, scarf-side accent
+const AV = [
+  { bg: BLUE, ray: '#2a8fd0', glow: PAPER, drop: INK },
+  { bg: YEL,  ray: '#ffd966', glow: RED, drop: BLUE },
+  { bg: PAPER, ray: '#f7e6bd', glow: RED, drop: INK, blob: BLUE },
+];
+
+function sunburst(cx, cy, n, color, seed) {
+  for (let i = 0; i < n; i += 2) {
+    const a0 = i / n * TAU, a1 = (i + 1) / n * TAU, R = 520;
+    fillDense(prep([[cx, cy], [cx + Math.cos(a0) * R, cy + Math.sin(a0) * R], [cx + Math.cos(a1) * R, cy + Math.sin(a1) * R]], true, seed + i, 2, 2), color);
+  }
+}
+function sparkA(x, y, s, seed, c = PAPER) { shape([[x, y - s], [x + s * 0.28, y - s * 0.28], [x + s, y], [x + s * 0.28, y + s * 0.28], [x, y + s], [x - s * 0.28, y + s * 0.28], [x - s, y], [x - s * 0.28, y - s * 0.28]], c, 2.6, seed, 0.7); }
+
+function draw(v) {
+  const C = AV[v];
+  ctx.setTransform(2, 0, 0, 2, 0, 0);
+  ctx.fillStyle = C.bg; ctx.fillRect(0, 0, AW, AW);
+  sunburst(215, 170, 22, C.ray, 100 + v * 40);
+  // a paper blob behind the bean so the face pops on any colour
+  shape(blobPts(196, 236, 160, 164, 150 + v, 20, 0.025), C.blob || PAPER, 0, 150 + v);
+  // the host: grinning, one brow down, eyes on the bad idea he's holding up
+  const pose = poseAt([{ t: 0, x: 184, y: 354, scarf: -10, aL: 0.75, eyes: 'half', mouth: 'grin', brow: 0.95, browY: -3, arms: 'pointUpR', look: [3.5, -4], breathe: 0, blink: false }], 0);
+  fillOnly(blobPts(184, 360, 80, 10, 190 + v, 10), v === 0 || v === 2 ? INK : BLUE, 190 + v);
+  const an = drawChar(BEAN2, pose, { t: 0, shadow: false });
+  const h = an.hands[1] || an.hands[0];
+  badBulb(h[0] + 2, h[1] - 28, 20, 160 + v, C.glow);
+  sparkA(52, 128, 15, 170 + v); sparkA(92, 66, 8, 171 + v, YEL); sparkA(352, 252, 11, 172 + v, YEL); sparkA(70, 300, 9, 173 + v, YEL);
+}
+window.renderAvatar = v => { draw(v); return document.getElementById('c').toDataURL('image/png'); };
+ctx = document.getElementById('c').getContext('2d');
+window.READY = true;
+</script></body></html>

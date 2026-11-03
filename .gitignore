@@ -26,3 +26,9 @@ research/**/long/
 
 # your local settings (made by the Settings tab)
 config.json
+
+# caches and large generated data (rebuilt by the app)
+data/topic-*.json
+data/youtube-videos.json
+data/analytics-meta.json
+data/make/

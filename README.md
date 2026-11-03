@@ -17,8 +17,10 @@ Needs: Python 3.10+, and for building videos the `line-boil` Claude Code skill p
 
 | Tab | What it does |
 |---|---|
-| **Videos** | Every project with its thumbnail and a checklist (script, video, captions, thumbnail, upload sheet, uploaded). Open one to watch it, run the build steps (Voice → Check → Build video → Thumbnail), edit the script and upload sheet, and upload + schedule it to YouTube. |
-| **Schedule** | The posting plan from `bean-planner.xlsx` (2 Shorts a day + 1 long-form a week), with an "Open in Excel" button. |
+| **Videos** | Every project with its thumbnail, its live YouTube state (LIVE / SCHEDULED / PRIVATE) and a checklist (script, video, captions, thumbnail, upload sheet, uploaded). Open one to watch it, run the build steps (Voice → Check → Build video → Thumbnail), edit the script and upload sheet, and upload it to YouTube: pick any date and any time (15-minute steps, IST, with the US time shown) and **Upload + schedule**, or **⚡ Post now** to publish immediately. **🗑 Delete** removes a video's folder from the disk (not from YouTube). |
+| **✨ Topics** | Studies what is beating its own channel's median on other channels in your category (`topic_channels` in Settings; public data, no login), then has the agent adapt the best into **5 original ideas** (topic and format borrowed, never the script or title), each with its video type, what it shows, what to draw and a fact-risk flag. **🎲 Re-roll** gives 5 new ones from sources not shown yet. Click one and answer a few questions (length, voice, pace, tone, cast, ending, music, outro, thumbnail text, notes) and the agent makes the whole video: script, fact-check, animation, thumbnail and upload sheet. It appears in Videos as it is built. |
+| **Schedule** | What is really on YouTube (live, scheduled, private), read from the channel itself, plus the planner rows that are not on YouTube yet. Refreshes on open, every 5 minutes and after an upload. |
+| **Analytics** | Pulls your numbers **straight from YouTube** (Data API + Analytics API, same Google sign-in as the uploader): views, engaged %, average % watched, view duration, likes, comments, shares, subscribers, the second where the retention curve falls hardest, and top countries. It refreshes itself every 6 hours (`analytics_sync_hours` in Settings) or on **Sync now**; slot and type are filled in automatically from the publish time and the planner, and your edits are kept. Per-slot and per-type averages sit underneath (⚠️ = under 5 videos). **Analyze & recommend** hands everything to the agent, which writes `reports/analysis-<date>.md` with what worked, what's noise and up to 3 decisions; it never edits the planner or videos. First time: **Connect YouTube** (see `tools/yt_upload.md`). |
 | **Agent** | Type a request and Claude Code runs it in this folder with the line-boil and yt-* skills. Quick buttons for a new Short, an upload sheet, a thumbnail, rebuilding an old Short, or an idea batch. |
 | **Activity** | Live logs of everything running, with a Stop button. YouTube sign-in and upload status live here. |
 | **Settings** | `config.json`: paths, posting slots, the agent command, the port, hidden folders. |
@@ -50,6 +52,6 @@ youtube/
 ## Safety
 
 - The server listens on `127.0.0.1` only, so nothing else on your network can reach it.
-- **Upload + schedule** asks for confirmation first, and the uploader refuses to upload the same project twice.
+- **Upload + schedule** and **Post now** ask for confirmation first, and the uploader refuses to upload the same project twice.
 - YouTube OAuth secrets live in `tools/.secrets/` and are git-ignored. Never commit them.
 - Until your Google API project passes YouTube's audit, API uploads are locked Private (see `tools/yt_upload.md`).

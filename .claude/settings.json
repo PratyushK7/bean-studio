@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "additionalDirectories": [
+      "C:\\Users\\praty\\.claude\\skills",
+      "C:\\Users\\praty\\.claude\\youtube",
+      "C:\\Users\\praty\\.claude\\plugins\\cache\\claude-animation-skills"
+    ],
+    "allow": [
+      "Read(//c/Users/praty/.claude/skills/**)",
+      "Read(//c/Users/praty/.claude/youtube/**)",
+      "Read(//c/Users/praty/.claude/plugins/cache/claude-animation-skills/**)",
+      "Edit(//c/Users/praty/youtube/**)",
+      "Bash(python *)", "Bash(node *)", "Bash(ffmpeg *)", "Bash(ffprobe *)",
+      "PowerShell(python *)", "PowerShell(ffmpeg *)", "PowerShell(ffprobe *)",
+      "WebSearch", "WebFetch"
+    ],
+    "deny": [
+      "Edit(//c/Users/praty/.claude/**)",
+      "Read(//c/Users/praty/youtube/tools/.secrets/**)",
+      "Bash(git push *)",
+      "Bash(*yt_upload.py upload*)"
+    ]
+  }
+}

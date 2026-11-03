@@ -24,6 +24,12 @@ DEFAULTS = {
     "slots": {"A": "12:00", "B": "06:30", "Long": "21:30"},
     "channel": "The Bean With Bad Ideas",
     "hide_projects": ["bean-avatar"],   # folders in projects_dir that aren't videos
+    "analytics_sync_hours": 6,          # 0 = only when you press Sync now
+    "topic_category": "animated science explainers and 'what if' Shorts",
+    "topic_channels": ["WhatIfScienceShow", "MinuteEarth", "AsapSCIENCE", "LifeNoggin", "kurzgesagt", "TEDEd", "SciShow", "veritasium",
+                       "MarkRober", "RealLifeLore", "Vsauce", "TierZoo", "CleoAbram", "zackdfilms"],   # same-category channels the Topics tab studies
+    "options_model": "sonnet",          # model that adapts outliers into 5 ideas
+    "video_model": "opus",              # model that makes the video (the hard creative part)
 }
 SLUG = re.compile(r"^[a-z0-9][a-z0-9-]{0,60}$")
 
@@ -97,7 +103,8 @@ def summary(p):
     words = len(" ".join(json.loads(script.read_text(encoding="utf-8"))).split()) if script.exists() else 0
     steps = {"script": words > 20, "video": has(".mp4"), "srt": has(".srt"), "thumbnail": has("-thumbnail.png"),
              "sheet": has("-youtube.txt"), "uploaded": bool(upinfo)}
-    return {"name": n, "title": sheet_title(p), "words": words, "steps": steps, "upload": upinfo,
+    import ytstate
+    return {"name": n, "title": sheet_title(p), "words": words, "steps": steps, "upload": upinfo, "yt": ytstate.badge_for(p),
             "ready": all(steps[k] for k in ("video", "srt", "thumbnail", "sheet")),
             "modified": max((f.stat().st_mtime for f in p.iterdir()), default=0)}
 
@@ -130,6 +137,25 @@ def save_script(name):
     (p / "script.json").write_text(json.dumps(lines, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     return jsonify(ok=True)
 
+@app.delete("/api/projects/<name>")
+def delete_project(name):
+    """removes the project folder from disk (video, thumbnail, sources). The YouTube copy, if any, is untouched."""
+    import shutil, stat
+    p = proj_dir(name)
+    root = Path(cfg()["projects_dir"]).resolve()
+    if p.resolve().parent != root: abort(400, "not a project folder")
+    if any(j["label"].endswith(" · " + name) and not j["done"] for j in JOBS.values()): abort(409, "a job is still running on this project")
+    size = sum(f.stat().st_size for f in p.rglob("*") if f.is_file())
+    def unlock(fn, path, _):   # read-only files on Windows
+        os.chmod(path, stat.S_IWRITE); fn(path)
+    try:
+        shutil.rmtree(p, onerror=unlock)
+    except OSError as e:
+        abort(500, f"could not delete everything ({e}). Close anything using that folder and try again.")
+    mk = Path(ROOT) / "data" / "make" / f"{name}.json"
+    if mk.exists(): mk.unlink()
+    return jsonify(ok=True, freed_mb=round(size / 1e6, 1))
+
 @app.get("/media/<name>/<path:fname>")
 def media(name, fname):
     p = proj_dir(name)
@@ -154,7 +180,8 @@ def run():
     tool, args = ACTIONS[act]
     cmd = [c["python"], c[tool], args[0], name] + args[1:]
     if tool == "uploader" and act != "comment":
-        if b.get("at"): cmd += ["--at", b["at"]]
+        if b.get("now"): cmd.append("--now")                      # publish immediately, public
+        elif b.get("at"): cmd += ["--at", b["at"]]                # "YYYY-MM-DD HH:MM" IST from the time dropdown
         else: cmd += ["--slot", b.get("slot", "A"), "--date", b.get("date", "")]
     if act == "video" and b.get("no_music"): cmd.append("--no-music")
     return jsonify(start_job(f"{act} · {name}", cmd, str(ROOT)))
@@ -170,28 +197,40 @@ def agent():
 # ---------- schedule (read-only view of the planner) ----------
 @app.get("/api/schedule")
 def schedule():
-    import openpyxl
+    """what is really on YouTube (live / scheduled / private), plus the planner's rows that aren't there yet"""
+    import openpyxl, ytstate
+    refresh_youtube(force=bool(request.args.get("refresh")))
+    vids = ytstate.STATE["videos"]
+    planned = []
     f = Path(cfg()["planner"])
-    if not f.exists(): return jsonify(rows=[], error=f"no planner at {f}")
-    ws = openpyxl.load_workbook(f, read_only=True, data_only=False)["Schedule"]
-    head = [c.value for c in next(ws.iter_rows(min_row=3, max_row=3))]
-    col = {h: i for i, h in enumerate(head) if h}
-    rows, today = [], dt.date.today()
-    for r in ws.iter_rows(min_row=4, values_only=True):
-        d = r[col["Post date (IST)"]]
-        if not isinstance(d, (dt.date, dt.datetime)): continue
-        d = d.date() if isinstance(d, dt.datetime) else d
-        if d < today - dt.timedelta(days=1): continue
-        g = lambda h: r[col[h]] if h in col else None
-        rows.append({"date": d.isoformat(), "day": d.strftime("%a"), "slot": g("Slot"), "time": g("Post time (IST)"),
-                     "format": g("Format"), "type": g("Video type"), "title": g("Working title"), "status": g("Status"),
-                     "notes": g("Notes")})
-    return jsonify(rows=rows[:60])
+    if f.exists():
+        ws = openpyxl.load_workbook(f, read_only=True, data_only=False)["Schedule"]
+        head = [c.value for c in next(ws.iter_rows(min_row=3, max_row=3))]
+        col = {h: i for i, h in enumerate(head) if h}
+        today = dt.date.today()
+        for r in ws.iter_rows(min_row=4, values_only=True):
+            d = r[col["Post date (IST)"]]
+            if not isinstance(d, (dt.date, dt.datetime)): continue
+            d = d.date() if isinstance(d, dt.datetime) else d
+            g = lambda h: r[col[h]] if h in col else None
+            if d < today - dt.timedelta(days=1) or g("Status") in ("Posted", "Skipped"): continue
+            title = g("Working title")
+            hit = ytstate.match_title(title, vids, 0.78) if vids else None
+            if hit: continue                         # already on YouTube: shown above with its real state
+            planned.append({"date": d.isoformat(), "day": d.strftime("%a"), "slot": g("Slot"), "time": g("Post time (IST)"),
+                            "format": g("Format"), "type": g("Video type"), "title": title, "status": g("Status"), "notes": g("Notes")})
+    return jsonify(youtube=vids, connected=ytstate.STATE["connected"], error=ytstate.STATE["error"], last=ytstate.STATE["last"], planned=planned[:60])
 
 @app.post("/api/open-planner")
 def open_planner():
     os.startfile(cfg()["planner"])
     return jsonify(ok=True)
+
+
+import analytics, ytstate, topics   # noqa: E402
+analytics.register(app, ROOT, cfg, start_job)
+refresh_youtube = ytstate.register(app, ROOT, cfg)      # live posted / scheduled / private state for every tab
+topics.register(app, ROOT, cfg, start_job, JOBS)        # topic selector + the "make this video" job
 
 
 # ---------- settings ----------

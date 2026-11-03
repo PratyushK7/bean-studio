@@ -53,6 +53,21 @@
   .quick button { margin: 0 6px 6px 0; }
   .back { cursor:pointer; color: var(--blue); font-weight:600; font-size:13px; margin-bottom:12px; display:inline-block; }
   @media (max-width: 800px) { .detail { grid-template-columns: 1fr; } header { flex-wrap: wrap; } main { padding: 16px; } }
+  .modal { position:fixed; inset:0; background:rgba(28,28,28,.55); display:none; align-items:flex-start; justify-content:center; overflow:auto; padding:30px 16px; z-index:50; }
+  .modal.on { display:flex; }
+  .modal .box { background:var(--paper); border:3px solid var(--ink); border-radius:16px; box-shadow:5px 5px 0 var(--ink); padding:20px; width:min(640px,100%); }
+  .modal label { display:block; font-weight:600; font-size:13px; margin:12px 0 4px; }
+  .modal select, .modal input[type=text], .modal textarea { width:100%; }
+  .opt { cursor:pointer; position:relative; } .opt:hover { transform: translate(-1px,-1px); }
+  .opt h3 { margin:6px 0 6px; font-size:16px; line-height:1.3; }
+  .opt .n { position:absolute; top:10px; right:12px; font-weight:700; color:var(--mute); }
+  .risk-low { background:var(--ok); } .risk-medium { background:#ffe9a8; } .risk-high { background:#ffd1d2; }
+  .spin { display:inline-block; animation: sp 1s linear infinite; } @keyframes sp { to { transform: rotate(360deg); } }
+  .stt { font-size:11px; font-weight:700; padding:2px 8px; border-radius:6px; color:#fff; display:inline-block; }
+  .stt.live { background:#2f8f3a; } .stt.scheduled { background:var(--blue); } .stt.private { background:#8a8a8a; } .stt.unlisted { background:#8a8a8a; } .stt.planned { background:var(--yel); color:var(--ink); }
+  button.del { font:inherit; font-size:12px; border:2px solid var(--ink); background:#fff; color:#c0262d; padding:3px 9px; border-radius:8px; cursor:pointer; }
+  button.del:hover { background:#c0262d; color:#fff; }
+  .making { border-style:dashed; background:#fffbe8; }
 </style>
 </head>
 <body>
@@ -60,7 +75,9 @@
   <h1>🫘 Bean <span>Studio</span></h1>
   <nav>
     <button data-tab="projects" class="on">Videos</button>
+    <button data-tab="topics">✨ Topics</button>
     <button data-tab="schedule">Schedule</button>
+    <button data-tab="analytics">Analytics</button>
     <button data-tab="agent">Agent</button>
     <button data-tab="jobs">Activity</button>
     <button data-tab="settings">Settings</button>
@@ -82,12 +99,62 @@
   <div id="detail" style="display:none"></div>
 </section>
 
+<section id="topics" class="tab">
+  <div class="row" style="margin-bottom:6px">
+    <h2 style="margin:0">Topics</h2><span class="muted" id="tpmeta"></span>
+    <span style="flex:1"></span>
+    <button class="act sec" id="tprefresh" onclick="refreshSources()">↻ Refresh sources</button>
+  </div>
+  <p class="muted" style="margin:0 0 12px">Studies what is beating its own channel's average on other channels in your category (<span id="tpcat"></span>), then adapts the best into <b>5 original ideas</b> for you: the topic and format are borrowed, never the script or title. Pick one, answer a few questions, and the agent makes the whole video.</p>
+  <div id="tpempty" class="card" style="display:none"></div>
+  <div class="grid" id="tpopts" style="grid-template-columns:repeat(auto-fill,minmax(300px,1fr))"></div>
+  <div class="row" style="margin:18px 0; justify-content:center">
+    <button class="act blue" id="tpgo" onclick="getIdeas(false)">✨ Get 5 ideas</button>
+    <button class="act" id="tpreroll" onclick="getIdeas(true)" style="display:none">🎲 Re-roll: 5 new ideas</button>
+  </div>
+  <div id="tpstatus" class="muted" style="text-align:center"></div>
+  <h4>Top performers it is learning from</h4>
+  <div class="card" style="padding:0; overflow:auto"><table id="tptop"></table></div>
+</section>
+
 <section id="schedule" class="tab">
   <div class="row" style="margin-bottom:12px">
-    <h2 style="margin:0">Schedule</h2><span class="muted">from bean-planner.xlsx · read-only here</span>
-    <span style="flex:1"></span><button class="act sec" onclick="api('/api/open-planner',{method:'POST'})">Open in Excel</button>
+    <h2 style="margin:0">Schedule</h2><span class="muted" id="schedmeta">from YouTube</span>
+    <span style="flex:1"></span>
+    <button class="act sec" onclick="loadSchedule(true)">↻ Refresh from YouTube</button>
+    <button class="act sec" onclick="api('/api/open-planner',{method:'POST'})">Open planner in Excel</button>
   </div>
-  <div class="card" style="padding:0; max-height:70vh; overflow:auto"><table id="sched"></table></div>
+  <div id="schedwarn" class="card" style="display:none; margin-bottom:12px"></div>
+  <h4 style="margin-top:0">On YouTube <span class="muted">(live, scheduled and private, straight from the channel)</span></h4>
+  <div class="card" style="padding:0; max-height:46vh; overflow:auto"><table id="schedyt"></table></div>
+  <h4>Still to make and post <span class="muted">(planner rows that are not on YouTube yet)</span></h4>
+  <div class="card" style="padding:0; max-height:40vh; overflow:auto"><table id="sched"></table></div>
+</section>
+
+<section id="analytics" class="tab">
+  <div class="row" style="margin-bottom:12px">
+    <h2 style="margin:0">Analytics</h2><span class="muted" id="ancount"></span>
+    <span style="flex:1"></span>
+    <button class="act sec" id="connbtn" onclick="run({action:'auth'})" style="display:none">Connect YouTube</button>
+    <button class="act" id="syncbtn" onclick="syncNow()">⟳ Sync now</button>
+    <button class="act sec" onclick="saveAnalytics()" title="Saves the slot, type, project and notes you changed">Save edits</button>
+  </div>
+  <div class="card" id="anstatus" style="margin-bottom:12px"></div>
+  <div class="card" style="padding:0; overflow:auto; max-height:46vh"><table id="antable"></table></div>
+  <p class="muted">Numbers come from YouTube by themselves (Data API + Analytics API) and refresh every few hours; they run 1 to 2 days behind. You can change slot, type, project and notes (kept across syncs). <b>Engaged %</b> = engaged views / views, a proxy: YouTube's "Viewed vs swiped away" isn't available to the API, so type it into the last-but-one column from Studio if you want it. <b>Drop at</b> = the second where the retention curve falls hardest after the first 10%.</p>
+
+  <div id="ansum" class="grid" style="grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); margin:14px 0"></div>
+
+  <div class="card">
+    <h2 style="margin-bottom:6px">Analyze with the agent</h2>
+    <p class="muted" style="margin:0 0 8px">The agent reads the numbers, the planner and the scripts, then writes a report with what worked, what's noise, and up to 3 decisions. It never edits your planner or videos; you decide what to apply.</p>
+    <textarea id="anq" rows="2" placeholder="Optional question, e.g. Should I move slot A to the evening?"></textarea>
+    <div class="row" style="margin:8px 0"><button class="act blue" id="anbtn" onclick="analyze()">Analyze &amp; recommend</button><span class="muted">Needs numbers for at least 2 videos.</span></div>
+    <div class="log" id="anlog" style="height:150px"></div>
+  </div>
+  <h4>Reports</h4>
+  <div class="row" id="replist" style="margin-bottom:8px"></div>
+  <div class="card" id="report" style="display:none"></div>
 </section>
 
 <section id="agent" class="tab">
@@ -118,13 +185,18 @@
 </section>
 
 </main>
+<div class="modal" id="wiz"><div class="box" id="wizbox"></div></div>
 <script>
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 async function api(url, opt = {}) {
   if (opt.body && typeof opt.body !== 'string') { opt.body = JSON.stringify(opt.body); opt.headers = {'Content-Type': 'application/json'}; }
   const r = await fetch(url, opt);
-  if (!r.ok) { alert(await r.text()); throw new Error(r.status); }
+  if (!r.ok) {
+    const t = await r.text();
+    alert(r.status === 404 && t.trim().startsWith('<!doctype') ? 'Bean Studio is running older code than this page.\n\nClose its console window (or press Ctrl+C there) and run start.bat again, then refresh with Ctrl+F5.' : t);
+    throw new Error(r.status);
+  }
   return r.json();
 }
 let CFG = {};
@@ -132,29 +204,47 @@ document.querySelectorAll('nav button').forEach(b => b.onclick = () => show(b.da
 function show(tab) {
   document.querySelectorAll('nav button').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('on', t.id === tab));
-  ({projects: loadProjects, schedule: loadSchedule, jobs: loadJobs, settings: loadCfg}[tab] || (() => {}))();
+  ({projects: loadProjects, topics: loadTopics, schedule: loadSchedule, analytics: loadAnalytics, jobs: loadJobs, settings: loadCfg}[tab] || (() => {}))();
 }
 
 // ---------- videos ----------
 const STEPS = [['script','Script'],['video','Video'],['srt','Captions'],['thumbnail','Thumbnail'],['sheet','Upload sheet'],['uploaded','Uploaded']];
+const YT = {live: 'LIVE', scheduled: 'SCHEDULED', private: 'PRIVATE', unlisted: 'UNLISTED'};
+const ytBadge = y => y ? `<span class="stt ${y.state}" title="${esc(y.when)}">${YT[y.state] || y.state.toUpperCase()}${y.state === 'scheduled' ? ' · ' + esc(y.when.slice(5, 16).replace('T', ' ')) + ' IST' : ''}</span>` : '';
+let MAKEPOLL = null;
 async function loadProjects() {
   $('#detail').style.display = 'none'; $('#list').style.display = '';
-  const ps = await api('/api/projects');
-  $('#count').textContent = `${ps.length} projects · ${ps.filter(p => p.ready).length} ready to upload`;
-  $('#grid').innerHTML = ps.map(p => `
+  api('/api/youtube/videos?refresh=1').catch(() => {});          // keeps the badges current (the server throttles this)
+  const [ps, jobs] = await Promise.all([api('/api/projects'), api('/api/jobs')]);
+  const making = jobs.filter(j => !j.done && j.label.startsWith('make · '));
+  $('#count').textContent = `${ps.length} videos · ${ps.filter(p => p.ready && !p.steps.uploaded).length} ready to upload · ${ps.filter(p => p.yt && p.yt.state === 'live').length} live`;
+  $('#grid').innerHTML = making.map(j => { const slug = j.label.slice(7), p = ps.find(x => x.name === slug);
+    return `<div class="card making"><div class="ph" style="border-style:dashed"><div style="text-align:center"><div class="spin" style="font-size:28px">⟳</div><div>the agent is making<br><b>${esc(slug)}</b></div></div></div>
+      <h3>${p && p.title ? esc(p.title) : esc(slug)}</h3><div class="slug">usually 10–25 minutes · <a href="#" onclick="show('jobs');watch('${j.id}');return false">watch the log</a></div>
+      <div class="chips">${STEPS.slice(0, 5).map(([k, l]) => `<span class="chip ${p && p.steps[k] ? 'y' : 'n'}">${p && p.steps[k] ? '✓' : '·'} ${l}</span>`).join('')}</div></div>`; }).join('') +
+  ps.map(p => `
     <div class="card proj" onclick="openProject('${p.name}')">
       ${p.steps.thumbnail ? `<img loading="lazy" src="/media/${p.name}/${p.name}-thumbnail.png?${p.modified}">` : `<div class="ph">no thumbnail yet</div>`}
       <h3>${esc(p.title || p.name)}</h3>
       <div class="slug">${p.name} · ${p.words} words</div>
-      <div style="margin-top:6px">${p.steps.uploaded ? '<span class="badge up">UPLOADED</span>' : p.ready ? '<span class="badge ok">READY</span>' : '<span class="badge">IN PROGRESS</span>'}</div>
+      <div style="margin-top:6px">${p.yt ? ytBadge(p.yt) : p.steps.uploaded ? '<span class="badge up">UPLOADED</span>' : p.ready ? '<span class="badge ok">READY</span>' : '<span class="badge">IN PROGRESS</span>'}
+        <button class="del" style="float:right" title="Delete from disk" onclick="event.stopPropagation(); deleteProject('${p.name}', ${p.yt ? "'" + p.yt.state + "'" : 'null'})">🗑 Delete</button></div>
       <div class="chips">${STEPS.map(([k, l]) => `<span class="chip ${p.steps[k] ? 'y' : 'n'}">${p.steps[k] ? '✓' : '·'} ${l}</span>`).join('')}</div>
     </div>`).join('');
+  clearInterval(MAKEPOLL); if (making.length) MAKEPOLL = setInterval(() => { if ($('#projects').classList.contains('on') && $('#detail').style.display === 'none') loadProjects(); else clearInterval(MAKEPOLL); }, 5000);
+}
+async function deleteProject(name, ytState) {
+  const live = ytState ? `\n\nIt is ${ytState.toUpperCase()} on YouTube. Deleting here does NOT remove it from YouTube.` : '';
+  if (!confirm(`Delete "${name}" from this computer?\n\nThe video, thumbnail, script and all files in its folder are removed permanently (not sent to the Recycle Bin).${live}`)) return;
+  const r = await api('/api/projects/' + name, {method: 'DELETE'});
+  loadProjects();
 }
 async function openProject(name) {
   const p = await api('/api/projects/' + name);
   CFG = await api('/api/config');
   $('#list').style.display = 'none'; const d = $('#detail'); d.style.display = '';
   const tomorrow = new Date(Date.now() + 864e5).toISOString().slice(0, 10);
+  setTimeout(whenHint, 0);
   d.innerHTML = `
     <span class="back" onclick="loadProjects()">← all videos</span>
     <div class="detail">
@@ -163,7 +253,9 @@ async function openProject(name) {
         ${p.steps.thumbnail ? `<h4>Thumbnail</h4><img class="thumb" src="/media/${name}/${name}-thumbnail.png?${p.modified}">` : ''}
       </div>
       <div>
-        <h2>${esc(p.title || name)}</h2>
+        <div class="row" style="justify-content:space-between"><h2 style="margin:0">${esc(p.title || name)}</h2>${p.yt ? ytBadge(p.yt) : ''}
+          <button class="del" onclick="deleteProject('${name}', ${p.yt ? "'" + p.yt.state + "'" : 'null'}).then(() => loadProjects())">🗑 Delete</button></div>
+        <div style="height:10px"></div>
         <div class="chips" style="margin-bottom:14px">${STEPS.map(([k, l]) => `<span class="chip ${p.steps[k] ? 'y' : 'n'}">${p.steps[k] ? '✓' : '·'} ${l}</span>`).join('')}</div>
         ${p.upload ? `<div class="card" style="margin-bottom:14px">Uploaded: <a href="${p.upload.url}" target="_blank">${p.upload.url}</a> · goes live ${new Date(p.upload.publishAt).toLocaleString()} · <a href="${p.upload.studio}" target="_blank">open in Studio</a></div>` : ''}
         <h4>Build</h4>
@@ -178,16 +270,18 @@ async function openProject(name) {
         <h4>Upload &amp; schedule</h4>
         <div class="card">
           <div class="row">
-            <label>Date <input type="date" id="update" value="${tomorrow}"></label>
-            <label>Slot <select id="upslot">${Object.entries(CFG.slots).map(([k, v]) => `<option value="${k}">${k} · ${v} IST</option>`).join('')}</select></label>
-            <span class="muted">or exact time</span><input id="upat" placeholder="2026-11-05 18:00" style="width:150px">
+            <label>Date <input type="date" id="update" value="${tomorrow}" onchange="whenHint()"></label>
+            <label>Time (IST) <select id="uptime" onchange="whenHint()">${timeOptions()}</select></label>
+            <span class="muted" id="whenhint"></span>
           </div>
           <div class="row" style="margin-top:10px">
-            <button class="act sec" onclick="upload('${name}', true)">Dry run</button>
-            <button class="act red" onclick="upload('${name}', false)" ${p.ready ? '' : 'disabled title="needs video, captions, thumbnail and upload sheet"'}>Upload + schedule</button>
+            <button class="act sec" onclick="upload('${name}', 'dry')">Dry run</button>
+            <button class="act blue" onclick="upload('${name}', 'schedule')" ${p.ready ? '' : 'disabled title="needs video, captions, thumbnail and upload sheet"'}>Upload + schedule</button>
+            <button class="act red" onclick="upload('${name}', 'now')" ${p.ready ? '' : 'disabled title="needs video, captions, thumbnail and upload sheet"'}>⚡ Post now</button>
             <button class="act sec" onclick="run({action:'comment',project:'${name}'})" ${p.upload ? '' : 'disabled'}>Post pinned comment</button>
           </div>
-          <p class="muted" style="margin:8px 0 0">Sets title, description, tags, Education, not made for kids, altered content No, thumbnail and captions. Pin the comment and the Education "Type" in Studio.</p>
+          <p class="muted" style="margin:8px 0 0">Sets title, description, tags, Education, not made for kids, altered content No, thumbnail and captions. <b>Post now</b> publishes publicly right away; <b>Upload + schedule</b> keeps it private until the chosen time.</p>
+          <div class="chips" style="margin-top:8px"><span class="chip">After upload, in Studio → Education:</span><span class="chip y">Type: Concept overview</span><span class="chip y">Academic system: None</span><span class="chip y">Level: None</span><span class="chip y">pin the comment</span></div>
         </div>
         <h4>Script <span class="muted">(one sentence per line · re-run Voice after editing)</span></h4>
         <textarea id="script" rows="8">${esc(p.script.join('\n'))}</textarea>
@@ -200,10 +294,24 @@ async function openProject(name) {
 }
 async function saveScript(n) { await api(`/api/projects/${n}/script`, {method: 'PUT', body: {sentences: $('#script').value.split('\n')}}); alert('Script saved. Run Voice to re-record.'); }
 async function saveSheet(n) { await api(`/api/projects/${n}/sheet`, {method: 'PUT', body: {text: $('#sheet').value}}); alert('Upload sheet saved.'); }
-function upload(n, dry) {
-  const at = $('#upat').value.trim();
-  if (!dry && !confirm(`Upload "${n}" to YouTube and schedule it? This publishes to your channel.`)) return;
-  run({action: dry ? 'upload-dry' : 'upload', project: n, slot: $('#upslot').value, date: $('#update').value, at});
+// every 15 minutes, IST; the channel's slots come first
+function timeOptions() {
+  const slots = Object.entries(CFG.slots).sort((x, y) => x[1].localeCompare(y[1]));
+  let h = `<optgroup label="Your slots">${slots.map(([k, v]) => `<option value="${v}">${k} · ${v}</option>`).join('')}</optgroup><optgroup label="Any time">`;
+  for (let m = 0; m < 1440; m += 15) { const t = String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0'); h += `<option value="${t}">${t}</option>`; }
+  return h + '</optgroup>';
+}
+function whenHint() {   // what the chosen IST time is for viewers in the US and India
+  const d = $('#update').value, t = $('#uptime').value; if (!d || !t) return;
+  const at = new Date(`${d}T${t}:00+05:30`);
+  const f = tz => at.toLocaleString('en-US', {timeZone: tz, weekday: 'short', hour: 'numeric', minute: '2-digit'});
+  $('#whenhint').textContent = `= ${f('America/New_York')} ET · ${f('America/Los_Angeles')} PT`;
+}
+function upload(n, mode) {
+  const at = `${$('#update').value} ${$('#uptime').value}`;
+  if (mode === 'now' && !confirm(`Post "${n}" to YouTube right now? It becomes public immediately.`)) return;
+  if (mode === 'schedule' && !confirm(`Upload "${n}" and schedule it for ${at} IST?`)) return;
+  run({action: mode === 'dry' ? 'upload-dry' : 'upload', project: n, at, now: mode === 'now'});
 }
 async function newProject() {
   const s = $('#newslug').value.trim();
@@ -219,13 +327,13 @@ async function loadJobs() {
   const js = await api('/api/jobs');
   $('#joblist').innerHTML = js.map(j => `<div class="job ${j.id === CUR ? 'sel' : ''}" onclick="watch('${j.id}')"><span>${esc(j.label)}</span><span>${j.done ? (j.code === 0 ? '✓ done' : '✗ exit ' + j.code) : '… running'}</span></div>`).join('') || '<span class="muted">Nothing run yet.</span>';
 }
-function watch(id, target = '#joblog') {
+function watch(id, target = '#joblog', onDone) {
   CUR = id; let n = 0; clearInterval(POLL); $(target).textContent = '';
   const tick = async () => {
     const j = await api(`/api/jobs/${id}?since=${n}`); n = j.n;
     if (target === '#joblog') { $('#jobtitle').textContent = j.label; $('#stopbtn').style.display = j.done ? 'none' : ''; }
     if (j.log.length) { const el = $(target); el.textContent += j.log.join('\n') + '\n'; el.scrollTop = el.scrollHeight; }
-    if (j.done) { clearInterval(POLL); $(target).textContent += j.code === 0 ? '\n✓ finished' : `\n✗ exited with ${j.code}`; }
+    if (j.done) { clearInterval(POLL); $(target).textContent += j.code === 0 ? '\n✓ finished' : `\n✗ exited with ${j.code}`; if (onDone) onDone(j); }
     loadJobs();
   };
   tick(); POLL = setInterval(tick, 1000);
@@ -240,21 +348,177 @@ const QUICK = [
   ['Rebuild old Short', 'Rebuild the line-boil project SLUG with the current engine so it has captions, the .srt and the outro. Check caption placement on a still per shot.'],
   ['Idea batch', 'Suggest 10 new Short ideas for The Bean With Bad Ideas across different video types (see the Types tab in bean-planner.xlsx), avoiding topics already in the planner.'],
 ];
-$('#quick').innerHTML = QUICK.map(([l, t], i) => `<button class="act sec" onclick="$('#prompt').value=QUICK[${i}][1]">${l}</button>`).join('');
+$('#quick').innerHTML = QUICK.map(([l, t], i) => `<button class="act sec" onclick="$('#prompt').value=QUICK[${i}][1]">${l}</button>`).join('') +
+  `<button class="act blue" onclick="show('analytics'); analyze()" title="Reads your Analytics tab, writes a report with decisions">📊 Analyze analytics</button>`;
 async function askAgent() {
   const prompt = $('#prompt').value.trim(); if (!prompt) return;
   const j = await api('/api/agent', {method: 'POST', body: {prompt}});
   watch(j.id, '#agentlog');
 }
 
+// ---------- topics ----------
+let TPBATCH = null, TPPOLL = null, TOPT = [];
+async function loadTopics() {
+  const t = await api('/api/topics');
+  $('#tpcat').textContent = t.category || 'your category';
+  $('#tpmeta').textContent = t.fetched ? `${t.videos} Shorts from ${t.channels.length} channels · studied ${ago(t.fetched)}` : '';
+  $('#tprefresh').disabled = t.refreshing; $('#tprefresh').textContent = t.refreshing ? `↻ Studying… ${t.progress}` : '↻ Refresh sources';
+  const e = $('#tpempty');
+  e.style.display = t.videos ? 'none' : '';
+  e.innerHTML = t.videos ? '' : `<b>No source data yet.</b> Press <b>Refresh sources</b> to study ${t.channels.length} channels in your category (about a minute; public data only, no login).${t.error ? `<div style="color:#c0262d;margin-top:6px">⚠ ${esc(t.error)}</div>` : ''}`;
+  $('#tpgo').disabled = !t.videos;
+  $('#tptop').innerHTML = `<tr><th>x channel median</th><th>Views</th><th>Channel</th><th>Title</th><th>Format</th></tr>` + (t.top || []).map(v => `<tr><td><b>${v.multiple}×</b></td><td>${v.views.toLocaleString()}</td><td>${esc(v.channel)}</td><td><a href="${v.url}" target="_blank">${esc(v.title)}</a></td><td>${esc(v.type)}</td></tr>`).join('');
+  if (t.refreshing) setTimeout(() => $('#topics').classList.contains('on') && loadTopics(), 3000);
+}
+async function refreshSources() { await api('/api/topics/refresh', {method: 'POST'}); loadTopics(); }
+async function getIdeas(reroll) {
+  $('#tpgo').disabled = true; $('#tpreroll').disabled = true;
+  $('#tpstatus').innerHTML = '<span class="spin">⟳</span> The agent is adapting the best performers into ideas for your channel… (usually 30–90 s)';
+  let r; try { r = await api('/api/topics/options', {method: 'POST'}); } catch (e) { $('#tpgo').disabled = false; $('#tpreroll').disabled = false; $('#tpstatus').textContent = ''; return; }
+  TPBATCH = r.batch; clearInterval(TPPOLL);
+  TPPOLL = setInterval(async () => {
+    const b = await api('/api/topics/batch/' + TPBATCH);
+    if (b.status === 'running') { $('#tpstatus').innerHTML = `<span class="spin">⟳</span> The agent is adapting the best performers into ideas… ${b.seconds}s`; return; }
+    clearInterval(TPPOLL); TOPT = b.options; $('#tpstatus').textContent = '';
+    $('#tpgo').style.display = 'none'; $('#tpreroll').style.display = ''; $('#tpreroll').disabled = false;
+    $('#tpopts').innerHTML = b.options.map((o, i) => `<div class="card opt" onclick="openWizard(${i})">
+      <span class="n">#${i + 1}</span><span class="chip">${esc(o.type)}</span> <span class="chip risk-${o.fact_risk}" title="${esc(o.fact_note)}">facts: ${o.fact_risk}</span>${o.adapted ? '' : ' <span class="chip" title="the agent did not return an adapted idea">raw source</span>'}
+      <h3>${esc(o.title)}</h3>
+      ${o.promise ? `<div style="font-size:13px">${esc(o.promise)}</div>` : ''}
+      ${o.visual ? `<div class="muted" style="margin-top:6px">🎨 ${esc(o.visual)}</div>` : ''}
+      <div class="muted" style="margin-top:8px;border-top:1px dashed #ccc;padding-top:6px">Inspired by <b>${esc(o.inspired_by.channel)}</b>: “${esc(o.inspired_by.title)}” · ${o.inspired_by.multiple}× its channel's median</div>
+      <div style="margin-top:8px"><span class="act" style="display:inline-block;font-size:12px;padding:4px 10px">Pick this →</span></div></div>`).join('');
+  }, 2000);
+}
+const VOICES = [['af_heart', 'Heart · warm female (channel default)'], ['am_michael', 'Michael · male'], ['bf_emma', 'Emma · British female'], ['bm_george', 'George · British male']];
+function openWizard(i) {
+  const o = TOPT[i];
+  $('#wizbox').innerHTML = `<h2 style="margin:0 0 4px">Make this video</h2><p class="muted" style="margin:0">A few questions, then the agent writes the script, fact-checks it, draws and renders the video, and makes the thumbnail and upload sheet. You can watch it in Videos.</p>
+    <label>Title</label><input type="text" id="w_title" value="${esc(o.title)}">
+    <label>Length</label><select id="w_dur"><option value="30">About 30 seconds (~84 words) · fastest, punchy</option><option value="40" selected>About 40 seconds (~112 words) · the channel's usual</option><option value="50">About 50 seconds (~140 words)</option><option value="60">About 60 seconds (~168 words) · the Shorts maximum we draw</option></select>
+    <label>Voice</label><select id="w_voice">${VOICES.map(([v, l]) => `<option value="${v}">${l}</option>`).join('')}</select>
+    <label>Speaking pace <span class="muted" id="w_spv">1.0×</span></label><input type="range" id="w_speed" min="0.9" max="1.15" step="0.05" value="1" style="width:100%" oninput="$('#w_spv').textContent = this.value + '×'">
+    <label>Tone</label><select id="w_tone"><option>dry and deadpan, the channel default</option><option>playful and energetic</option><option>calm and curious</option><option>dramatic and suspenseful</option></select>
+    <label>Characters</label><select id="w_cast"><option value="new">A new cast designed for this topic</option><option value="host">Our red host bean as the hero</option></select>
+    <label>Ending</label><select id="w_end"><option>a punchy callback line</option><option>a question to the viewer for the comments</option><option>a teaser for the next bad idea</option></select>
+    <div class="row" style="margin-top:12px"><label style="margin:0"><input type="checkbox" id="w_music" checked> Background music</label><label style="margin:0"><input type="checkbox" id="w_outro" checked> Channel outro (3.5 s)</label></div>
+    <label>Thumbnail text <span class="muted">(optional, up to 3 words; blank = the agent chooses)</span></label><input type="text" id="w_thumb" maxlength="24" placeholder="e.g. TOO TALL?">
+    <label>Anything else? <span class="muted">(optional)</span></label><textarea id="w_notes" rows="3" placeholder="e.g. keep it gentle, include the 1982 lawn chair story, avoid mentioning X"></textarea>
+    <div class="row" style="margin-top:16px; justify-content:flex-end"><button class="act sec" onclick="closeWizard()">Cancel</button><button class="act red" onclick="makeVideo(${i})">🎬 Make the video</button></div>`;
+  $('#wiz').classList.add('on');
+}
+function closeWizard() { $('#wiz').classList.remove('on'); }
+async function makeVideo(i) {
+  const o = Object.assign({}, TOPT[i], {title: $('#w_title').value.trim()});
+  const answers = {duration: +$('#w_dur').value, voice: $('#w_voice').value, speed: +$('#w_speed').value, tone: $('#w_tone').value, cast: $('#w_cast').value, ending: $('#w_end').value,
+    music: $('#w_music').checked, outro: $('#w_outro').checked, thumb_text: $('#w_thumb').value.trim(), notes: $('#w_notes').value.trim()};
+  const r = await api('/api/topics/make', {method: 'POST', body: {topic: o, answers}});
+  closeWizard(); show('projects');
+}
+
+// ---------- analytics ----------
+const TYPES = ['What if','Myth test','Why','True story','Versus','Ranking','Levels','Paradox','Puzzle','How it works','Superlative','How many','Map/scale'];
+let AN = [], PROJ = [];
+const AN_COLS = [['title','Video',240,'ro'],['posted','Posted',78,'ro'],['slot','Slot',54,'sel'],['type','Type',100,'sel'],['project','Project',100,'sel'],
+  ['views','Views',58,'ro'],['engaged_pct','Engaged %',66,'ro'],['avg_pct','% watched',68,'ro'],['avd_s','AVD s',54,'ro'],['likes','Likes',46,'ro'],
+  ['comments','Cmts',46,'ro'],['shares','Shares',52,'ro'],['subs','Subs',46,'ro'],['drop_s','Drop at s',62,'ro'],['geo','Top countries',150,'ro'],
+  ['viewed_pct','Viewed % (Studio)',92,'edit'],['notes','Notes',160,'edit']];
+let ANST = null, ANPOLL = null;
+async function loadAnalytics() {
+  const [a, ps] = await Promise.all([api('/api/analytics'), api('/api/projects')]);
+  AN = a.rows; PROJ = ps.map(p => p.name); ANST = a.status; drawAnalytics(a.summary); drawStatus(); loadReports();
+  clearInterval(ANPOLL); if (a.status.syncing) ANPOLL = setInterval(loadAnalytics, 4000);
+}
+function ago(iso) {
+  if (!iso) return 'never';
+  const m = Math.round((Date.now() - new Date(iso)) / 60000);
+  return m < 1 ? 'just now' : m < 90 ? `${m} min ago` : m < 2880 ? `${Math.round(m / 60)} h ago` : `${Math.round(m / 1440)} days ago`;
+}
+function drawStatus() {
+  const st = ANST, box = $('#anstatus');
+  $('#connbtn').style.display = st.connected ? 'none' : '';
+  $('#syncbtn').disabled = !st.connected || st.syncing; $('#syncbtn').textContent = st.syncing ? '⟳ Syncing…' : '⟳ Sync now';
+  if (!st.connected) box.innerHTML = `<b>● Not connected.</b> Press <b>Connect YouTube</b> and sign in with the channel's Google account. It asks for two read-only permissions (YouTube and YouTube Analytics). Also enable the <b>YouTube Analytics API</b> in your Google Cloud project once (see <code>tools/yt_upload.md</code>). <span class="muted">${esc((st.missing || []).join(', ').replace(/https:\/\/www.googleapis.com\/auth\//g, ''))}</span>`;
+  else box.innerHTML = `<b style="color:#2f8f3a">● Connected</b>${st.info ? ' · ' + esc(st.info.channel) + (st.info.subscribers ? ` · ${st.info.subscribers} subscribers` : '') : ''} · last synced <b>${ago(st.last_sync)}</b> · auto-refresh every ${st.auto_hours || 'no'} h` +
+    (st.error ? `<div style="color:#c0262d;margin-top:6px">⚠ ${esc(st.error)}</div>` : '') +
+    ((st.info && st.info.warnings && st.info.warnings.length) ? `<div class="muted" style="margin-top:4px">Some per-video details were skipped (usually videos with too few views): ${esc(st.info.warnings[0])}</div>` : '');
+}
+async function syncNow() {
+  $('#syncbtn').disabled = true; $('#syncbtn').textContent = '⟳ Syncing…';
+  try { const r = await api('/api/analytics/sync', {method: 'POST'}); AN = r.rows; ANST = r.status; drawAnalytics(r.summary); drawStatus(); }
+  finally { loadAnalytics(); }
+}
+function drawAnalytics(summary) {
+  $('#ancount').textContent = `${AN.length} videos · ${AN.filter(r => r.views != null).length} with numbers`;
+  const fmt = (k, v) => v == null || v === '' ? '<span class="muted">–</span>' : k === 'posted' ? esc(String(v).slice(5)) : typeof v === 'number' ? (k === 'views' || k === 'likes' || k === 'comments' || k === 'shares' || k === 'subs' ? v.toLocaleString() : (Math.round(v * 10) / 10)) : esc(v);
+  const cell = (r, i, [k, , w, kind]) => {
+    const v = r[k] ?? '';
+    if (kind === 'ro') return `<div style="min-width:${w}px;max-width:${w + 40}px;padding:4px 6px;${k === 'title' ? 'font-weight:600;' : ''}">${fmt(k, r[k])}</div>`;
+    if (k === 'project') return `<select style="width:${w}px" onchange="AN[${i}].project=this.value||null"><option value=""></option>${PROJ.map(p => `<option ${p === v ? 'selected' : ''}>${p}</option>`).join('')}</select>`;
+    if (k === 'slot') return `<select style="width:${w}px" onchange="AN[${i}].slot=this.value||null">${['', 'A', 'B', 'Long'].map(o => `<option ${o === v ? 'selected' : ''}>${o}</option>`).join('')}</select>`;
+    if (k === 'type') return `<select style="width:${w}px" onchange="AN[${i}].type=this.value||null"><option value=""></option>${TYPES.map(o => `<option ${o === v ? 'selected' : ''}>${o}</option>`).join('')}</select>`;
+    return `<input style="width:${w}px" value="${esc(v)}" oninput="AN[${i}]['${k}']=this.value">`;
+  };
+  $('#antable').innerHTML = `<tr>${AN_COLS.map(c => `<th>${c[1]}</th>`).join('')}</tr>` +
+    (AN.length ? AN.map((r, i) => `<tr>${AN_COLS.map(c => `<td style="padding:3px">${cell(r, i, c)}</td>`).join('')}</tr>`).join('')
+      : `<tr><td colspan="${AN_COLS.length}" class="muted" style="padding:16px">No numbers yet. Connect YouTube and press Sync now.</td></tr>`);
+  if (summary) {
+    const tbl = (rows, key, label) => `<div class="card"><h4 style="margin-top:0">${label}</h4>${rows.length ? `<table><tr><th>${label.split(' ').pop()}</th><th>n</th><th>Views</th><th>Engaged %</th><th>% watched</th></tr>` +
+      rows.map(r => `<tr><td>${esc(r[key])}</td><td>${r.videos}${r.videos < 5 ? ' <span title="too few to trust">⚠️</span>' : ''}</td><td>${r.avg_views ?? '–'}</td><td>${r.avg_engaged_pct ?? '–'}</td><td>${r.avg_pct_watched ?? '–'}</td></tr>`).join('') + '</table>' : '<span class="muted">Add slot/type and views to see this.</span>'}</div>`;
+    $('#ansum').innerHTML = tbl(summary.by_slot, 'slot', 'By slot') + tbl(summary.by_type, 'type', 'By type') + `<div class="muted" style="align-self:center">⚠️ = fewer than 5 videos, a hint rather than a result.</div>`;
+  }
+}
+async function saveAnalytics() { await api('/api/analytics', {method: 'PUT', body: {rows: AN}}); const a = await api('/api/analytics'); AN = a.rows; drawAnalytics(a.summary); }
+async function analyze() {
+  await saveAnalytics();
+  const j = await api('/api/analytics/analyze', {method: 'POST', body: {question: $('#anq').value}});
+  $('#anbtn').disabled = true; $('#report').style.display = 'none';
+  watch(j.id, '#anlog', async () => { $('#anbtn').disabled = false; await loadReports(); openReport(j.report); });
+}
+async function loadReports() {
+  const rs = await api('/api/reports');
+  $('#replist').innerHTML = rs.map(r => `<button class="act sec" onclick="openReport('${r.name}')">${r.name.replace('analysis-', '').replace('.md', '')}</button>`).join('') || '<span class="muted">No reports yet.</span>';
+}
+function md(t) {   // tiny markdown: headings, bullets, bold, tables
+  const inl = s => esc(s).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/`(.+?)`/g, '<code>$1</code>');
+  const out = []; let list = false, tbl = null;
+  const close = () => { if (list) { out.push('</ul>'); list = false; } if (tbl) { out.push('</table>'); tbl = null; } };
+  for (const line of t.split('\n')) {
+    if (/^\s*\|/.test(line)) {
+      if (/^\s*\|[\s:|-]+\|?\s*$/.test(line)) continue;
+      const cells = line.trim().replace(/^\||\|$/g, '').split('|').map(c => c.trim());
+      if (!tbl) { close(); out.push('<table>'); tbl = 1; out.push('<tr>' + cells.map(c => `<th>${inl(c)}</th>`).join('') + '</tr>'); }
+      else out.push('<tr>' + cells.map(c => `<td>${inl(c)}</td>`).join('') + '</tr>');
+      continue;
+    }
+    if (tbl) { out.push('</table>'); tbl = null; }
+    let m;
+    if ((m = line.match(/^(#{1,3})\s+(.*)/))) { close(); out.push(`<h${m[1].length + 1} style="margin:14px 0 6px">${inl(m[2])}</h${m[1].length + 1}>`); }
+    else if ((m = line.match(/^\s*(?:[-*]|\d+\.)\s+(.*)/))) { if (!list) { out.push('<ul style="margin:4px 0 4px 18px;padding:0">'); list = true; } out.push(`<li>${inl(m[1])}</li>`); }
+    else if (line.trim()) { close(); out.push(`<p style="margin:6px 0">${inl(line)}</p>`); }
+  }
+  close(); return out.join('');
+}
+async function openReport(name) {
+  try { const r = await api('/api/reports/' + name); $('#report').innerHTML = md(r.text); $('#report').style.display = ''; $('#report').scrollIntoView({behavior: 'smooth'}); } catch (e) {}
+}
+
 // ---------- schedule ----------
-async function loadSchedule() {
-  const {rows, error} = await api('/api/schedule');
+async function loadSchedule(refresh) {
+  const d = await api('/api/schedule' + (refresh ? '?refresh=1' : ''));
   const today = new Date().toISOString().slice(0, 10);
-  $('#sched').innerHTML = `<tr><th>Date</th><th>Slot</th><th>IST</th><th>Type</th><th>Working title</th><th>Status</th><th>Notes</th></tr>` +
-    (error ? `<tr><td colspan=7>${esc(error)}</td></tr>` : rows.map(r => `<tr class="${r.format} ${r.date === today ? 'today' : ''}">
-      <td>${r.day} ${r.date.slice(5)}</td><td>${esc(r.slot)}</td><td>${esc(r.time)}</td><td>${esc(r.type)}</td>
-      <td>${esc(r.title)}</td><td class="st-${esc(r.status)}">${esc(r.status)}</td><td class="muted">${esc(r.notes)}</td></tr>`).join(''));
+  $('#schedmeta').textContent = d.last ? `YouTube data from ${ago(d.last)}` : 'from YouTube';
+  const warn = $('#schedwarn');
+  warn.style.display = d.connected && !d.error ? 'none' : '';
+  warn.innerHTML = !d.connected ? `<b>● Not connected to YouTube.</b> Open the Analytics tab and press <b>Connect YouTube</b>; then this table shows what is really live and scheduled.` : `⚠ ${esc(d.error)}`;
+  const order = {scheduled: 0, live: 1, private: 2, unlisted: 3};
+  const yt = d.youtube.slice().sort((a, b) => (order[a.state] - order[b.state]) || (a.state === 'scheduled' ? a.when.localeCompare(b.when) : b.when.localeCompare(a.when)));
+  $('#schedyt').innerHTML = `<tr><th>State</th><th>When (IST)</th><th>Title</th><th>Views</th><th></th></tr>` +
+    (yt.length ? yt.map(v => `<tr class="${v.duration_s > 180 ? 'Long' : ''}"><td>${ytBadge(v)}</td><td>${esc(v.when.slice(0, 16).replace('T', ' '))}</td><td>${esc(v.title)}</td><td>${v.state === 'live' ? v.views.toLocaleString() : '–'}</td>
+      <td><a href="${v.url}" target="_blank">watch</a> · <a href="${v.studio}" target="_blank">Studio</a></td></tr>`).join('') : `<tr><td colspan=5 class="muted" style="padding:14px">${d.connected ? 'No videos on the channel yet.' : 'Connect YouTube to see them.'}</td></tr>`);
+  $('#sched').innerHTML = `<tr><th>Date</th><th>Slot</th><th>IST</th><th>Type</th><th>Working title</th><th>Planner status</th><th>Notes</th></tr>` +
+    (d.planned.length ? d.planned.map(r => `<tr class="${r.format} ${r.date === today ? 'today' : ''}"><td>${r.day} ${r.date.slice(5)}</td><td>${esc(r.slot)}</td><td>${esc(r.time)}</td><td>${esc(r.type)}</td>
+      <td>${esc(r.title)}</td><td><span class="stt planned">${esc(r.status || 'Idea')}</span></td><td class="muted">${esc(r.notes)}</td></tr>`).join('') : '<tr><td colspan=7 class="muted" style="padding:14px">Nothing left in the planner.</td></tr>');
 }
 
 // ---------- settings ----------

@@ -28,6 +28,14 @@ Note: while the consent screen is in **Testing**, Google expires the sign-in aft
 `auth` again when it asks. Setting the app to **In production** (no verification needed for your own use)
 avoids that.
 
+### Also for the Analytics tab
+Bean Studio's Analytics tab reads your numbers straight from YouTube (nothing to type in). It needs:
+1. In the same Google Cloud project: **APIs & Services → Library →** enable **YouTube Analytics API** (the YouTube Data API v3 is already on).
+2. Sign in again so the token includes the two read-only analytics scopes: in Bean Studio, **Analytics → Connect YouTube**
+   (or `python tools\yt_upload.py auth`). Reading numbers does not need the audit below.
+3. Back on the Analytics tab, press **Sync now**; after that it refreshes itself every 6 hours (`analytics_sync_hours` in Settings, 0 = off).
+Numbers arrive about 1 to 2 days late, and the API has no "Viewed vs swiped away" metric, so the tab shows engaged views / views as a proxy.
+
 ## 3. The audit (needed for scheduling to actually go public)
 YouTube **locks every video uploaded from an unaudited API project as Private**, and a locked video
 can't be scheduled or made public. To lift it, submit the free **YouTube API Services audit and quota

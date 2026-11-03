@@ -3,6 +3,7 @@
     .venv\\Scripts\\python yt_upload.py auth                                  sign in once (opens the browser)
     .venv\\Scripts\\python yt_upload.py upload <project> --slot A --date 2026-11-05 [--dry-run]
     .venv\\Scripts\\python yt_upload.py upload <project> --at "2026-11-05 12:00"   (IST)
+    .venv\\Scripts\\python yt_upload.py upload <project> --now                    publish immediately, public
     .venv\\Scripts\\python yt_upload.py comment <project>                     post the pinned-comment text (after it's public)
     .venv\\Scripts\\python yt_upload.py status                                what's been uploaded
 
@@ -15,8 +16,8 @@ Writes <project>-upload.json with the video id, and refuses to upload the same p
 Uses the official YouTube Data API v3 with your own OAuth client (client_secret.json in tools\\.secrets\\).
 Nothing is uploaded without the `upload` command; --dry-run shows exactly what would be sent.
 
-Not possible through the API, so do these by hand in Studio: pin the comment, Education "Type"
-(e.g. Concept overview), and anything marked "your call".
+Not possible through the API, so do these by hand in Studio: pin the comment and the Education fields
+(Type: Concept overview, Academic system: None, Level: None), plus anything marked "your call".
 """
 import argparse, datetime as dt, json, re, sys
 from pathlib import Path
@@ -25,7 +26,8 @@ ROOT = Path(r"C:\Users\praty\youtube\line-boil")
 SECRETS = Path(__file__).resolve().parent / ".secrets"
 CLIENT = SECRETS / "client_secret.json"
 TOKEN = SECRETS / "token.json"
-SCOPES = ["https://www.googleapis.com/auth/youtube.upload", "https://www.googleapis.com/auth/youtube.force-ssl"]
+SCOPES = ["https://www.googleapis.com/auth/youtube.upload", "https://www.googleapis.com/auth/youtube.force-ssl",
+          "https://www.googleapis.com/auth/youtube.readonly", "https://www.googleapis.com/auth/yt-analytics.readonly"]   # the last two: Bean Studio reads your numbers
 IST = dt.timezone(dt.timedelta(hours=5, minutes=30))
 SLOTS = {"A": "12:00", "B": "06:30", "Long": "21:30"}   # IST, same as bean-planner.xlsx
 EDUCATION = "27"
@@ -76,7 +78,7 @@ def service():
     from google.auth.transport.requests import Request
     from googleapiclient.discovery import build
     if not TOKEN.exists(): sys.exit("not signed in - run: yt_upload.py auth")
-    creds = Credentials.from_authorized_user_file(str(TOKEN), SCOPES)
+    creds = Credentials.from_authorized_user_file(str(TOKEN))   # the scopes it was granted, so an older token keeps working for uploads
     if not creds.valid:
         creds.refresh(Request()); TOKEN.write_text(creds.to_json())
     return build("youtube", "v3", credentials=creds)
@@ -102,15 +104,21 @@ def cmd_upload(a):
     meta = read_sheet(proj)
     errs = check(meta)
     if errs: sys.exit("fix the upload sheet: " + "; ".join(errs))
-    t = when(a)
+    t = dt.datetime.now(IST) if a.now else when(a)
+    status = {"selfDeclaredMadeForKids": meta["kids"], "containsSyntheticMedia": meta["synthetic"],
+              "embeddable": True, "license": "youtube"}
+    if a.now:   # publish immediately: public, no schedule
+        status.update(privacyStatus="public", publishAt=t.astimezone(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"))
+        status.pop("publishAt")
+    else:       # private until publishAt, then YouTube flips it to public
+        status.update(privacyStatus="private", publishAt=t.astimezone(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"))
     body = {
         "snippet": {"title": meta["title"], "description": meta["description"], "tags": meta["tags"],
                     "categoryId": EDUCATION, "defaultLanguage": "en", "defaultAudioLanguage": "en"},
-        "status": {"privacyStatus": "private", "publishAt": t.astimezone(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
-                   "selfDeclaredMadeForKids": meta["kids"], "containsSyntheticMedia": meta["synthetic"],
-                   "embeddable": True, "license": "youtube"},
+        "status": status,
     }
-    print(f"\n  {a.project}\n  goes live  {t:%a %d %b %Y %H:%M} IST  ({t.astimezone(dt.timezone(dt.timedelta(hours=-5))):%a %H:%M} ET)")
+    live = "NOW (public immediately)" if a.now else f"{t:%a %d %b %Y %H:%M} IST  ({t.astimezone(dt.timezone(dt.timedelta(hours=-5))):%a %H:%M} ET)"
+    print(f"\n  {a.project}\n  goes live  {live}")
     print(f"  title      {meta['title']}")
     print(f"  desc       {meta['description'].splitlines()[0][:90]}  (+{len(meta['description'].splitlines()) - 1} lines)")
     print(f"  tags       {len(meta['tags'])}: {', '.join(meta['tags'])[:90]}...")
@@ -130,7 +138,7 @@ def cmd_upload(a):
     vid = resp["id"]
     print(f"  uploaded   https://youtu.be/{vid}")
     out = {"id": vid, "url": f"https://youtu.be/{vid}", "studio": f"https://studio.youtube.com/video/{vid}/edit",
-           "publishAt": body["status"]["publishAt"], "title": meta["title"], "uploaded": dt.datetime.now(IST).isoformat()}
+           "publishAt": t.astimezone(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"), "now": bool(a.now), "title": meta["title"], "uploaded": dt.datetime.now(IST).isoformat()}
     log.write_text(json.dumps(out, indent=1))   # written before the extras, so a failure below can't cause a double upload
     try:
         yt.thumbnails().set(videoId=vid, media_body=MediaFileUpload(str(files["thumb"]), mimetype="image/png")).execute()
@@ -145,10 +153,12 @@ def cmd_upload(a):
         print(f"  captions   FAILED ({e}). Upload the .srt in Studio.")
     got = yt.videos().list(part="status", id=vid).execute()["items"][0]["status"]
     out["status"] = got; log.write_text(json.dumps(out, indent=1))
-    if got.get("privacyStatus") == "private" and not got.get("publishAt"):
-        print("\n  WARNING: YouTube kept this video private with no schedule. If your API project hasn't passed the\n"
-              "  YouTube API audit, uploads are locked private - see yt_upload.md.")
-    print(f"\n  done. Still by hand in Studio: pin the comment, Education 'Type'.\n  {out['studio']}")
+    if got.get("privacyStatus") == "private" and (a.now or not got.get("publishAt")):
+        print("\n  WARNING: YouTube kept this video private" + (" although you asked to post it now." if a.now else " with no schedule.")
+              + " If your API project hasn't passed the\n  YouTube API audit, uploads are locked private - see yt_upload.md.")
+    print("\n  done. The API can't set these, so do them by hand in Studio (Details > Show more > Education):\n"
+          "    Type: Concept overview | Academic system: None (remove the country) | Level: None | Exam/course: None | Problems: empty\n"
+          "    and pin the comment.\n  " + out["studio"])
 
 def cmd_comment(a):
     proj = ROOT / a.project
@@ -172,7 +182,8 @@ def main():
     sub = ap.add_subparsers(dest="cmd", required=True)
     sub.add_parser("auth").set_defaults(f=cmd_auth)
     p = sub.add_parser("upload"); p.add_argument("project"); p.add_argument("--at"); p.add_argument("--slot", choices=SLOTS)
-    p.add_argument("--date"); p.add_argument("--dry-run", action="store_true"); p.add_argument("--force", action="store_true")
+    p.add_argument("--date"); p.add_argument("--now", action="store_true", help="publish immediately (public) instead of scheduling")
+    p.add_argument("--dry-run", action="store_true"); p.add_argument("--force", action="store_true")
     p.set_defaults(f=cmd_upload)
     p = sub.add_parser("comment"); p.add_argument("project"); p.set_defaults(f=cmd_comment)
     sub.add_parser("status").set_defaults(f=cmd_status)
