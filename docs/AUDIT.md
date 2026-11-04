@@ -62,8 +62,11 @@ What was found, what was fixed, what was simplified, and what could be added nex
 - **Long-video topic research** in the Topics tab (own source pool, ideas with chapters and sources, researched picks) and the first
   researched pick: `research/long-form-topic/brief-money-bugs.md (and brief-mosquito.md)`.
 - **Length option** in the Agent tab and both wizards, passed to the line-boil skill (`build.py voice --target N`).
-- **Still to build for long videos:** a 16:9 mode in the line-boil engine (canvas, world size, captions, camera, thumbnail size),
-  then the same wizard renders the video instead of stopping at the package.
+- **Long videos are now built end to end** (5 Nov 2026): the engine is format-aware (world size and canvas come from the page), the new
+  `line-boil-wide` skill plans and builds 16:9 videos with chapters, a wide outro and 1280x720 thumbnails, and the wizard, progress bar and
+  Videos tab handle them like Shorts. Found and fixed on the way: the word-timing model cannot time audio past about 6.5 minutes (now timed in
+  40 s windows), the ducking filter was quadratic (minutes of CPU for 8 minutes of audio; now linear), `new --wide` did not make `web/shots/`,
+  and an empty video rendered silently (now `check` fails).
 
 - **Live agent view:** progress bar from real files, readable step feed, optional own Claude window, run ledger with cost,
   per-video Quality choice, one contact sheet of stills instead of ten image reads.

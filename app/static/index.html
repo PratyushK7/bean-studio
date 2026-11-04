@@ -76,6 +76,8 @@
   .seg button.on { background:var(--yel); }
   .opt.pick { background:#fffbe8; border-color:var(--red); }
   .opt ul { margin:6px 0 0 16px; padding:0; font-size:12px; color:var(--mute); }
+  .proj img.wide, .proj .ph.wide { aspect-ratio:16/9; }
+  .detail img.thumb.wide, .detail video.wide { aspect-ratio:16/9; }
   .bar { height:12px; border:2px solid var(--ink); border-radius:999px; background:#fff; overflow:hidden; margin:10px 0 6px; }
   .bar i { display:block; height:100%; background:var(--blue); transition:width .6s; }
   .now { font-size:12px; color:var(--mute); min-height:34px; line-height:1.35; word-break:break-word; }
@@ -235,7 +237,7 @@ function fillLengths() {           // the Agent tab's Length option: what you pi
   const L = META.lengths;
   $('#agentlen').innerHTML = '<option value="">Auto (the skill default, 32 to 42 s)</option>' +
     `<optgroup label="Short (9:16)">${L.short.map(x => `<option value="${x}">${x} seconds</option>`).join('')}</optgroup>` +
-    `<optgroup label="Long video (script package)">${L.long.map(x => `<option value="${x}">${x / 60} minutes</option>`).join('')}</optgroup>`;
+    `<optgroup label="Long video (16:9)">${L.long.map(x => `<option value="${x}">${x / 60} minutes</option>`).join('')}</optgroup>`;
 }
 async function initMeta() { await checkMeta(); setInterval(checkMeta, 60000); }
 async function checkMeta() {
@@ -252,7 +254,7 @@ function show(tab) {
 }
 
 // ---------- videos ----------
-const STEP_LABELS = {script: 'Script', video: 'Video', srt: 'Captions', thumbnail: 'Thumbnail', sheet: 'Upload sheet', uploaded: 'Uploaded', sources: 'Sources', shotlist: 'Shot list'};
+const STEP_LABELS = {script: 'Script', video: 'Video', srt: 'Captions', thumbnail: 'Thumbnail', sheet: 'Upload sheet', uploaded: 'Uploaded', sources: 'Sources', chapters: 'Chapters'};
 const stepChips = p => (p ? Object.keys(p.steps) : ['script', 'video', 'srt', 'thumbnail', 'sheet']).map(k => { const on = p && p.steps[k]; return `<span class="chip ${on ? 'y' : 'n'}">${on ? '✓' : '·'} ${STEP_LABELS[k] || k}</span>`; }).join('');
 const YT = {live: 'LIVE', scheduled: 'SCHEDULED', private: 'PRIVATE', unlisted: 'UNLISTED'};
 const ytBadge = y => y ? `<span class="stt ${y.state}" title="${esc(y.when)}">${YT[y.state] || y.state.toUpperCase()}${y.state === 'scheduled' ? ' · ' + esc(y.when.slice(5, 16).replace('T', ' ')) + ' IST' : ''}</span>` : '';
@@ -273,10 +275,10 @@ async function loadProjects() {
       <div style="margin-top:8px"><a href="#" onclick="show('jobs');watch('${j.id}');return false">watch every step live →</a></div></div>`; }).join('') +
   ps.filter(p => !making.some(j => j.label.slice(7) === p.name)).map(p => `
     <div class="card proj" onclick="openProject('${p.name}')">
-      ${p.steps.thumbnail ? `<img loading="lazy" src="/media/${p.name}/${p.name}-thumbnail.png?${p.modified}">` : `<div class="ph">${p.kind === 'long' ? 'long video<br>script package' : 'no thumbnail yet'}</div>`}
+      ${p.steps.thumbnail ? `<img class="${p.kind === 'long' ? 'wide' : ''}" loading="lazy" src="/media/${p.name}/${p.name}-thumbnail.png?${p.modified}">` : `<div class="ph ${p.kind === 'long' ? 'wide' : ''}">${p.kind === 'long' ? 'long video<br>no thumbnail yet' : 'no thumbnail yet'}</div>`}
       <h3>${esc(p.title || p.name)}</h3>
       <div class="slug">${p.kind === 'long' ? '🎞 long · ' : ''}${p.name} · ${p.words} words</div>
-      <div style="margin-top:6px">${p.yt ? ytBadge(p.yt) : p.steps.uploaded ? '<span class="badge up">UPLOADED</span>' : p.ready ? `<span class="badge ok">${p.kind === 'long' ? 'PACKAGE READY' : 'READY'}</span>` : '<span class="badge">IN PROGRESS</span>'}
+      <div style="margin-top:6px">${p.yt ? ytBadge(p.yt) : p.steps.uploaded ? '<span class="badge up">UPLOADED</span>' : p.ready ? `<span class="badge ok">READY</span>` : '<span class="badge">IN PROGRESS</span>'}
         <button class="del" style="float:right" title="Delete from disk" onclick="event.stopPropagation(); deleteProject('${p.name}', ${p.yt ? "'" + p.yt.state + "'" : 'null'})">🗑 Delete</button></div>
       <div class="chips">${stepChips(p)}</div>
     </div>`).join('');
@@ -301,8 +303,8 @@ async function openProject(name) {
     <span class="back" onclick="loadProjects()">← all videos</span>
     <div class="detail">
       <div>
-        ${long ? '<div class="card"><b>Long video: script package</b><div class="muted" style="margin-top:6px">The line-boil engine renders 9:16 Shorts only, so this project holds the script, sources, chapters, shot list and upload sheet. Rendering the 16:9 video is the next step.</div></div>' : p.steps.video ? `<video controls preload="metadata" src="/media/${name}/${name}.mp4?${p.modified}"></video>` : '<div class="card muted">No video yet. Run Voice, then Build video.</div>'}
-        ${p.steps.thumbnail ? `<h4>Thumbnail</h4><img class="thumb" src="/media/${name}/${name}-thumbnail.png?${p.modified}">` : ''}
+        ${p.steps.video ? `<video class="${long ? 'wide' : ''}" controls preload="metadata" src="/media/${name}/${name}.mp4?${p.modified}"></video>` : '<div class="card muted">No video yet. Run Voice, then Build video.</div>'}
+        ${p.steps.thumbnail ? `<h4>Thumbnail</h4><img class="thumb ${long ? 'wide' : ''}" src="/media/${name}/${name}-thumbnail.png?${p.modified}">` : ''}
       </div>
       <div>
         <div class="row" style="justify-content:space-between"><h2 style="margin:0">${esc(p.title || name)}</h2>${p.yt ? ytBadge(p.yt) : ''}
@@ -310,13 +312,13 @@ async function openProject(name) {
         <div style="height:10px"></div>
         <div class="chips" style="margin-bottom:14px">${stepChips(p)}</div>
         ${p.upload ? `<div class="card" style="margin-bottom:14px">Uploaded: <a href="${p.upload.url}" target="_blank">${p.upload.url}</a> · goes live ${new Date(p.upload.publishAt).toLocaleString()} · <a href="${p.upload.studio}" target="_blank">open in Studio</a></div>` : ''}
-        ${long ? `<h4>Build</h4><div class="row"><button class="act sec" onclick="run({action:'voice',project:'${name}'})">Voice</button><button class="act blue" onclick="agentFor('${name}')">Ask agent…</button></div>` : `        <h4>Build</h4>
+        ${`        <h4>Build</h4>
         <div class="row">
           <button class="act sec" onclick="run({action:'voice',project:'${name}'})">1 · Voice</button>
           <button class="act sec" onclick="run({action:'check',project:'${name}'})">2 · Check</button>
           <button class="act" onclick="run({action:'video',project:'${name}'})">3 · Build video</button>
           <button class="act sec" onclick="run({action:'thumb',project:'${name}'})">4 · Thumbnail</button>
-          <button class="act sec" onclick="run({action:'sheet',project:'${name}'})">Contact sheet</button>
+          <button class="act sec" onclick="run({action:'sheet',project:'${name}'})">Contact sheet</button>${long ? `<button class="act sec" onclick="run({action:'chapters',project:'${name}'})">Chapters</button>` : ''}
           <button class="act blue" onclick="agentFor('${name}')">Ask agent…</button>
         </div>
         <h4>Upload &amp; schedule</h4>
@@ -343,7 +345,7 @@ async function openProject(name) {
         <h4>Upload sheet <span class="muted">(${name}-youtube.txt)</span></h4>
         <textarea id="sheet" rows="16" placeholder="No sheet yet. Ask the agent to write one.">${esc(p.sheet_text)}</textarea>
         <div class="row" style="margin-top:6px"><button class="act sec" onclick="saveSheet('${name}')">Save sheet</button></div>
-        ${long ? Object.entries(p.docs || {}).map(([k, t]) => `<h4>${k} <span class="muted">(read-only)</span></h4><textarea readonly rows="12">${esc(t)}</textarea>`).join('') : ''}
+        ${long ? Object.entries(p.docs || {}).map(([k, t]) => `<h4>${k} <span class="muted">(written by the agent)</span></h4><textarea readonly rows="10">${esc(t)}</textarea>`).join('') : ''}
       </div>
     </div>`;
 }
@@ -432,7 +434,7 @@ let TKIND = 'short', TPPOLL = null;
 const TOPT = {short: [], long: []}, TPICK = {short: [], long: []};
 const TDESC = {
   short: `Studies what is beating its own channel's average on other channels in your category (<span id="tpcat"></span>), then adapts the best into <b>5 original ideas</b> for you: the topic and format are borrowed, never the script or title. Pick one, answer a few questions, and the agent makes the whole video.`,
-  long: `The same study for <b>long videos</b> (4 to 40 minutes) on other channels, adapted into 5 ideas with chapters, a runtime and sources to check. <b>Researched picks</b> sit on top. A long video is prepared as a <b>script package</b> (script, sources, real chapter times, shot list, upload sheet); the 16:9 renderer is the next step.`};
+  long: `The same study for <b>long videos</b> (4 to 40 minutes) on other channels, adapted into 5 ideas with chapters, a runtime and sources to check. <b>Researched picks</b> sit on top. A long video is made end to end in <b>16:9</b> with the line-boil-wide skill: sourced script, chapters timed from the real voiceover, the animation, a 1280×720 thumbnail and the upload sheet.`};
 function setKind(k) {
   TKIND = k; $('#kshort').classList.toggle('on', k === 'short'); $('#klong').classList.toggle('on', k === 'long');
   clearInterval(TPPOLL); $('#tpstatus').textContent = ''; loadTopics();
@@ -466,7 +468,7 @@ function optionCard(o, i, src) {
     ${long && (o.reuse_shorts || []).length ? `<div class="muted" style="margin-top:6px">♻ builds on: ${o.reuse_shorts.map(esc).join(' · ')}</div>` : ''}
     ${(o.why || []).length ? `<div style="margin-top:8px;font-size:12px"><b>Why this one</b><ul>${o.why.map(w => `<li>${esc(w)}</li>`).join('')}</ul></div>` : ''}
     <div class="muted" style="margin-top:8px;border-top:1px dashed #ccc;padding-top:6px">Inspired by <b>${esc(o.inspired_by.channel)}</b>: “${esc(o.inspired_by.title)}”${o.inspired_by.multiple ? ` · ${o.inspired_by.multiple}× its channel's median` : ''}</div>
-    <div style="margin-top:8px"><span class="act" style="display:inline-block;font-size:12px;padding:4px 10px">${long ? 'Prepare this →' : 'Pick this →'}</span></div></div>`;
+    <div style="margin-top:8px"><span class="act" style="display:inline-block;font-size:12px;padding:4px 10px">${long ? 'Make this →' : 'Pick this →'}</span></div></div>`;
 }
 function drawPicks() {
   const picks = TPICK[TKIND] || [];
@@ -493,13 +495,13 @@ async function getIdeas() {
     if (k === TKIND) drawOptions();
   }, 2000);
 }
-const LENGTH_LABEL = {30: 'About 30 seconds (~84 words) · fastest, punchy', 40: "About 40 seconds (~112 words) · the channel's usual", 50: 'About 50 seconds (~140 words)', 60: 'About 60 seconds (~168 words) · the Shorts maximum we draw'};
-const MIN_LABEL = {5: '5 minutes (~840 words)', 7: '7 minutes (~1,180 words) · the sweet spot for this style', 9: '9 minutes (~1,510 words)', 12: '12 minutes (~2,020 words)'};
+const LENGTH_LABEL = {30: 'About 30 seconds (~93 words) · fastest, punchy', 40: "About 40 seconds (~124 words) · the channel's usual", 50: 'About 50 seconds (~155 words)', 60: 'About 60 seconds (~186 words) · the Shorts maximum'};
+const MIN_LABEL = {5: '5 minutes (~930 words)', 7: '7 minutes (~1,300 words) · the sweet spot for this style', 9: '9 minutes (~1,670 words)', 12: '12 minutes (~2,230 words)'};
 function openWizard(src, i) {
   const long = TKIND === 'long', o = (src === 'pick' ? TPICK : TOPT)[TKIND][i];
   const near = long ? ([5, 7, 9, 12].reduce((a, b) => Math.abs(b - (o.runtime_min || 7)) < Math.abs(a - (o.runtime_min || 7)) ? b : a)) : 40;
-  $('#wizbox').innerHTML = `<h2 style="margin:0 0 4px">${long ? 'Prepare this long video' : 'Make this video'}</h2><p class="muted" style="margin:0">${long
-      ? 'A few questions, then the agent writes the script chapter by chapter, fact-checks every claim against sources, times the chapters from the real voiceover, plans the shots and writes the upload sheet. The 16:9 renderer is not built yet, so it stops at the package. You can watch it in Videos.'
+  $('#wizbox').innerHTML = `<h2 style="margin:0 0 4px">${long ? 'Make this long video' : 'Make this video'}</h2><p class="muted" style="margin:0">${long
+      ? 'A few questions, then the agent writes the script chapter by chapter, fact-checks every claim against sources, times the chapters from the real voiceover, draws and renders the 16:9 video, and makes the thumbnail and upload sheet. This is a long job (it can take an hour or more of the agent\'s time); watch it in Videos.'
       : 'A few questions, then the agent writes the script, fact-checks it, draws and renders the video, and makes the thumbnail and upload sheet. You can watch it in Videos.'}</p>
     <label>Title</label><input type="text" id="w_title" value="${esc(o.title)}">
     <label>Length</label>${long
@@ -517,7 +519,7 @@ function openWizard(src, i) {
     <div class="row" style="margin-top:10px"><label style="margin:0"><input type="checkbox" id="w_window"> 🪟 Open in its own Claude window so I can watch every step (it may ask for permissions)</label></div>
     <label>Thumbnail text <span class="muted">(optional, up to 3 words; blank = the agent chooses)</span></label><input type="text" id="w_thumb" maxlength="24" placeholder="e.g. TOO TALL?">
     <label>Anything else? <span class="muted">(optional)</span></label><textarea id="w_notes" rows="3" placeholder="e.g. keep it gentle, include the 1982 lawn chair story, avoid mentioning X"></textarea>
-    <div class="row" style="margin-top:16px; justify-content:flex-end"><button class="act sec" onclick="closeWizard()">Cancel</button><button class="act red" id="wizgo" onclick="makeVideo('${src}', ${i})">${long ? '📝 Prepare the package' : '🎬 Make the video'}</button></div>`;
+    <div class="row" style="margin-top:16px; justify-content:flex-end"><button class="act sec" onclick="closeWizard()">Cancel</button><button class="act red" id="wizgo" onclick="makeVideo('${src}', ${i})">${long ? '🎬 Make the long video' : '🎬 Make the video'}</button></div>`;
   $('#wiz').classList.add('on');
 }
 function closeWizard() { $('#wiz').classList.remove('on'); }

@@ -6,8 +6,8 @@
 2. "Get 5 ideas": a sample of the best outliers goes to the agent, which adapts five of them into ORIGINAL topics for this
    channel (topic and format borrowed, never the script or title). "Re-roll" samples a fresh set, skipping sources already shown.
    data/picks.json holds hand-researched topics (with a brief file) that show above the generated ones.
-3. A chosen topic + the answers from the form become one agent job. A Short goes all the way to a rendered video; a long video
-   stops at the script package, because the line-boil engine renders 9:16 only.
+3. A chosen topic + the answers from the form become one agent job. A Short is made with the line-boil skill (9:16); a long video with
+   the line-boil-wide skill (16:9, chapters), both to a rendered video, thumbnail and upload sheet.
 
 length_instructions(seconds) is the one place that turns a duration into instructions for the skill; the Agent tab uses it too.
 register(app, ROOT, cfg, start_job, JOBS) adds /api/topics*.
@@ -35,7 +35,7 @@ STOP = set("what if you your the a an of to how would it take and is are do does
 VOICES = [["af_heart", "Heart · warm female (channel default)"], ["am_michael", "Michael · male"], ["bf_emma", "Emma · British female"], ["bm_george", "George · British male"]]
 VOICE_IDS = [v[0] for v in VOICES]
 LENGTHS = {"short": [30, 40, 50, 60], "long": [300, 420, 540, 720]}       # seconds; the Agent tab and the wizards offer these
-WORDS_PER_SECOND = 2.8                                                       # the Kokoro voice at speed 1.0
+WORDS_PER_SECOND = 3.1                                                       # the Kokoro voice at speed 1.0 (measured: 3.05 to 3.3 on our scripts)
 KINDS = ("short", "long")
 
 
@@ -46,10 +46,10 @@ def length_instructions(seconds):
     head = f"TARGET LENGTH: {seconds} seconds of voiceover, about {words} words ({WORDS_PER_SECOND} words a second)."
     if seconds <= 60:
         return (head + f" Write the script to this length, run build.py voice <project> --target {seconds}, and rewrite until it prints TARGET {seconds}s: OK"
-                " (within 4 seconds). It is a Short, so it renders as 9:16.")
-    return (head + " This is long-form (over 60 seconds). The line-boil engine renders only 9:16 Shorts, so produce the script package"
-            f" (script.json, sources, chapters from the real word times via build.py voice <project> --target {seconds}, shot list, upload sheet)"
-            " and stop before building any video. Say so at the end.")
+                " (within 4 seconds). It is a Short, so it renders as 9:16 with the line-boil skill.")
+    return (head + " This is a long video (over 60 seconds): use the line-boil-wide skill (16:9, 1920x1080, chapters), which runs on the same engine"
+            f" (build.py new <project> --wide). Write the script to this length, run build.py voice <project> --target {seconds}, and rewrite until it"
+            f" prints TARGET {seconds}s: OK. Plan 5 to 9 chapters of 45 to 90 seconds, write chapters.json, and make the video, chapter by chapter.")
 
 
 def classify(title):
@@ -276,7 +276,7 @@ Do not use any other tool than reading that file and writing that file. When don
         return jsonify(status=b["status"], options=b["options"], seconds=int(time.time() - b["started"]),
                        log=(j["log"][-4:] if j and b["status"] == "running" else []))
 
-    # ---------- 3. the form's answers -> the video (Short) or the script package (long) ----------
+    # ---------- 3. the form's answers -> the finished video (Short 9:16, long 16:9) ----------
     def slug_for(title):
         words = [w for w in re.findall(r"[a-z0-9]+", title.lower()) if w not in STOP][:4] or ["video"]
         base = "-".join(words)[:40].strip("-") or "video"
@@ -332,18 +332,18 @@ THE USER'S ANSWERS (follow them):
 The user has already approved this topic and these settings, so do NOT stop to ask or to show a plan. Go straight through: script, fact-check (search the web; hedge anything uncertain; keep the sources for the sheet), cast, shots, build.py check, stills of every shot checked for overlaps and caption placement, build.py video, build.py sheet, the thumbnail (SKILL.md step 9) and the YouTube upload sheet (step 10). Do not upload anything and do not touch other projects. Finish by printing the project folder, the title and the thumbnail text."""
         else:
             structure = clean(a.get("structure") or "as in the research brief or the topic's chapters", 80)
-            prompt = f"""Prepare a LONG-FORM video package ({dur // 60} minutes) for the channel with the line-boil skill's tools. Read ~/.claude/skills/line-boil/SKILL.md (especially "Length") and ~/.claude/youtube/voice.md for the channel voice, and the yt-chapters and yt-seo skills' rules.
+            prompt = f"""Make a LONG video ({dur // 60} minutes, 16:9) for the channel with the line-boil-wide skill. Read ~/.claude/skills/line-boil-wide/SKILL.md and references/wide.md, then the files they point to in ~/.claude/skills/line-boil (SKILL.md, references/api.md, references/style.md, references/youtube.md), and ~/.claude/youtube/voice.md for the channel voice. Use the yt-chapters, yt-seo and yt-package skills' rules for the chapters, description and title.
 
 {common}- Structure: {structure}
 
-IMPORTANT: the line-boil engine renders 9:16 Shorts only, so do NOT run build.py check, stills, video, thumb or sheet and do not write shots.js. Produce the package, then stop:
-1. build.py new {slug}, then script.json: one sentence per entry, written chapter by chapter, with a hook in the first 30 seconds and a payoff that calls back to the hook. Dry, calm, honest; no hype words.
-2. Fact-check every claim with web searches of primary sources (the paper, the review, the agency page). Hedge anything uncertain, drop anything you cannot verify, and never invent a number. Write {slug}-sources.md: a table of claim, source link, and what you verified (full text, abstract only, or secondary report).
-3. build.py voice {slug} --voice {voice} --speed {speed} --target {dur}; rewrite and re-run until it prints TARGET {dur}s: OK.
-4. {slug}-chapters.txt: YouTube chapters taken from the REAL word times in audio/words.json (first at 0:00, at least 3, each at least 10 seconds long).
-5. {slug}-shotlist.md: for each chapter, what to draw, the characters, props and the visual gag, staged for 16:9 landscape (the finished video will be 1920x1080).
-6. {slug}-youtube.txt following references/youtube.md but for a long video: no #shorts, a CHAPTERS section, a description whose first two lines contain the target search queries, 6 to 8 sources, tags, a pinned comment and the thumbnail brief (1280x720, at most 3 words). Also list 3 to 4 Shorts that could be cut from it.
-Do not upload anything and do not touch other projects. Finish by printing the folder, the real voiceover length, the chapters and anything that could not be verified."""
+The user has already approved this topic and these settings, so do NOT stop to ask or to show a plan. Go straight through, in this order:
+1. build.py new {slug} --wide (it lands in {c['projects_dir']}); script.json, one sentence per entry, written chapter by chapter, a hook in the first 30 seconds and a payoff that calls back to it. Dry, calm, honest, funny in the pictures and the last line of each chapter; no hype words.
+2. Fact-check every claim with web searches of primary sources (the paper, the review, the agency page). Hedge what is uncertain, drop what you cannot verify, never invent a number. Write {slug}-sources.md: claim, link, and how far you verified it (full text, abstract only, secondary report).
+3. chapters.json (5 to 9 chapters, [{{"title", "line"}}]), then build.py voice {slug} --voice {voice} --speed {speed} --target {dur}; rewrite and re-run until it prints TARGET {dur}s: OK; then build.py chapters {slug} until it prints "valid".
+4. A cast of different beans (see "A cast of beans" in references/style.md) in web/cast.js, then web/shots/ch01.js, ch02.js, ... ONE CHAPTER AT A TIME: write the chapter's shots, render 2 or 3 stills per chapter with build.py stills (read the single stills/sheet.jpg it writes), fix what is wrong, then the next chapter. build.py check must show no [error] and no shot over 20 s.
+5. build.py video {slug}{'' if a.get('music', True) else ' --no-music'}{'' if a.get('outro', True) else ' --no-outro'}, then build.py sheet {slug} and look at the sheet once.
+6. The thumbnail (1280x720, web/thumb.js, build.py thumb {slug}; check stills/thumb-crops.png) and {slug}-youtube.txt for a long video (references/youtube.md: no #shorts, chapters from {slug}-chapters.txt, 6 to 8 sources, tags, a pinned comment, and 3 to 4 Shorts that could be cut from it).
+Do not upload anything and do not touch other projects. Finish by printing the project folder, the real length, the chapters, the title and thumbnail text, and anything you could not verify."""
         (DATA / "make").mkdir(parents=True, exist_ok=True)
         save_json(DATA / "make" / f"{slug}.json", {"kind": kind, "topic": t, "answers": a, "when": dt.datetime.now().isoformat(timespec="seconds")})
         mode = "window" if (a.get("window") or c.get("agent_window")) else "feed"      # watch it live, or in its own Claude window

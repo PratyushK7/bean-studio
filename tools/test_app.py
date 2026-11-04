@@ -153,9 +153,9 @@ def test_agent_duration():
     try:
         assert c.post("/api/agent", json={"prompt": "Make a Short about onions", "duration": 50}, headers=H).status_code == 200
         p = seen[-1]
-        assert "TARGET LENGTH: 50 seconds" in p and "--target 50" in p and "about 140 words" in p and "Short about onions" in p
+        assert "TARGET LENGTH: 50 seconds" in p and "--target 50" in p and "about 155 words" in p and "Short about onions" in p
         c.post("/api/agent", json={"prompt": "x", "duration": 420}, headers=H)
-        assert "long-form" in seen[-1] and "stop before building any video" in seen[-1] and "--target 420" in seen[-1]
+        assert "long video" in seen[-1] and "line-boil-wide" in seen[-1] and "--wide" in seen[-1] and "--target 420" in seen[-1] and "about 1302 words" in seen[-1]
         c.post("/api/agent", json={"prompt": "no length"}, headers=H); assert "TARGET LENGTH" not in seen[-1]
         assert c.post("/api/agent", json={"prompt": "x", "duration": 5}, headers=H).status_code == 400
         assert c.post("/api/agent", json={"prompt": "x", "duration": "abc"}, headers=H).status_code == 400
@@ -200,8 +200,8 @@ def test_long_topics():
     m = c3.post("/api/topics/make", json={"kind": "long", "topic": pick, "answers": {"minutes": 7, "voice": "bf_emma", "structure": "ranked", "speed": "x"}}).json
     mp = launched[-1][-1]
     assert m["kind"] == "long" and (root / "proj" / m["project"]).is_dir(), "the folder is reserved straight away"
-    assert "LONG-FORM video package (7 minutes)" in mp and "TARGET LENGTH: 420 seconds" in mp and "--target 420" in mp
-    assert "RESEARCH BRIEF" in mp and str(root / "research" / "brief.md") in mp and "do NOT run build.py check" in mp and "--voice bf_emma --speed 1.0" in mp
+    assert "LONG video (7 minutes, 16:9)" in mp and "line-boil-wide skill" in mp and "TARGET LENGTH: 420 seconds" in mp and "--target 420" in mp
+    assert "RESEARCH BRIEF" in mp and str(root / "research" / "brief.md") in mp and "build.py new " in mp and " --wide" in mp and "build.py video " in mp and "ONE CHAPTER AT A TIME" in mp and "1280x720" in mp and "--voice bf_emma --speed 1.0" in mp
     evil = c3.post("/api/topics/make", json={"kind": "long", "topic": dict(pick, brief="../../outside.md"), "answers": {}}).json
     assert "RESEARCH BRIEF" not in launched[-1][-1], "a brief path outside the studio folder is ignored"
     s = c3.post("/api/topics/make", json={"kind": "short", "topic": {"title": "A short idea"}, "answers": {"duration": 50}}).json
@@ -215,8 +215,8 @@ def test_long_topics():
     server.ROOT = root; server.CONFIG = TMP / "cfg-long.json"; server.CONFIG.write_text(json.dumps({"projects_dir": str(root / "proj")})); server._cfg.update(stamp="unset", val=None)
     try:
         pj = c.get(f"/api/projects/{m['project']}", headers=H).json
-        assert pj["kind"] == "long" and list(pj["steps"]) == ["script", "sources", "shotlist", "sheet"] and pj["steps"]["sources"] and not pj["steps"]["shotlist"] and not pj["ready"], pj
-        assert "sources" in pj["docs"] and "shotlist" not in pj["docs"]
+        assert pj["kind"] == "long" and list(pj["steps"]) == ["script", "sources", "chapters", "video", "srt", "thumbnail", "sheet", "uploaded"] and pj["steps"]["sources"] and not pj["steps"]["video"] and not pj["ready"], pj
+        assert "sources" in pj["docs"] and "chapters" not in pj["docs"]
         sj = c.get(f"/api/projects/{s['project']}", headers=H)
         assert sj.status_code == 404 or sj.json["kind"] == "short"
     finally:
@@ -245,7 +245,9 @@ def test_live_feed_and_progress():
     for f in ("vid.mp4", "vid.srt", "vid-thumbnail.png", "vid-youtube.txt"): (proj / f).write_text("z")
     g = agentlog.make_progress(proj); assert g["pct"] == 100 and g["stage"] == "All done", g     # no stills folder: still reaches 100
     lp = TMP / "prog" / "lng"; lp.mkdir(); (lp / "script.json").write_text(json.dumps(["word " * 80]))
-    assert agentlog.make_progress(lp, "long")["pct"] == 20
+    assert agentlog.make_progress(lp, "long")["pct"] == 8
+    (lp / "chapters.json").write_text(json.dumps([{"title": "a", "line": 0}] * 4)); (lp / "web" / "shots").mkdir(parents=True); (lp / "web" / "shots" / "ch01.js").write_text("x"); (lp / "web" / "shots" / "ch02.js").write_text("x")
+    g = agentlog.make_progress(lp, "long"); assert g["stage"].startswith("Recording the voiceover") or "Drawing the chapters (50%)" in g["stage"] or g["pct"] > 8, g
     ok("agent feed: steps in plain words, cost captured; progress comes from real files and skipped stages don't stall it")
 
 

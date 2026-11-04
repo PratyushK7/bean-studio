@@ -215,14 +215,15 @@ def summary(p):
     upinfo = store.read(p / f"{n}-upload.json")
     script = store.read(p / "script.json", [])
     words = len(" ".join(script).split()) if isinstance(script, list) else 0
-    kind = (store.read(ROOT / "data" / "make" / f"{n}.json", {}) or {}).get("kind", "short")
-    if kind == "long":     # the engine can't render landscape yet, so a long video is a package: script, sources, shot list, upload sheet
-        steps = {"script": words > 20, "sources": has("-sources.md"), "shotlist": has("-shotlist.md"), "sheet": has("-youtube.txt")}
-        ready = all(steps.values())
+    pj = store.read(p / "project.json", {}) or {}
+    kind = (store.read(ROOT / "data" / "make" / f"{n}.json", {}) or {}).get("kind") or ("long" if pj.get("format") == "wide" else "short")
+    if kind == "long":     # a 16:9 video with chapters and sources, made with the line-boil-wide skill
+        steps = {"script": words > 20, "sources": has("-sources.md"), "chapters": has("-chapters.txt"), "video": has(".mp4"), "srt": has(".srt"),
+                 "thumbnail": has("-thumbnail.png"), "sheet": has("-youtube.txt"), "uploaded": bool(upinfo)}
     else:
         steps = {"script": words > 20, "video": has(".mp4"), "srt": has(".srt"), "thumbnail": has("-thumbnail.png"),
                  "sheet": has("-youtube.txt"), "uploaded": bool(upinfo)}
-        ready = all(steps[k] for k in ("video", "srt", "thumbnail", "sheet"))
+    ready = all(steps[k] for k in ("video", "srt", "thumbnail", "sheet"))
     return {"name": n, "kind": kind, "title": sheet_title(p), "words": words, "steps": steps, "upload": upinfo, "yt": ytstate.badge_for(p),
             "ready": ready,
             "modified": max((f.stat().st_mtime for f in p.iterdir()), default=0)}
@@ -241,8 +242,8 @@ def project(name):
     s["sheet_text"] = sheet.read_text(encoding="utf-8") if sheet.exists() else ""
     script = store.read(p / "script.json", [])
     s["script"] = script if isinstance(script, list) else []
-    if s["kind"] == "long":     # the package documents, shown read-only on the project page
-        s["docs"] = {k: (p / f"{name}-{k}.{ext}").read_text(encoding="utf-8") for k, ext in (("sources", "md"), ("chapters", "txt"), ("shotlist", "md"))
+    if s["kind"] == "long":     # the research documents, shown read-only on the project page
+        s["docs"] = {k: (p / f"{name}-{k}.{ext}").read_text(encoding="utf-8") for k, ext in (("sources", "md"), ("chapters", "txt"))
                      if (p / f"{name}-{k}.{ext}").exists()}
     return jsonify(s)
 
@@ -284,7 +285,7 @@ def media(name, fname):
 
 ACTIONS = {   # what the buttons run: engine steps and uploader commands
     "voice": ("engine", ["voice"]), "check": ("engine", ["check"]), "video": ("engine", ["video"]),
-    "thumb": ("engine", ["thumb"]), "sheet": ("engine", ["sheet"]), "new": ("engine", ["new"]),
+    "thumb": ("engine", ["thumb"]), "sheet": ("engine", ["sheet"]), "new": ("engine", ["new"]), "chapters": ("engine", ["chapters"]),
     "upload-dry": ("uploader", ["upload", "--dry-run"]), "upload": ("uploader", ["upload"]), "comment": ("uploader", ["comment"]),
 }
 
