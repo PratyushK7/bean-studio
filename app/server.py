@@ -31,9 +31,20 @@ DEFAULTS = {
     "hide_projects": ["bean-avatar"],   # folders in projects_dir that aren't videos
     "analytics_sync_hours": 6,          # 0 = only when you press Sync now
     "topic_category": "funny animated explainers that teach something useful, in any genre (science, health, money, tech, history, psychology, how things work, everyday life)",
-    "topic_channels": ["TEDEd", "kurzgesagt", "MinuteEarth", "AsapSCIENCE", "SciShow", "veritasium", "Vsauce", "LifeNoggin", "WhatIfScienceShow",
-                       "CGPGrey", "Vox", "johnnyharris", "Wendoverproductions", "PracticalEngineering", "EconomicsExplained", "PolyMatter", "RealLifeLore",
-                       "CleoAbram", "TheOdd1sOut", "JaidenAnimations", "Nerdwriter1", "ColdFusion"],   # explainer channels across genres the Topics tab studies
+    "topic_channels": [
+        # animated / funny explainers
+        "TEDEd", "kurzgesagt", "MinuteEarth", "AsapSCIENCE", "SciShow", "LifeNoggin", "WhatIfScienceShow", "TheOdd1sOut", "JaidenAnimations", "OverSimplified", "Psych2go", "ThoughtCafe", "PrimerBlobs", "ZackDFilms", "RyanGeorge", "SciShowKids",
+        # science and how things work
+        "veritasium", "Vsauce", "Vsauce2", "Vsauce3", "Numberphile", "3blue1brown", "minutephysics", "SmarterEveryDay", "SteveMould", "NileRed", "TheActionLab", "ElectroBOOM", "PBSSpaceTime", "ArvinAsh", "DomainOfScience", "MarkRober", "PracticalEngineering", "colinfurze", "CrashCourse", "SciShowPsych", "SciShowSpace",
+        # health and the body
+        "DoctorMike", "ChubbyEmu", "MedCram", "HealthyGamerGG", "BrainCraft", "DrBecky",
+        # money and business
+        "EconomicsExplained", "PolyMatter", "Wendoverproductions", "BenFelixCSI", "HowMoneyWorks", "TheB1M", "FinanceWithSharan", "CARachanaRanade", "warikoo",
+        # history, world and culture
+        "CGPGrey", "Vox", "johnnyharris", "RealLifeLore", "HistoriaCivilis", "extrahistory", "TheInfographicsShow", "Lemmino", "MentalFloss", "NowThis",
+        # tech, productivity and learning
+        "ColdFusion", "Fireship", "Computerphile", "TwoMinutePapers", "Mrwhosetheboss", "Techquickie", "MKBHD", "ThomasFrank", "CleoAbram", "Nerdwriter1", "TomScottGo", "LegalEagle", "dhruvrathee", "DailyDoseOfInternet",
+    ],
     "options_model": "sonnet",          # model that adapts outliers into 5 ideas
     "video_model": "opus",              # model that makes the video (the hard creative part)
     "agent_window": False,              # True: every video the agent makes opens in its own visible Claude window
