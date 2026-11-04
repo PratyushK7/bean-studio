@@ -30,9 +30,10 @@ DEFAULTS = {
     "channel": "The Bean With Bad Ideas",
     "hide_projects": ["bean-avatar"],   # folders in projects_dir that aren't videos
     "analytics_sync_hours": 6,          # 0 = only when you press Sync now
-    "topic_category": "animated science explainers and 'what if' Shorts",
-    "topic_channels": ["WhatIfScienceShow", "MinuteEarth", "AsapSCIENCE", "LifeNoggin", "kurzgesagt", "TEDEd", "SciShow", "veritasium",
-                       "MarkRober", "RealLifeLore", "Vsauce", "TierZoo", "CleoAbram", "zackdfilms"],   # same-category channels the Topics tab studies
+    "topic_category": "funny animated explainers that teach something useful, in any genre (science, health, money, tech, history, psychology, how things work, everyday life)",
+    "topic_channels": ["TEDEd", "kurzgesagt", "MinuteEarth", "AsapSCIENCE", "SciShow", "veritasium", "Vsauce", "LifeNoggin", "WhatIfScienceShow",
+                       "CGPGrey", "Vox", "johnnyharris", "Wendoverproductions", "PracticalEngineering", "EconomicsExplained", "PolyMatter", "RealLifeLore",
+                       "CleoAbram", "TheOdd1sOut", "JaidenAnimations", "Nerdwriter1", "ColdFusion"],   # explainer channels across genres the Topics tab studies
     "options_model": "sonnet",          # model that adapts outliers into 5 ideas
     "video_model": "opus",              # model that makes the video (the hard creative part)
 }

@@ -1,6 +1,47 @@
 {
   "long": [
     {
+      "title": "6 Bugs in Your Brain That Cost You Money",
+      "type": "Explainer",
+      "promise": "Six well-studied mistakes your brain makes with money, each played by a different bug bean with its own study and a one-line patch; the sixth bug has a bug of its own.",
+      "visual": "The Debugger Bean files a bug report on each bean (NEW, FILED, WON'T FIX); sunk-cost bean glued to a seat, anchor bean, envelope bean, a Present vs Future tug of war, a sofa bean, a worried loss bean.",
+      "runtime_min": 8,
+      "chapters": [
+        "Your brain has bugs",
+        "Bug 1: Sunk Cost",
+        "Bug 2: Anchoring",
+        "Bug 3: Mental Accounting",
+        "Bug 4: Present Bias",
+        "Bug 5: Defaults",
+        "Bug 6: Loss Aversion (the bug with a bug)",
+        "The six patches"
+      ],
+      "reuse_shorts": [],
+      "sources_to_check": [
+        "Arkes and Blumer 1985 (sunk cost)",
+        "Tversky and Kahneman, Science 1974 (anchoring)",
+        "Kahneman and Tversky (lost ticket vs lost cash)",
+        "DellaVigna and Malmendier, AER 2006 (gym)",
+        "Madrian and Shea, QJE 2001 (401(k) defaults)",
+        "Gal and Rucker 2018 and replies (loss aversion debate)"
+      ],
+      "fact_risk": "medium",
+      "fact_note": "Behavioural economics has replication problems: use only these six, say 'roughly' for the anchoring numbers, do not quote the 37%/86% or Save More Tomorrow figures until verified, leave out Ariely studies, ego depletion and priming. Loss aversion is contested: present both sides.",
+      "why": [
+        "Abstract and useful: the viewer learns six named mistakes and a patch for each, and can repeat them to a friend.",
+        "Open lane: the best direct result for 'money mistakes your brain makes' is a 78-minute lecture; 'sunk cost explained' tops out at 718k with nothing polished or animated.",
+        "Adjacent demand is big: 12 Cognitive Biases (2.8M), SciShow Psych on restaurants (1.7M), TED-Ed irrational decisions (2.4M).",
+        "Beans make it funny and drawable: every bug is a bean; the running gag is the bug-report stamp."
+      ],
+      "inspired_by": {
+        "channel": "Practical Psychology, SciShow Psych, TED-Ed",
+        "title": "12 Cognitive Biases Explained / How Restaurants Use Psychology to Make You Spend More Money",
+        "multiple": 0,
+        "url": ""
+      },
+      "brief": "research/long-form-topic/brief-money-bugs.md"
+    },
+    {
       "title": "7 Mosquito Bite Hacks That Don't Work (And What Does)",
       "type": "Ranking",
       "promise": "Seven popular ways to stop mosquito bites, ranked from useless to almost-works, each tested against a real study; then the three boring things that actually work.",
@@ -13,7 +54,9 @@
         "What actually works: repellent, a fan, tipping out water",
         "The boring answer"
       ],
-      "reuse_shorts": ["Could 1 Million Mosquitoes Drain All Your Blood?"],
+      "reuse_shorts": [
+        "Could 1 Million Mosquitoes Drain All Your Blood?"
+      ],
       "sources_to_check": [
         "Fradin and Day, NEJM 2002 (repellent comparison)",
         "De Obaldia et al., Cell 2022 (why some people attract mosquitoes)",
@@ -35,7 +78,7 @@
         "multiple": 8.1,
         "url": ""
       },
-      "brief": "research/long-form-topic/brief.md"
+      "brief": "research/long-form-topic/brief-mosquito.md"
     }
   ],
   "short": []

@@ -13,6 +13,13 @@ the studio opens at **http://127.0.0.1:5173**. Close the window (or Ctrl+C) to s
 Needs: Python 3.10+, and for building videos the `line-boil` Claude Code skill plus the
 `claude-animation-skills` kit. The Agent tab needs Claude Code (`claude` on your PATH).
 
+## What the channel is
+
+*The Bean With Bad Ideas* is a funny animated explainer channel about anything that helps people learn something (science, health,
+money, tech, history, psychology, how things work, everyday life), told by a cast of **different beans**, one per idea or role
+(abstract ideas get a costume bean). The name is a brand, not a limit. The line-boil skill, the topic scout and the voice profile
+(`~/.claude/youtube/voice.md`) all follow this.
+
 ## What's in the studio
 
 | Tab | What it does |

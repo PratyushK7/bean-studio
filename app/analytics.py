@@ -140,7 +140,7 @@ def register(app, ROOT, cfg, start_job):
         REPORTS.mkdir(exist_ok=True)
         out = REPORTS / f"analysis-{dt.datetime.now():%Y-%m-%d-%H%M}.md"
         c = cfg()
-        prompt = f"""You are the analyst for the YouTube channel "{c['channel']}" (hand-drawn cartoon science Shorts; 2 Shorts a day plus 1 long-form a week; slot A posts at {c['slots'].get('A')} IST, slot B at {c['slots'].get('B')} IST).
+        prompt = f"""You are the analyst for the YouTube channel "{c['channel']}" (funny hand-drawn cartoon explainers in any genre that teaches something useful; 2 Shorts a day plus 1 long-form a week; slot A posts at {c['slots'].get('A')} IST, slot B at {c['slots'].get('B')} IST).
 Analyze the channel's numbers and write a report to {out} (Markdown). Read {FILE} (every row, pulled from YouTube by the server: video type, slot, views, engaged_pct, average % watched, subs, top countries, the retention curve as [second, % still watching] pairs, and drop_s = the second with the biggest loss after the first 10%), {c['planner']} (the Schedule and Types tabs) and, for any video you want to explain, its folder under {c['projects_dir']} (script.json and <name>-youtube.txt). Also read ~/.claude/youtube/voice.md for the channel voice.
 
 Summary the app computed (a cross-check; recompute anything that looks off):

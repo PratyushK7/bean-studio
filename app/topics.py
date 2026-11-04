@@ -230,11 +230,11 @@ def register(app, ROOT, cfg, start_job, JOBS):
         save_json(cfile, {"candidates": cands, "already_made_titles": made[:150], "types": TYPES})
         c = cfg()
         if kind == "short":
-            what = ("hand-drawn cartoon science Shorts hosted by a red bean, 30 to 45 seconds, each answering one concrete, drawable science question",
+            what = ("hand-drawn cartoon explainer Shorts hosted by a red bean, 30 to 45 seconds, funny in a dry way, each teaching one concrete thing a viewer can use or repeat; any genre that helps people learn (science, health, money, tech, history, psychology, how things work, everyday life), not only science",
                     "recent Shorts", "answerable in about 100 words with a real number or scale",
                     '{"title": str, "type": one of the types, "promise": "one sentence on what the video shows and the answer it lands on", "visual": "one line: what we would draw", "fact_risk": "low"|"medium"|"high", "fact_note": "what must be checked", "inspired_by": {"title": source title, "channel": source channel, "multiple": number, "url": source url}}')
         else:
-            what = ("hand-drawn cartoon science explainers hosted by a red bean; this is for a LONG video of 6 to 9 minutes (landscape), built from a clear premise with 5 to 8 chapters and a payoff",
+            what = ("hand-drawn cartoon explainers hosted by a red bean, funny in a dry way and always teaching something real; any genre that helps people learn (science, health, money, tech, history, psychology, how things work, everyday life). This is for a LONG video of 6 to 9 minutes (landscape), built from a clear premise with 5 to 8 chapters and a payoff",
                     "recent long videos (4 to 40 minutes)", "able to carry 6 to 9 minutes with real sources (studies, reviews, official guidance) and a chapter structure",
                     '{"title": str, "type": one of the types, "promise": "one sentence: the premise and the answer it lands on", "visual": "one line: the running visual gag or set piece", "chapters": [5 to 8 short chapter titles in order], "runtime_min": 6 to 9, "reuse_shorts": [titles of OUR made or planned Shorts it could fold in or spin off, if any], "sources_to_check": [3 to 5 named studies, reviews or agencies that would back it], "fact_risk": "low"|"medium"|"high", "fact_note": "what must be checked", "inspired_by": {"title": source title, "channel": source channel, "multiple": number, "url": source url}}')
         prompt = f"""You are the topic scout for the YouTube channel "{c['channel']}": {what[0]}. Category: {c.get('topic_category', 'science explainers')}.
@@ -243,7 +243,9 @@ Read {cfile}. "candidates" are {what[1]} from other channels that beat their own
 
 Pick FIVE different candidates and adapt each into an ORIGINAL topic for our channel. Borrow the topic area and the video format only: never copy a title, a script or a distinctive phrase. Rules:
 - 5 different video types (from {TYPES}); at most one "What if". Title in the channel voice: a plain question or claim, under 60 characters, no hype words, no all caps.
-- Every topic must be drawable as a cartoon with props and faces, and {what[2]}.
+- Every topic must be tellable by a cast of different beans (one bean per idea or role, so abstract ideas are welcome), funny without being silly (the joke lives in the picture and the last line), and {what[2]}.
+- Vary the GENRE across the five (do not make all five science), and prefer topics where the viewer learns something they can use or explain to a friend.
+- "Bad ideas" is only the channel's name: do not force a bad-idea framing onto every topic.
 - Only topics whose facts you are confident about, or flag the risk honestly.
 - Prefer the highest "multiple", but variety beats ranking.
 
@@ -309,7 +311,7 @@ THE USER'S ANSWERS (follow them):
 - {length_instructions(dur)}
 - Voice: {voice}   Speed: {speed}  (build.py voice {slug} --voice {voice} --speed {speed} --target {dur})
 - Tone: {clean(a.get('tone') or 'dry and deadpan, the channel default', 80)}
-- Cast: {'reuse the red host bean (BEAN in the bean-avatar project) as the hero' if a.get('cast') == 'host' else 'a new cast designed for this topic'}
+- Cast: {'reuse the red host bean (BEAN in the bean-avatar project) as the hero, with other beans for the other ideas' if a.get('cast') == 'host' else 'a new cast of different beans designed for this topic: one bean per idea or role, abstract ideas as costume beans (see "A cast of beans" in references/style.md)'}
 - Ending: {clean(a.get('ending') or 'a punchy callback line', 80)}
 - Background music: {'on' if a.get('music', True) else 'off (pass --no-music to build.py video)'}
 - Channel outro: {'appended' if a.get('outro', True) else 'left off (pass --no-outro to build.py video)'}

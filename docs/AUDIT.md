@@ -60,7 +60,7 @@ What was found, what was fixed, what was simplified, and what could be added nex
 ## Added after the audit (4 Nov 2026)
 
 - **Long-video topic research** in the Topics tab (own source pool, ideas with chapters and sources, researched picks) and the first
-  researched pick: `research/long-form-topic/brief.md`.
+  researched pick: `research/long-form-topic/brief-money-bugs.md (and brief-mosquito.md)`.
 - **Length option** in the Agent tab and both wizards, passed to the line-boil skill (`build.py voice --target N`).
 - **Still to build for long videos:** a 16:9 mode in the line-boil engine (canvas, world size, captions, camera, thumbnail size),
   then the same wizard renders the video instead of stopping at the package.
