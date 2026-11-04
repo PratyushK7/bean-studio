@@ -47,6 +47,5 @@ Category: Education
 Language / caption language: English
 Subtitles: upload grow-1cm.srt (Subtitles > Upload file > With timing)
 Altered or synthetic content: No (an animated cartoon; the voice is TTS narration, not a real person)
-Education fields (Studio only, the upload API can't set them): Type = Concept overview; Academic system = None (remove the country);
-  Level = None; Exam, course or standard = None; Problems = empty
+Education fields (Studio only, the upload API can't set them): Type = Concept overview; Level = None; Exam, course or standard = None; Problems = empty
 Visibility: user's call

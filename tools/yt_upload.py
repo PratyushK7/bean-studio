@@ -17,7 +17,7 @@ Uses the official YouTube Data API v3 with your own OAuth client (client_secret.
 Nothing is uploaded without the `upload` command; --dry-run shows exactly what would be sent.
 
 Not possible through the API, so do these by hand in Studio: pin the comment and the Education fields
-(Type: Concept overview, Academic system: None, Level: None), plus anything marked "your call".
+(Type: Concept overview, Level: None), plus anything marked "your call".
 """
 import argparse, datetime as dt, json, os, re, sys, time
 from pathlib import Path
@@ -176,7 +176,7 @@ def finish_upload(a, yt, files, resp, meta, t, log):
         print("\n  WARNING: YouTube kept this video private" + (" although you asked to post it now." if a.now else " with no schedule.")
               + " If your API project hasn't passed the\n  YouTube API audit, uploads are locked private - see yt_upload.md.")
     print("\n  done. The API can't set these, so do them by hand in Studio (Details > Show more > Education):\n"
-          "    Type: Concept overview | Academic system: None (remove the country) | Level: None | Exam/course: None | Problems: empty\n"
+          "    Type: Concept overview | Level: None | Exam/course: None | Problems: empty\n"
           "    and pin the comment.\n  " + out["studio"])
 
 def cmd_comment(a):

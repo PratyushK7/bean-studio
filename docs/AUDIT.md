@@ -73,6 +73,6 @@ What was found, what was fixed, what was simplified, and what could be added nex
 ## Known limits (not bugs)
 
 - YouTube's API has no "Viewed vs swiped away" metric, so Engaged % (engaged views / views) stands in for it.
-- The API cannot set the Education Type, Academic system or Level, or pin a comment; the upload card reminds you.
+- The API cannot set the Education Type or Level, or pin a comment; the upload card reminds you.
 - Analytics numbers run one to two days behind.
 - Until Google approves the API audit, API uploads stay private (scheduling and Post now need the audit).
