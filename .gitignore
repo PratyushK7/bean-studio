@@ -33,3 +33,4 @@ data/topic-*.json
 data/youtube-videos.json
 data/analytics-meta.json
 data/make/
+research/long-form-topic/search-*.json

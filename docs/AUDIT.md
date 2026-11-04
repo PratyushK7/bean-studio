@@ -57,6 +57,14 @@ What was found, what was fixed, what was simplified, and what could be added nex
 14. **Long-form mode** for the weekly episode (the line-boil engine currently makes Shorts).
 15. **Nightly backup** commit and push of the data folder.
 
+## Added after the audit (4 Nov 2026)
+
+- **Long-video topic research** in the Topics tab (own source pool, ideas with chapters and sources, researched picks) and the first
+  researched pick: `research/long-form-topic/brief.md`.
+- **Length option** in the Agent tab and both wizards, passed to the line-boil skill (`build.py voice --target N`).
+- **Still to build for long videos:** a 16:9 mode in the line-boil engine (canvas, world size, captions, camera, thumbnail size),
+  then the same wizard renders the video instead of stopping at the package.
+
 ## Known limits (not bugs)
 
 - YouTube's API has no "Viewed vs swiped away" metric, so Engaged % (engaged views / views) stands in for it.

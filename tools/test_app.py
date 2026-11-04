@@ -147,6 +147,80 @@ def test_upload_lock():
     ok("uploader: lock refuses a second upload, releases itself, now=public, scheduled=private+publishAt")
 
 
+def test_agent_duration():
+    seen, orig = [], server.start_job
+    server.start_job = lambda label, cmd, cwd, unique=False: seen.append(cmd[-1]) or {"id": "x", "label": label}
+    try:
+        assert c.post("/api/agent", json={"prompt": "Make a Short about onions", "duration": 50}, headers=H).status_code == 200
+        p = seen[-1]
+        assert "TARGET LENGTH: 50 seconds" in p and "--target 50" in p and "about 140 words" in p and "Short about onions" in p
+        c.post("/api/agent", json={"prompt": "x", "duration": 420}, headers=H)
+        assert "long-form" in seen[-1] and "stop before building any video" in seen[-1] and "--target 420" in seen[-1]
+        c.post("/api/agent", json={"prompt": "no length"}, headers=H); assert "TARGET LENGTH" not in seen[-1]
+        assert c.post("/api/agent", json={"prompt": "x", "duration": 5}, headers=H).status_code == 400
+        assert c.post("/api/agent", json={"prompt": "x", "duration": "abc"}, headers=H).status_code == 400
+        meta = c.get("/api/meta", headers=H).json
+        assert meta["lengths"]["short"] == [30, 40, 50, 60] and meta["lengths"]["long"][0] == 300
+    finally: server.start_job = orig
+    ok("agent: the chosen duration reaches the skill (Short rule or long-form rule), bad values refused")
+
+
+def test_long_topics():
+    import topics
+    root = TMP / "troot"; (root / "data").mkdir(parents=True); (root / "research").mkdir(); (root / "proj").mkdir()
+    (root / "research" / "brief.md").write_text("brief")
+    store.write(root / "data" / "picks.json", {"long": [{"title": "Pick A", "type": "Ranking", "brief": "research/brief.md",
+                                                       "inspired_by": {"channel": "c", "title": "t"}}], "short": []})
+    cfgd = dict(server.cfg()); cfgd["projects_dir"] = str(root / "proj")
+    JOBS, launched = {}, []
+    def fake(label, cmd, cwd, unique=False):
+        j = {"id": f"j{len(JOBS)}", "label": label, "log": [], "done": False, "code": None, "started": time.time()}
+        JOBS[j["id"]] = j; launched.append(cmd); return j
+    app3 = server.Flask("t3"); topics.register(app3, root, lambda: cfgd, fake, JOBS); c3 = app3.test_client()
+    assert c3.get("/api/topics/picks?kind=long").json["picks"][0]["pick"] and c3.get("/api/topics/picks?kind=short").json["picks"] == []
+    store.write(root / "data" / "topic-pool-long.json", {"fetched": "2026-11-04T00:00:00", "videos": [
+        {"id": f"v{i}", "title": f"Thing {i} explained", "channel": "Ch", "views": 1000 * i, "multiple": 2 + i / 10, "type": "Explainer", "duration": 500, "url": "u"} for i in range(1, 16)]})
+    assert c3.get("/api/topics?kind=long").json["videos"] == 15 and c3.get("/api/topics?kind=short").json["videos"] is None
+    assert c3.post("/api/topics/options", json={"kind": "short"}).status_code == 400, "the Shorts pool is separate"
+    r = c3.post("/api/topics/options", json={"kind": "long"}).json
+    prompt = launched[-1][-1]
+    assert "LONG video" in prompt and "chapters" in prompt and "runtime_min" in prompt and "sources_to_check" in prompt
+    out = root / "data" / f"topic-options-{r['batch']}.json"
+    out.write_text(json.dumps([{"title": f"Idea {i}", "type": ["Ranking", "Why", "Nope", "Myth test", "Explainer"][i], "fact_risk": "wild" if i == 0 else "low",
+                                "runtime_min": "abc" if i == 0 else 99 if i == 1 else 8, "chapters": [f"c{k}" for k in range(20)], "reuse_shorts": "not a list",
+                                "inspired_by": {"channel": "c", "title": "t", "multiple": 3}} for i in range(5)]))
+    JOBS[r["job"]]["done"] = True
+    o = c3.get(f"/api/topics/batch/{r['batch']}").json["options"]
+    assert len(o) == 5 and o[0]["runtime_min"] == 7 and o[1]["runtime_min"] == 15 and o[0]["fact_risk"] == "medium" and o[2]["type"] == "Other"
+    assert len(o[0]["chapters"]) == 9 and o[0]["reuse_shorts"] == []
+    pick = c3.get("/api/topics/picks?kind=long").json["picks"][0]
+    m = c3.post("/api/topics/make", json={"kind": "long", "topic": pick, "answers": {"minutes": 7, "voice": "bf_emma", "structure": "ranked", "speed": "x"}}).json
+    mp = launched[-1][-1]
+    assert m["kind"] == "long" and (root / "proj" / m["project"]).is_dir(), "the folder is reserved straight away"
+    assert "LONG-FORM video package (7 minutes)" in mp and "TARGET LENGTH: 420 seconds" in mp and "--target 420" in mp
+    assert "RESEARCH BRIEF" in mp and str(root / "research" / "brief.md") in mp and "do NOT run build.py check" in mp and "--voice bf_emma --speed 1.0" in mp
+    evil = c3.post("/api/topics/make", json={"kind": "long", "topic": dict(pick, brief="../../outside.md"), "answers": {}}).json
+    assert "RESEARCH BRIEF" not in launched[-1][-1], "a brief path outside the studio folder is ignored"
+    s = c3.post("/api/topics/make", json={"kind": "short", "topic": {"title": "A short idea"}, "answers": {"duration": 50}}).json
+    sp = launched[-1][-1]
+    assert "Make a new Short" in sp and "TARGET LENGTH: 50 seconds" in sp and "build.py video" in sp
+    assert json.loads((root / "data" / "make" / f"{m['project']}.json").read_text())["kind"] == "long"
+    # the Videos tab sees a long project as a package, with its own checklist and documents
+    pdir = root / "proj" / m["project"]; (pdir / "script.json").write_text(json.dumps(["word " * 40]))
+    (pdir / f"{m['project']}-sources.md").write_text("claim | link"); (pdir / f"{m['project']}-youtube.txt").write_text("== TITLE ==\nA long title\n")
+    old_root, old_cfg = server.ROOT, server.CONFIG
+    server.ROOT = root; server.CONFIG = TMP / "cfg-long.json"; server.CONFIG.write_text(json.dumps({"projects_dir": str(root / "proj")})); server._cfg.update(stamp="unset", val=None)
+    try:
+        pj = c.get(f"/api/projects/{m['project']}", headers=H).json
+        assert pj["kind"] == "long" and list(pj["steps"]) == ["script", "sources", "shotlist", "sheet"] and pj["steps"]["sources"] and not pj["steps"]["shotlist"] and not pj["ready"], pj
+        assert "sources" in pj["docs"] and "shotlist" not in pj["docs"]
+        sj = c.get(f"/api/projects/{s['project']}", headers=H)
+        assert sj.status_code == 404 or sj.json["kind"] == "short"
+    finally:
+        server.ROOT, server.CONFIG = old_root, old_cfg; server._cfg.update(stamp="unset", val=None)
+    ok("topics (long): separate pool, picks with brief, sanitised ideas, package prompt, safe brief path, long project view")
+
+
 def test_delete_and_media():
     d = Path(server.cfg()["projects_dir"]) / "zz-bean-test"; (d / "web").mkdir(parents=True, exist_ok=True)
     (d / "script.json").write_text('["x"]'); (d / "web" / "a.js").write_text("1"); os.chmod(d / "web" / "a.js", 0o444)

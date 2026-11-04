@@ -1,0 +1,42 @@
+{
+  "long": [
+    {
+      "title": "7 Mosquito Bite Hacks That Don't Work (And What Does)",
+      "type": "Ranking",
+      "promise": "Seven popular ways to stop mosquito bites, ranked from useless to almost-works, each tested against a real study; then the three boring things that actually work.",
+      "visual": "Kit the blue bean tries every hack while Moz the mosquito holds up a score card; each bad idea gets its own gag prop.",
+      "runtime_min": 7,
+      "chapters": [
+        "Seven things that don't work",
+        "Why mosquitoes pick you",
+        "1-7. Garlic, vitamin B, ultrasonic apps, wristbands, bug zappers, mosquito plants, citronella candles",
+        "What actually works: repellent, a fan, tipping out water",
+        "The boring answer"
+      ],
+      "reuse_shorts": ["Could 1 Million Mosquitoes Drain All Your Blood?"],
+      "sources_to_check": [
+        "Fradin and Day, NEJM 2002 (repellent comparison)",
+        "De Obaldia et al., Cell 2022 (why some people attract mosquitoes)",
+        "Cochrane review CD005434 (ultrasonic repellers)",
+        "Shelomi 2022, Bulletin of Entomological Research (vitamin B1)",
+        "Frick and Tallamy 1996 (bug zappers)"
+      ],
+      "fact_risk": "medium",
+      "fact_note": "Verify the fan, wristband and CDC duration figures in the primary sources. Do NOT quote the 74/75/70% fan numbers: that experiment pushed air through a DEET screen. Candle results range from about 14% to 42% depending on the study.",
+      "why": [
+        "Demand next door: TED-Ed's 'why mosquitoes bite some people more' has 2.2M views; MinuteEarth's mosquito-magnet video is 8.1x its channel median.",
+        "A real gap: the best result for 'mosquito repellent myths science' has 54k views and the median result 471.",
+        "It is our format: a ranked list of bad ideas, each a myth test.",
+        "It reuses Moz and the mosquito Short."
+      ],
+      "inspired_by": {
+        "channel": "MinuteEarth, TED-Ed",
+        "title": "Why Are Some People Mosquito Magnets? / Why mosquitoes bite some people more than others",
+        "multiple": 8.1,
+        "url": ""
+      },
+      "brief": "research/long-form-topic/brief.md"
+    }
+  ],
+  "short": []
+}

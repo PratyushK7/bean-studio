@@ -40,6 +40,7 @@ SLUG = re.compile(r"^[a-z0-9][a-z0-9-]{0,60}$")
 HHMM = re.compile(r"^([01]\d|2[0-3]):[0-5]\d$")
 
 app = Flask(__name__, static_folder="static", static_url_path="/static")
+app.json.sort_keys = False        # keep the order we build (the checklist chips follow the order of the keys)
 
 
 # ---------- settings: only your changes live in config.json, so new defaults always reach you ----------
@@ -163,10 +164,16 @@ def summary(p):
     upinfo = store.read(p / f"{n}-upload.json")
     script = store.read(p / "script.json", [])
     words = len(" ".join(script).split()) if isinstance(script, list) else 0
-    steps = {"script": words > 20, "video": has(".mp4"), "srt": has(".srt"), "thumbnail": has("-thumbnail.png"),
-             "sheet": has("-youtube.txt"), "uploaded": bool(upinfo)}
-    return {"name": n, "title": sheet_title(p), "words": words, "steps": steps, "upload": upinfo, "yt": ytstate.badge_for(p),
-            "ready": all(steps[k] for k in ("video", "srt", "thumbnail", "sheet")),
+    kind = (store.read(ROOT / "data" / "make" / f"{n}.json", {}) or {}).get("kind", "short")
+    if kind == "long":     # the engine can't render landscape yet, so a long video is a package: script, sources, shot list, upload sheet
+        steps = {"script": words > 20, "sources": has("-sources.md"), "shotlist": has("-shotlist.md"), "sheet": has("-youtube.txt")}
+        ready = all(steps.values())
+    else:
+        steps = {"script": words > 20, "video": has(".mp4"), "srt": has(".srt"), "thumbnail": has("-thumbnail.png"),
+                 "sheet": has("-youtube.txt"), "uploaded": bool(upinfo)}
+        ready = all(steps[k] for k in ("video", "srt", "thumbnail", "sheet"))
+    return {"name": n, "kind": kind, "title": sheet_title(p), "words": words, "steps": steps, "upload": upinfo, "yt": ytstate.badge_for(p),
+            "ready": ready,
             "modified": max((f.stat().st_mtime for f in p.iterdir()), default=0)}
 
 @app.get("/api/projects")
@@ -183,6 +190,9 @@ def project(name):
     s["sheet_text"] = sheet.read_text(encoding="utf-8") if sheet.exists() else ""
     script = store.read(p / "script.json", [])
     s["script"] = script if isinstance(script, list) else []
+    if s["kind"] == "long":     # the package documents, shown read-only on the project page
+        s["docs"] = {k: (p / f"{name}-{k}.{ext}").read_text(encoding="utf-8") for k, ext in (("sources", "md"), ("chapters", "txt"), ("shotlist", "md"))
+                     if (p / f"{name}-{k}.{ext}").exists()}
     return jsonify(s)
 
 @app.put("/api/projects/<name>/sheet")
@@ -247,8 +257,14 @@ def run():
 @app.post("/api/agent")
 def agent():
     c = cfg()
-    prompt = str(body().get("prompt", "")).strip()
+    b = body()
+    prompt = str(b.get("prompt", "")).strip()
     if not prompt: abort(400, "empty prompt")
+    if b.get("duration") not in (None, "", 0):          # a chosen length is passed on to the skill as instructions
+        try: seconds = int(float(b["duration"]))
+        except (TypeError, ValueError): abort(400, "duration must be a number of seconds")
+        if not 20 <= seconds <= 1800: abort(400, "duration must be between 20 seconds and 30 minutes")
+        prompt += "\n\n" + topics.length_instructions(seconds)
     return jsonify(start_job("agent · " + prompt[:50], list(c["agent_command"]) + [prompt], c["agent_cwd"]))
 
 
@@ -310,7 +326,7 @@ STARTED = code_stamp()
 def meta():
     """shared lists (so the page never hard-codes them) and whether the code on disk is newer than this running copy"""
     cfg()
-    return jsonify(types=topics.TYPES, voices=topics.VOICES, started=STARTED, current=code_stamp(), config_problem=_cfg["problem"])
+    return jsonify(types=topics.TYPES, voices=topics.VOICES, lengths=topics.LENGTHS, started=STARTED, current=code_stamp(), config_problem=_cfg["problem"])
 
 @app.get("/api/config")
 def get_config():

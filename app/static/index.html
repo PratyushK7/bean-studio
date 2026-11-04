@@ -71,6 +71,11 @@
   #toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%) translateY(90px); background:var(--ink); color:#fff; padding:10px 16px; border-radius:12px; font-size:13px; max-width:min(560px,92vw); opacity:0; transition:.25s; z-index:90; pointer-events:none; }
   #toast.on { opacity:1; transform:translateX(-50%); }
   .banner { background:var(--yel); border-bottom:3px solid var(--ink); padding:8px 24px; font-weight:600; font-size:13px; }
+  .seg { display:inline-flex; border:2px solid var(--ink); border-radius:999px; overflow:hidden; box-shadow:2px 2px 0 var(--ink); }
+  .seg button { font:inherit; font-weight:600; border:0; padding:6px 16px; background:#fff; cursor:pointer; }
+  .seg button.on { background:var(--yel); }
+  .opt.pick { background:#fffbe8; border-color:var(--red); }
+  .opt ul { margin:6px 0 0 16px; padding:0; font-size:12px; color:var(--mute); }
 </style>
 </head>
 <body>
@@ -106,16 +111,19 @@
 
 <section id="topics" class="tab">
   <div class="row" style="margin-bottom:6px">
-    <h2 style="margin:0">Topics</h2><span class="muted" id="tpmeta"></span>
+    <h2 style="margin:0">Topics</h2>
+    <div class="seg"><button id="kshort" class="on" onclick="setKind('short')">Shorts</button><button id="klong" onclick="setKind('long')">Long videos</button></div>
+    <span class="muted" id="tpmeta"></span>
     <span style="flex:1"></span>
     <button class="act sec" id="tprefresh" onclick="refreshSources()">↻ Refresh sources</button>
   </div>
-  <p class="muted" style="margin:0 0 12px">Studies what is beating its own channel's average on other channels in your category (<span id="tpcat"></span>), then adapts the best into <b>5 original ideas</b> for you: the topic and format are borrowed, never the script or title. Pick one, answer a few questions, and the agent makes the whole video.</p>
+  <p class="muted" style="margin:0 0 12px" id="tpdesc"></p>
   <div id="tpempty" class="card" style="display:none"></div>
+  <div id="tppicks" style="margin-bottom:16px"></div>
   <div class="grid" id="tpopts" style="grid-template-columns:repeat(auto-fill,minmax(300px,1fr))"></div>
   <div class="row" style="margin:18px 0; justify-content:center">
-    <button class="act blue" id="tpgo" onclick="getIdeas(false)">✨ Get 5 ideas</button>
-    <button class="act" id="tpreroll" onclick="getIdeas(true)" style="display:none">🎲 Re-roll: 5 new ideas</button>
+    <button class="act blue" id="tpgo" onclick="getIdeas()">✨ Get 5 ideas</button>
+    <button class="act" id="tpreroll" onclick="getIdeas()" style="display:none">🎲 Re-roll: 5 new ideas</button>
   </div>
   <div id="tpstatus" class="muted" style="text-align:center"></div>
   <h4>Top performers it is learning from</h4>
@@ -166,7 +174,9 @@
   <p class="muted">Runs Claude Code in your youtube folder with the command from Settings. It can use the line-boil and yt-* skills. Output appears below and in Activity.</p>
   <div class="quick" id="quick"></div>
   <textarea id="prompt" rows="5" placeholder="e.g. Make a new Short with the line-boil skill about why onions make you cry. Go straight through without waiting for my OK."></textarea>
-  <div class="row" style="margin:10px 0"><button class="act blue" onclick="askAgent()">Run agent</button><span class="muted">Long jobs keep running if you switch tabs.</span></div>
+  <div class="row" style="margin:10px 0"><button class="act blue" onclick="askAgent()">Run agent</button>
+    <label class="muted" style="font-weight:600">Length <select id="agentlen" title="Passed to the line-boil skill as a target length"></select></label>
+    <span class="muted">Long jobs keep running if you switch tabs.</span></div>
   <div class="log" id="agentlog"></div>
 </section>
 
@@ -214,10 +224,16 @@ async function api(url, opt = {}) {      // opt.silent: background polls don't p
 }
 const istDate = (add = 0) => new Intl.DateTimeFormat('en-CA', {timeZone: 'Asia/Kolkata'}).format(new Date(Date.now() + add * 864e5));   // YYYY-MM-DD in IST
 let TYPES = [], VOICES = [], META = null;       // shared lists come from the server, so they exist in one place only
+function fillLengths() {           // the Agent tab's Length option: what you pick is passed to the skill as the target length
+  const L = META.lengths;
+  $('#agentlen').innerHTML = '<option value="">Auto (the skill default, 32 to 42 s)</option>' +
+    `<optgroup label="Short (9:16)">${L.short.map(x => `<option value="${x}">${x} seconds</option>`).join('')}</optgroup>` +
+    `<optgroup label="Long video (script package)">${L.long.map(x => `<option value="${x}">${x / 60} minutes</option>`).join('')}</optgroup>`;
+}
 async function initMeta() { await checkMeta(); setInterval(checkMeta, 60000); }
 async function checkMeta() {
   const m = await api('/api/meta', {silent: true}).catch(() => null); if (!m) return;
-  if (!META) { META = m; TYPES = m.types; VOICES = m.voices; if (m.config_problem) toast('⚠ ' + m.config_problem, 15000); }
+  if (!META) { META = m; TYPES = m.types; VOICES = m.voices; fillLengths(); if (m.config_problem) toast('⚠ ' + m.config_problem, 15000); }
   $('#stale').style.display = m.current > m.started + 1 ? '' : 'none';
 }
 let CFG = {};
@@ -229,7 +245,8 @@ function show(tab) {
 }
 
 // ---------- videos ----------
-const STEPS = [['script','Script'],['video','Video'],['srt','Captions'],['thumbnail','Thumbnail'],['sheet','Upload sheet'],['uploaded','Uploaded']];
+const STEP_LABELS = {script: 'Script', video: 'Video', srt: 'Captions', thumbnail: 'Thumbnail', sheet: 'Upload sheet', uploaded: 'Uploaded', sources: 'Sources', shotlist: 'Shot list'};
+const stepChips = p => (p ? Object.keys(p.steps) : ['script', 'video', 'srt', 'thumbnail', 'sheet']).map(k => { const on = p && p.steps[k]; return `<span class="chip ${on ? 'y' : 'n'}">${on ? '✓' : '·'} ${STEP_LABELS[k] || k}</span>`; }).join('');
 const YT = {live: 'LIVE', scheduled: 'SCHEDULED', private: 'PRIVATE', unlisted: 'UNLISTED'};
 const ytBadge = y => y ? `<span class="stt ${y.state}" title="${esc(y.when)}">${YT[y.state] || y.state.toUpperCase()}${y.state === 'scheduled' ? ' · ' + esc(y.when.slice(5, 16).replace('T', ' ')) + ' IST' : ''}</span>` : '';
 let MAKEPOLL = null, GRIDSIG = '';
@@ -242,15 +259,15 @@ async function loadProjects() {
   const html = making.map(j => { const slug = j.label.slice(7), p = ps.find(x => x.name === slug);
     return `<div class="card making"><div class="ph" style="border-style:dashed"><div style="text-align:center"><div class="spin" style="font-size:28px">⟳</div><div>the agent is making<br><b>${esc(slug)}</b></div></div></div>
       <h3>${p && p.title ? esc(p.title) : esc(slug)}</h3><div class="slug">usually 10–25 minutes · <a href="#" onclick="show('jobs');watch('${j.id}');return false">watch the log</a></div>
-      <div class="chips">${STEPS.slice(0, 5).map(([k, l]) => `<span class="chip ${p && p.steps[k] ? 'y' : 'n'}">${p && p.steps[k] ? '✓' : '·'} ${l}</span>`).join('')}</div></div>`; }).join('') +
+      <div class="chips">${stepChips(p)}</div></div>`; }).join('') +
   ps.map(p => `
     <div class="card proj" onclick="openProject('${p.name}')">
-      ${p.steps.thumbnail ? `<img loading="lazy" src="/media/${p.name}/${p.name}-thumbnail.png?${p.modified}">` : `<div class="ph">no thumbnail yet</div>`}
+      ${p.steps.thumbnail ? `<img loading="lazy" src="/media/${p.name}/${p.name}-thumbnail.png?${p.modified}">` : `<div class="ph">${p.kind === 'long' ? 'long video<br>script package' : 'no thumbnail yet'}</div>`}
       <h3>${esc(p.title || p.name)}</h3>
-      <div class="slug">${p.name} · ${p.words} words</div>
-      <div style="margin-top:6px">${p.yt ? ytBadge(p.yt) : p.steps.uploaded ? '<span class="badge up">UPLOADED</span>' : p.ready ? '<span class="badge ok">READY</span>' : '<span class="badge">IN PROGRESS</span>'}
+      <div class="slug">${p.kind === 'long' ? '🎞 long · ' : ''}${p.name} · ${p.words} words</div>
+      <div style="margin-top:6px">${p.yt ? ytBadge(p.yt) : p.steps.uploaded ? '<span class="badge up">UPLOADED</span>' : p.ready ? `<span class="badge ok">${p.kind === 'long' ? 'PACKAGE READY' : 'READY'}</span>` : '<span class="badge">IN PROGRESS</span>'}
         <button class="del" style="float:right" title="Delete from disk" onclick="event.stopPropagation(); deleteProject('${p.name}', ${p.yt ? "'" + p.yt.state + "'" : 'null'})">🗑 Delete</button></div>
-      <div class="chips">${STEPS.map(([k, l]) => `<span class="chip ${p.steps[k] ? 'y' : 'n'}">${p.steps[k] ? '✓' : '·'} ${l}</span>`).join('')}</div>
+      <div class="chips">${stepChips(p)}</div>
     </div>`).join('');
   const sig = JSON.stringify([making.map(j => j.id), ps.map(p => [p.name, p.modified, p.title, p.yt && p.yt.state + p.yt.when, p.steps])]);
   if (sig !== GRIDSIG) { GRIDSIG = sig; $('#grid').innerHTML = html; }       // only redraw when something changed (no flicker while a video is being made)
@@ -265,6 +282,7 @@ async function deleteProject(name, ytState) {
 }
 async function openProject(name) {
   const p = await api('/api/projects/' + name);
+  const long = p.kind === 'long';
   CFG = await api('/api/config');
   $('#list').style.display = 'none'; const d = $('#detail'); d.style.display = '';
   setTimeout(() => useNextSlot(true), 0);
@@ -272,16 +290,16 @@ async function openProject(name) {
     <span class="back" onclick="loadProjects()">← all videos</span>
     <div class="detail">
       <div>
-        ${p.steps.video ? `<video controls preload="metadata" src="/media/${name}/${name}.mp4?${p.modified}"></video>` : '<div class="card muted">No video yet. Run Voice, then Build video.</div>'}
+        ${long ? '<div class="card"><b>Long video: script package</b><div class="muted" style="margin-top:6px">The line-boil engine renders 9:16 Shorts only, so this project holds the script, sources, chapters, shot list and upload sheet. Rendering the 16:9 video is the next step.</div></div>' : p.steps.video ? `<video controls preload="metadata" src="/media/${name}/${name}.mp4?${p.modified}"></video>` : '<div class="card muted">No video yet. Run Voice, then Build video.</div>'}
         ${p.steps.thumbnail ? `<h4>Thumbnail</h4><img class="thumb" src="/media/${name}/${name}-thumbnail.png?${p.modified}">` : ''}
       </div>
       <div>
         <div class="row" style="justify-content:space-between"><h2 style="margin:0">${esc(p.title || name)}</h2>${p.yt ? ytBadge(p.yt) : ''}
           <button class="del" onclick="deleteProject('${name}', ${p.yt ? "'" + p.yt.state + "'" : 'null'}).then(() => loadProjects())">🗑 Delete</button></div>
         <div style="height:10px"></div>
-        <div class="chips" style="margin-bottom:14px">${STEPS.map(([k, l]) => `<span class="chip ${p.steps[k] ? 'y' : 'n'}">${p.steps[k] ? '✓' : '·'} ${l}</span>`).join('')}</div>
+        <div class="chips" style="margin-bottom:14px">${stepChips(p)}</div>
         ${p.upload ? `<div class="card" style="margin-bottom:14px">Uploaded: <a href="${p.upload.url}" target="_blank">${p.upload.url}</a> · goes live ${new Date(p.upload.publishAt).toLocaleString()} · <a href="${p.upload.studio}" target="_blank">open in Studio</a></div>` : ''}
-        <h4>Build</h4>
+        ${long ? `<h4>Build</h4><div class="row"><button class="act sec" onclick="run({action:'voice',project:'${name}'})">Voice</button><button class="act blue" onclick="agentFor('${name}')">Ask agent…</button></div>` : `        <h4>Build</h4>
         <div class="row">
           <button class="act sec" onclick="run({action:'voice',project:'${name}'})">1 · Voice</button>
           <button class="act sec" onclick="run({action:'check',project:'${name}'})">2 · Check</button>
@@ -307,12 +325,14 @@ async function openProject(name) {
           <p class="muted" style="margin:8px 0 0">Sets title, description, tags, Education, not made for kids, altered content No, thumbnail and captions. <b>Post now</b> publishes publicly right away; <b>Upload + schedule</b> keeps it private until the chosen time.</p>
           <div class="chips" style="margin-top:8px"><span class="chip">After upload, in Studio → Education:</span><span class="chip y">Type: Concept overview</span><span class="chip y">Academic system: None</span><span class="chip y">Level: None</span><span class="chip y">pin the comment</span></div>
         </div>
+`}
         <h4>Script <span class="muted">(one sentence per line · re-run Voice after editing)</span></h4>
         <textarea id="script" rows="8">${esc(p.script.join('\n'))}</textarea>
         <div class="row" style="margin-top:6px"><button class="act sec" onclick="saveScript('${name}')">Save script</button></div>
         <h4>Upload sheet <span class="muted">(${name}-youtube.txt)</span></h4>
         <textarea id="sheet" rows="16" placeholder="No sheet yet. Ask the agent to write one.">${esc(p.sheet_text)}</textarea>
         <div class="row" style="margin-top:6px"><button class="act sec" onclick="saveSheet('${name}')">Save sheet</button></div>
+        ${long ? Object.entries(p.docs || {}).map(([k, t]) => `<h4>${k} <span class="muted">(read-only)</span></h4><textarea readonly rows="12">${esc(t)}</textarea>`).join('') : ''}
       </div>
     </div>`;
 }
@@ -387,51 +407,88 @@ $('#quick').innerHTML = QUICK.map(([l, t], i) => `<button class="act sec" onclic
   `<button class="act blue" onclick="show('analytics'); analyze()" title="Reads your Analytics tab, writes a report with decisions">📊 Analyze analytics</button>`;
 async function askAgent() {
   const prompt = $('#prompt').value.trim(); if (!prompt) return;
-  const j = await api('/api/agent', {method: 'POST', body: {prompt}});
+  const j = await api('/api/agent', {method: 'POST', body: {prompt, duration: $('#agentlen').value || null}});
   watch(j.id, '#agentlog');
 }
 
 // ---------- topics ----------
-let TPBATCH = null, TPPOLL = null, TOPT = [];
+let TKIND = 'short', TPPOLL = null;
+const TOPT = {short: [], long: []}, TPICK = {short: [], long: []};
+const TDESC = {
+  short: `Studies what is beating its own channel's average on other channels in your category (<span id="tpcat"></span>), then adapts the best into <b>5 original ideas</b> for you: the topic and format are borrowed, never the script or title. Pick one, answer a few questions, and the agent makes the whole video.`,
+  long: `The same study for <b>long videos</b> (4 to 40 minutes) on other channels, adapted into 5 ideas with chapters, a runtime and sources to check. <b>Researched picks</b> sit on top. A long video is prepared as a <b>script package</b> (script, sources, real chapter times, shot list, upload sheet); the 16:9 renderer is the next step.`};
+function setKind(k) {
+  TKIND = k; $('#kshort').classList.toggle('on', k === 'short'); $('#klong').classList.toggle('on', k === 'long');
+  clearInterval(TPPOLL); $('#tpstatus').textContent = ''; loadTopics();
+}
 async function loadTopics() {
-  const t = await api('/api/topics');
-  $('#tpcat').textContent = t.category || 'your category';
-  $('#tpmeta').textContent = t.fetched ? `${t.videos} Shorts from ${t.channels.length} channels · studied ${ago(t.fetched)}` : '';
+  const k = TKIND;
+  const [t, pk] = await Promise.all([api('/api/topics?kind=' + k), api('/api/topics/picks?kind=' + k)]);
+  if (k !== TKIND) return;                               // switched format while this was loading
+  TPICK[k] = pk.picks;
+  $('#tpdesc').innerHTML = TDESC[k]; if ($('#tpcat')) $('#tpcat').textContent = t.category || 'your category';
+  $('#tpmeta').textContent = t.fetched ? `${t.videos} ${k === 'short' ? 'Shorts' : 'long videos'} from ${t.channels.length} channels · studied ${ago(t.fetched)}` : '';
   $('#tprefresh').disabled = t.refreshing; $('#tprefresh').textContent = t.refreshing ? `↻ Studying… ${t.progress}` : '↻ Refresh sources';
   const e = $('#tpempty');
   e.style.display = t.videos ? 'none' : '';
-  e.innerHTML = t.videos ? '' : `<b>No source data yet.</b> Press <b>Refresh sources</b> to study ${t.channels.length} channels in your category (about a minute; public data only, no login).${t.error ? `<div style="color:#c0262d;margin-top:6px">⚠ ${esc(t.error)}</div>` : ''}`;
+  e.innerHTML = t.videos ? '' : `<b>No ${k === 'short' ? 'Shorts' : 'long-video'} source data yet.</b> Press <b>Refresh sources</b> to study ${t.channels.length} channels in your category (about a minute; public data only, no login).${t.error ? `<div style="color:#c0262d;margin-top:6px">⚠ ${esc(t.error)}</div>` : ''}`;
   $('#tpgo').disabled = !t.videos;
-  $('#tptop').innerHTML = `<tr><th>x channel median</th><th>Views</th><th>Channel</th><th>Title</th><th>Format</th></tr>` + (t.top || []).map(v => `<tr><td><b>${v.multiple}×</b></td><td>${v.views.toLocaleString()}</td><td>${esc(v.channel)}</td><td><a href="${v.url}" target="_blank">${esc(v.title)}</a></td><td>${esc(v.type)}</td></tr>`).join('');
+  $('#tptop').innerHTML = `<tr><th>x channel median</th><th>Views</th><th>Channel</th><th>Title</th><th>Format</th></tr>` + (t.top || []).map(v => `<tr><td><b>${v.multiple}×</b></td><td>${v.views.toLocaleString()}</td><td>${esc(v.channel)}</td><td><a href="${v.url}" target="_blank">${esc(v.title)}</a>${v.duration ? ` <span class="muted">${Math.round(v.duration / 60)} min</span>` : ''}</td><td>${esc(v.type)}</td></tr>`).join('');
+  drawPicks(); drawOptions();
   if (t.refreshing) setTimeout(() => $('#topics').classList.contains('on') && loadTopics(), 3000);
 }
-async function refreshSources() { await api('/api/topics/refresh', {method: 'POST'}); loadTopics(); }
-async function getIdeas(reroll) {
-  $('#tpgo').disabled = true; $('#tpreroll').disabled = true;
-  $('#tpstatus').innerHTML = '<span class="spin">⟳</span> The agent is adapting the best performers into ideas for your channel… (usually 30–90 s)';
-  let r; try { r = await api('/api/topics/options', {method: 'POST'}); } catch (e) { $('#tpgo').disabled = false; $('#tpreroll').disabled = false; $('#tpstatus').textContent = ''; return; }
-  TPBATCH = r.batch; clearInterval(TPPOLL);
+async function refreshSources() { await api('/api/topics/refresh', {method: 'POST', body: {kind: TKIND}}); loadTopics(); }
+function optionCard(o, i, src) {
+  const long = TKIND === 'long';
+  return `<div class="card opt ${src === 'pick' ? 'pick' : ''}" onclick="openWizard('${src}', ${i})">
+    ${src === 'pick' ? '<span class="n">⭐ researched</span>' : `<span class="n">#${i + 1}</span>`}<span class="chip">${esc(o.type)}</span> <span class="chip risk-${o.fact_risk}" title="${esc(o.fact_note)}">facts: ${o.fact_risk}</span>${long && o.runtime_min ? ` <span class="chip">⏱ ~${o.runtime_min} min</span>` : ''}${o.adapted ? '' : ' <span class="chip" title="the agent did not return an adapted idea">raw source</span>'}
+    <h3>${esc(o.title)}</h3>
+    ${o.promise ? `<div style="font-size:13px">${esc(o.promise)}</div>` : ''}
+    ${o.visual ? `<div class="muted" style="margin-top:6px">🎨 ${esc(o.visual)}</div>` : ''}
+    ${long && (o.chapters || []).length ? `<ul>${o.chapters.map(c => `<li>${esc(c)}</li>`).join('')}</ul>` : ''}
+    ${long && (o.reuse_shorts || []).length ? `<div class="muted" style="margin-top:6px">♻ builds on: ${o.reuse_shorts.map(esc).join(' · ')}</div>` : ''}
+    ${(o.why || []).length ? `<div style="margin-top:8px;font-size:12px"><b>Why this one</b><ul>${o.why.map(w => `<li>${esc(w)}</li>`).join('')}</ul></div>` : ''}
+    <div class="muted" style="margin-top:8px;border-top:1px dashed #ccc;padding-top:6px">Inspired by <b>${esc(o.inspired_by.channel)}</b>: “${esc(o.inspired_by.title)}”${o.inspired_by.multiple ? ` · ${o.inspired_by.multiple}× its channel's median` : ''}</div>
+    <div style="margin-top:8px"><span class="act" style="display:inline-block;font-size:12px;padding:4px 10px">${long ? 'Prepare this →' : 'Pick this →'}</span></div></div>`;
+}
+function drawPicks() {
+  const picks = TPICK[TKIND] || [];
+  $('#tppicks').innerHTML = picks.length ? `<h4 style="margin:0 0 8px">⭐ Researched pick${picks.length > 1 ? 's' : ''} <span class="muted">(checked against the data and sources; brief included)</span></h4><div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(300px,1fr))">${picks.map((o, i) => optionCard(o, i, 'pick')).join('')}</div>` : '';
+}
+function drawOptions() {
+  const o = TOPT[TKIND] || [];
+  $('#tpopts').innerHTML = o.map((x, i) => optionCard(x, i, 'opt')).join('');
+  $('#tpgo').style.display = o.length ? 'none' : ''; $('#tpreroll').style.display = o.length ? '' : 'none';
+}
+async function getIdeas() {
+  const k = TKIND, busy = on => { $('#tpgo').disabled = on; $('#tpreroll').disabled = on; };
+  busy(true);
+  const say = m => { if (k === TKIND) $('#tpstatus').innerHTML = m; };
+  say(`<span class="spin">⟳</span> The agent is adapting the best performers into ${k === 'long' ? 'long-video' : ''} ideas for your channel… (usually 30–90 s)`);
+  let r; try { r = await api('/api/topics/options', {method: 'POST', body: {kind: k}}); } catch (e) { busy(false); say(''); return; }
+  clearInterval(TPPOLL);
   TPPOLL = setInterval(async () => {
     let b;
-    try { b = await api('/api/topics/batch/' + TPBATCH, {silent: true}); }
-    catch (e) { clearInterval(TPPOLL); $('#tpstatus').textContent = 'Lost track of that request (the studio restarted?). Press the button to try again.'; $('#tpgo').disabled = false; $('#tpreroll').disabled = false; return; }
-    if (b.status === 'running') { $('#tpstatus').innerHTML = `<span class="spin">⟳</span> The agent is adapting the best performers into ideas… ${b.seconds}s`; return; }
-    clearInterval(TPPOLL); TOPT = b.options; $('#tpstatus').textContent = '';
-    $('#tpgo').style.display = 'none'; $('#tpreroll').style.display = ''; $('#tpreroll').disabled = false;
-    $('#tpopts').innerHTML = b.options.map((o, i) => `<div class="card opt" onclick="openWizard(${i})">
-      <span class="n">#${i + 1}</span><span class="chip">${esc(o.type)}</span> <span class="chip risk-${o.fact_risk}" title="${esc(o.fact_note)}">facts: ${o.fact_risk}</span>${o.adapted ? '' : ' <span class="chip" title="the agent did not return an adapted idea">raw source</span>'}
-      <h3>${esc(o.title)}</h3>
-      ${o.promise ? `<div style="font-size:13px">${esc(o.promise)}</div>` : ''}
-      ${o.visual ? `<div class="muted" style="margin-top:6px">🎨 ${esc(o.visual)}</div>` : ''}
-      <div class="muted" style="margin-top:8px;border-top:1px dashed #ccc;padding-top:6px">Inspired by <b>${esc(o.inspired_by.channel)}</b>: “${esc(o.inspired_by.title)}” · ${o.inspired_by.multiple}× its channel's median</div>
-      <div style="margin-top:8px"><span class="act" style="display:inline-block;font-size:12px;padding:4px 10px">Pick this →</span></div></div>`).join('');
+    try { b = await api('/api/topics/batch/' + r.batch, {silent: true}); }
+    catch (e) { clearInterval(TPPOLL); busy(false); say('Lost track of that request (the studio restarted?). Press the button to try again.'); return; }
+    if (b.status === 'running') { say(`<span class="spin">⟳</span> The agent is adapting the best performers into ideas… ${b.seconds}s`); return; }
+    clearInterval(TPPOLL); TOPT[k] = b.options; busy(false); say('');
+    if (k === TKIND) drawOptions();
   }, 2000);
 }
-function openWizard(i) {
-  const o = TOPT[i];
-  $('#wizbox').innerHTML = `<h2 style="margin:0 0 4px">Make this video</h2><p class="muted" style="margin:0">A few questions, then the agent writes the script, fact-checks it, draws and renders the video, and makes the thumbnail and upload sheet. You can watch it in Videos.</p>
+const LENGTH_LABEL = {30: 'About 30 seconds (~84 words) · fastest, punchy', 40: "About 40 seconds (~112 words) · the channel's usual", 50: 'About 50 seconds (~140 words)', 60: 'About 60 seconds (~168 words) · the Shorts maximum we draw'};
+const MIN_LABEL = {5: '5 minutes (~840 words)', 7: '7 minutes (~1,180 words) · the sweet spot for this style', 9: '9 minutes (~1,510 words)', 12: '12 minutes (~2,020 words)'};
+function openWizard(src, i) {
+  const long = TKIND === 'long', o = (src === 'pick' ? TPICK : TOPT)[TKIND][i];
+  const near = long ? ([5, 7, 9, 12].reduce((a, b) => Math.abs(b - (o.runtime_min || 7)) < Math.abs(a - (o.runtime_min || 7)) ? b : a)) : 40;
+  $('#wizbox').innerHTML = `<h2 style="margin:0 0 4px">${long ? 'Prepare this long video' : 'Make this video'}</h2><p class="muted" style="margin:0">${long
+      ? 'A few questions, then the agent writes the script chapter by chapter, fact-checks every claim against sources, times the chapters from the real voiceover, plans the shots and writes the upload sheet. The 16:9 renderer is not built yet, so it stops at the package. You can watch it in Videos.'
+      : 'A few questions, then the agent writes the script, fact-checks it, draws and renders the video, and makes the thumbnail and upload sheet. You can watch it in Videos.'}</p>
     <label>Title</label><input type="text" id="w_title" value="${esc(o.title)}">
-    <label>Length</label><select id="w_dur"><option value="30">About 30 seconds (~84 words) · fastest, punchy</option><option value="40" selected>About 40 seconds (~112 words) · the channel's usual</option><option value="50">About 50 seconds (~140 words)</option><option value="60">About 60 seconds (~168 words) · the Shorts maximum we draw</option></select>
+    <label>Length</label>${long
+      ? `<select id="w_min">${META.lengths.long.map(x => x / 60).map(m => `<option value="${m}" ${m === near ? 'selected' : ''}>${MIN_LABEL[m] || m + ' minutes'}</option>`).join('')}</select>`
+      : `<select id="w_dur">${META.lengths.short.map(x => `<option value="${x}" ${x === near ? 'selected' : ''}>${LENGTH_LABEL[x] || x + ' seconds'}</option>`).join('')}</select>`}
+    ${long ? `<label>Structure</label><select id="w_struct"><option ${o.type === 'Ranking' ? 'selected' : ''}>a ranked countdown, from least to most effective</option><option>one story told in chapters</option><option>a myth-busting tour: claim, test, verdict</option><option ${o.type !== 'Ranking' ? 'selected' : ''}>as in the research brief or the topic's chapters</option></select>` : ''}
     <label>Voice</label><select id="w_voice">${VOICES.map(([v, l]) => `<option value="${v}">${l}</option>`).join('')}</select>
     <label>Speaking pace <span class="muted" id="w_spv">1.0×</span></label><input type="range" id="w_speed" min="0.9" max="1.15" step="0.05" value="1" style="width:100%" oninput="$('#w_spv').textContent = this.value + '×'">
     <label>Tone</label><select id="w_tone"><option>dry and deadpan, the channel default</option><option>playful and energetic</option><option>calm and curious</option><option>dramatic and suspenseful</option></select>
@@ -440,17 +497,19 @@ function openWizard(i) {
     <div class="row" style="margin-top:12px"><label style="margin:0"><input type="checkbox" id="w_music" checked> Background music</label><label style="margin:0"><input type="checkbox" id="w_outro" checked> Channel outro (3.5 s)</label></div>
     <label>Thumbnail text <span class="muted">(optional, up to 3 words; blank = the agent chooses)</span></label><input type="text" id="w_thumb" maxlength="24" placeholder="e.g. TOO TALL?">
     <label>Anything else? <span class="muted">(optional)</span></label><textarea id="w_notes" rows="3" placeholder="e.g. keep it gentle, include the 1982 lawn chair story, avoid mentioning X"></textarea>
-    <div class="row" style="margin-top:16px; justify-content:flex-end"><button class="act sec" onclick="closeWizard()">Cancel</button><button class="act red" id="wizgo" onclick="makeVideo(${i})">🎬 Make the video</button></div>`;
+    <div class="row" style="margin-top:16px; justify-content:flex-end"><button class="act sec" onclick="closeWizard()">Cancel</button><button class="act red" id="wizgo" onclick="makeVideo('${src}', ${i})">${long ? '📝 Prepare the package' : '🎬 Make the video'}</button></div>`;
   $('#wiz').classList.add('on');
 }
 function closeWizard() { $('#wiz').classList.remove('on'); }
-async function makeVideo(i) {
-  const o = Object.assign({}, TOPT[i], {title: $('#w_title').value.trim()});
-  const answers = {duration: +$('#w_dur').value, voice: $('#w_voice').value, speed: +$('#w_speed').value, tone: $('#w_tone').value, cast: $('#w_cast').value, ending: $('#w_end').value,
-    music: $('#w_music').checked, outro: $('#w_outro').checked, thumb_text: $('#w_thumb').value.trim(), notes: $('#w_notes').value.trim()};
-  const btn = $('#wizgo'); btn.disabled = true; btn.textContent = 'Starting…';          // a second click would start a second video
-  try { await api('/api/topics/make', {method: 'POST', body: {topic: o, answers}}); closeWizard(); show('projects'); }
-  finally { btn.disabled = false; btn.textContent = '🎬 Make the video'; }
+async function makeVideo(src, i) {
+  const long = TKIND === 'long';
+  const o = Object.assign({}, (src === 'pick' ? TPICK : TOPT)[TKIND][i], {title: $('#w_title').value.trim()});
+  const answers = {voice: $('#w_voice').value, speed: +$('#w_speed').value, tone: $('#w_tone').value, cast: $('#w_cast').value, ending: $('#w_end').value,
+    music: $('#w_music').checked, outro: $('#w_outro').checked, thumb_text: $('#w_thumb').value.trim(), notes: $('#w_notes').value.trim(),
+    ...(long ? {minutes: +$('#w_min').value, structure: $('#w_struct').value} : {duration: +$('#w_dur').value})};
+  const btn = $('#wizgo'), label = btn.textContent; btn.disabled = true; btn.textContent = 'Starting…';          // a second click would start a second video
+  try { await api('/api/topics/make', {method: 'POST', body: {kind: TKIND, topic: o, answers}}); closeWizard(); show('projects'); }
+  finally { btn.disabled = false; btn.textContent = label; }
 }
 
 // ---------- analytics ----------
