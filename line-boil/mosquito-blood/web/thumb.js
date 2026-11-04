@@ -9,6 +9,7 @@ shot(0, {
       const a0 = i / 16 * TAU, a1 = (i + 1) / 16 * TAU, R = 900;
       fillDense(prep([[cx, cy], [cx + Math.cos(a0) * R, cy + Math.sin(a0) * R], [cx + Math.cos(a1) * R, cy + Math.sin(a1) * R]], true, 9000 + i, 2, 2), '#ef4b51');
     }
+    gridSafe(() => {
     shape(blobPts(cx, cy, 240, 240, 9100, 18, 0.03), PAPER, 0, 9100);
     // Kit, shocked, arm held out
     const K = poseAt([{ t: 0, x: 165, y: 800, size: 1.6, expr: 'shocked', eyes: 'wide', mouth: 'wavy', brow: -0.7, browY: -14,
@@ -25,5 +26,6 @@ shot(0, {
     // the words
     bigWord('JUST ONE', 270, 180, 104, PAPER, 9400);
     bigWord('SIP?', 270, 300, 120, YEL, 9410);
+    });
   },
 });

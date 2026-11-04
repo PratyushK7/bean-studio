@@ -25,6 +25,7 @@ shot(0, {
       const a0 = i / 16 * TAU, a1 = (i + 1) / 16 * TAU, R = 900;
       fillDense(prep([[300, 600], [300 + Math.cos(a0) * R, 600 + Math.sin(a0) * R], [300 + Math.cos(a1) * R, 600 + Math.sin(a1) * R]], true, 9000 + i, 2, 2), '#ffd966');
     }
+    gridSafe(() => {
     // the words, top third: the stakes, not the title
     bigWord('STUCK', 270, 175, 124, PAPER, 9400);
     bigWord('INSIDE?', 270, 295, 108, RED, 9410);
@@ -39,5 +40,6 @@ shot(0, {
     // a stick of gum, so there is no doubt what it is
     gumStick(440, 835, 150, 70, -0.35, 9230);
     plus(70, 460, 22, 9240); plus(490, 380, 18, 9241); plus(95, 590, 14, 9242);
+    });
   },
 });

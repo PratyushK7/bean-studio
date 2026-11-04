@@ -10,6 +10,7 @@ shot(0, {
       const a0 = i / 16 * TAU, a1 = (i + 1) / 16 * TAU, R = 900;
       fillDense(prep([[cx, cy], [cx + Math.cos(a0) * R, cy + Math.sin(a0) * R], [cx + Math.cos(a1) * R, cy + Math.sin(a1) * R]], true, 9000 + i, 2, 2), '#2a8fd0');
     }
+    gridSafe(() => {
     shape(blobPts(cx, cy, 235, 225, 9100, 18, 0.03), PAPER, 0, 9100);
     // the words
     bigWord('WASP', 270, 175, 118, PAPER, 9400);
@@ -29,6 +30,7 @@ shot(0, {
     [[110, 440, 2.2, 1], [440, 470, 2.0, -1]].forEach(([x, y, s, dir], i) => {
       speedLines(x - dir * 42 * s / 2, y, [dir, 0.15], 70, 12, 9300 + i * 10, 3);
       wasp(x, y, s, 9320 + i * 20, dir);
+    });
     });
   },
 });

@@ -9,6 +9,7 @@ shot(0, {
       const a0 = i / 16 * TAU, a1 = (i + 1) / 16 * TAU, R = 900;
       fillDense(prep([[cx, cy], [cx + Math.cos(a0) * R, cy + Math.sin(a0) * R], [cx + Math.cos(a1) * R, cy + Math.sin(a1) * R]], true, 9000 + i, 2, 2), '#ffd965');
     }
+    gridSafe(() => {
     shape(blobPts(cx, cy, 230, 260, 9100, 18, 0.03), BLUE, 0, 9100);
     // Bo, mid-growth
     const P = poseAt([{ t: 0, x: 270, y: 900, size: 3.1, expr: 'shocked', eyes: 'wide', mouth: 'o', brow: -0.7, browY: -14, arms: 'up', look: [0, -4], fx: ['take'], breathe: 0, blink: false }], 0);
@@ -23,5 +24,6 @@ shot(0, {
     // the words
     bigWord('TOO', 270, 175, 118, PAPER, 9400);
     bigWord('TALL!', 270, 290, 118, RED, 9410);
+    });
   },
 });

@@ -9,6 +9,7 @@ shot(0, {
       const a0 = i / 16 * TAU, a1 = (i + 1) / 16 * TAU, R = 900;
       fillDense(prep([[cx, cy], [cx + Math.cos(a0) * R, cy + Math.sin(a0) * R], [cx + Math.cos(a1) * R, cy + Math.sin(a1) * R]], true, 9000 + i, 2, 2), '#ff7276');
     }
+    gridSafe(() => {
     shape(blobPts(cx, cy + 20, 250, 262, 9100, 18, 0.03), PAPER, 0, 9100);
     bigWord('CLAWS?!', 270, 215, 100, YEL, 9400);
     // Kit, both hands up, every finger a huge curled nail
@@ -32,5 +33,6 @@ shot(0, {
     tube(ring, 16, RED, 9321);
     tube([[350, 835], [500, 685]], 16, RED, 9322);
     [[70, 560], [480, 470], [80, 760]].forEach(([x, y], i) => plus(x, y, 16, 9310 + i));
+    });
   },
 });
