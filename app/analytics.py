@@ -154,6 +154,8 @@ Rules:
 - Use drop_s and the retention curve to say which line or shot lost people: read the project's web/words.js or script.json to see what was said at that second, and say what to change in the next script.
 - Slot and type were inferred from publish time and the planner; if one looks wrong for a row, say so rather than trusting it.
 
+- Read the retention curve the way the yt-retention skill (~/.claude/skills/yt-retention/SKILL.md) does: a HOOK LEAK (what is lost in the first 30 seconds; under 25% is healthy), CLIFFS (single steep drops, tied to what was being said at that second) and a SLIDE (the steady bleed across the middle: pacing, fixed by cutting). Name the single biggest leak and one change for it; if the hook leak is healthy and the slide is flat, say the video is fine and the problem is packaging (yt-package).
+
 Report structure:
 # Analysis <date>
 ## What the data says (5 bullets max, each with the number)

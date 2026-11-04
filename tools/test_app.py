@@ -203,10 +203,16 @@ def test_long_topics():
     assert "LONG video (7 minutes, 16:9)" in mp and "line-boil-wide skill" in mp and "TARGET LENGTH: 420 seconds" in mp and "--target 420" in mp
     assert "RESEARCH BRIEF" in mp and str(root / "research" / "brief.md") in mp and "build.py new " in mp and " --wide" in mp and "build.py video " in mp and "ONE CHAPTER AT A TIME" in mp and "1280x720" in mp and "--voice bf_emma --speed 1.0" in mp
     evil = c3.post("/api/topics/make", json={"kind": "long", "topic": dict(pick, brief="../../outside.md"), "answers": {}}).json
+    for needle in ("hookscore.py", "{slug}-hooks.txt".replace("{slug}", m["project"]), "no channel intro", "SCENE AND SOUND PLAN", m["project"] + "-plan.md", "setScene()", "musicMood()", "yt-chapters", "3 to 5 words", "Burned-in captions: OFF"):
+        assert needle in mp, needle
+    assert "spin-off Shorts" in mp and "#shorts" in mp
     assert "RESEARCH BRIEF" not in launched[-1][-1], "a brief path outside the studio folder is ignored"
+    m2 = c3.post("/api/topics/make", json={"kind": "long", "topic": pick, "answers": {"minutes": 7, "captions": True}}).json
+    assert "Burned-in captions: ON" in launched[-1][-1] and "CAP.on = true" in launched[-1][-1]
     s = c3.post("/api/topics/make", json={"kind": "short", "topic": {"title": "A short idea"}, "answers": {"duration": 50}}).json
     sp = launched[-1][-1]
     assert "Make a new Short" in sp and "TARGET LENGTH: 50 seconds" in sp and "build.py video" in sp
+    assert "hookscore.py" in sp and "yt-script" in sp, "a Short is also opened with a scored hook"
     assert json.loads((root / "data" / "make" / f"{m['project']}.json").read_text())["kind"] == "long"
     # the Videos tab sees a long project as a package, with its own checklist and documents
     pdir = root / "proj" / m["project"]; (pdir / "script.json").write_text(json.dumps(["word " * 40]))
@@ -283,6 +289,31 @@ def test_agent_modes_and_runs():
     finally:
         server.ROOT = old_root; server._cfg.update(stamp="unset", val=None)
     ok("agent modes: feed / own window / plain command lines; the run ledger records cost; the jobs list carries progress")
+
+
+def test_spinoffs():
+    old_cfg, old_start = server.CONFIG, server.start_agent
+    root = TMP / "spin"; (root / "demo").mkdir(parents=True); (root / "nosrt").mkdir()
+    (root / "demo" / "demo.srt").write_text("1\n00:00:00,000 --> 00:00:02,000\nHello\n")
+    server.CONFIG = TMP / "cfg-spin.json"; server.CONFIG.write_text(json.dumps({"projects_dir": str(root)})); server._cfg.update(stamp="unset", val=None)
+    got = []
+    server.start_agent = lambda label, prompt, model=None, mode="plain": got.append((label, prompt, mode)) or {"id": "x", "label": label}
+    try:
+        assert c.post("/api/run", json={"action": "spinoffs", "project": "demo"}, headers=H).status_code == 200
+        label, prompt, mode = got[-1]
+        assert label == "spinoffs · demo" and mode == "feed" and "yt-shorts" in prompt and "hookscore.py" in prompt and "demo-shorts.md" in prompt and "line-boil skill" in prompt
+        assert "Do not make any video" in prompt
+        assert c.post("/api/run", json={"action": "spinoffs", "project": "nosrt"}, headers=H).status_code == 400
+        assert c.post("/api/run", json={"action": "spinoffs", "project": "../x"}, headers=H).status_code == 400
+    finally:
+        server.CONFIG, server.start_agent = old_cfg, old_start; server._cfg.update(stamp="unset", val=None)
+    ok("spin-offs: the yt-shorts skill runs on a finished long video; refused without an .srt")
+
+
+def test_analyst_uses_yt_retention():
+    src = (HERE.parent / "app" / "analytics.py").read_text(encoding="utf-8")
+    assert "yt-retention" in src and "HOOK LEAK" in src and "CLIFFS" in src and "SLIDE" in src
+    ok("analyst: reads retention with the yt-retention framing (hook leak, cliffs, slide)")
 
 
 def test_delete_and_media():

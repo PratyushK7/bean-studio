@@ -142,6 +142,46 @@ def test_shorts_unchanged():
     ok("engine: defaults are the Short's 540x960 world and 1080x1920 canvas")
 
 
+def test_captions_and_music_defaults():
+    main = (ENGINE / "web" / "main.js").read_text(encoding="utf-8")
+    assert "WIDE ? { on: false" in main and "{ on: true, y: 500" in main, "long videos have no burned-in captions by default; Shorts keep theirs"
+    assert "function musicMood(" in main and "'music:' + mood" in main
+    for f in ("web/sets.js", "tools/sound.py"): assert (ENGINE / f).exists()
+    pages = TMP / "pg"; (pages / "web").mkdir(parents=True); lb.write_pages(pages)
+    assert "engine/sets.js" in (pages / "web" / "index.html").read_text(), "the scene kit is loaded on every page"
+    assert "sets.js" in (ENGINE / "build.py").read_text() and "'sets.js'" in (ENGINE / "build.py").read_text()
+    sets = (ENGINE / "web" / "sets.js").read_text(encoding="utf-8")
+    for name in ("setSunny", "setNight", "setRoom", "setStreet", "setStage", "setDesk", "setSpace", "setBlank", "setScene"): assert f"function {name}(" in sets, name
+    ok("defaults: no burned-in captions in a long video, musicMood and the eight sets exist and are loaded")
+
+
+def test_music_moods():
+    try: import numpy as np
+    except ImportError: print("  skip  music moods (numpy not in this Python)"); return
+    sys.path.insert(0, str(ENGINE / "tools"))
+    import sound
+    assert set(sound.MOOD_NAMES) >= {"curious", "playful", "upbeat", "calm", "serious", "tense", "mystery", "triumphant", "silent"}
+    ref = sound._rms(sound.music(20))
+    cent = {}
+    for name in sound.MOODS:
+        x = sound._mood_section(name, 12, 5)
+        assert not np.isnan(x).any() and sound._rms(x) > 0, name
+        sec = x[int(2 * sound.SR):int(10 * sound.SR)]; S = np.abs(np.fft.rfft(sec * np.hanning(len(sec)))); f = np.fft.rfftfreq(len(sec), 1 / sound.SR)
+        cent[name] = float((S * f).sum() / S.sum())
+    assert max(cent.values()) > 2.5 * min(cent.values()), cent       # the moods really sound different (tense is bright, serious is low)
+    plan = [{"t": 0, "mood": "calm"}, {"t": 6, "mood": "silent"}, {"t": 9, "mood": "tense"}, {"t": 14, "mood": "no-such-mood"}]
+    y = sound.music_plan(20, plan)
+    seg = lambda a, b: sound._rms(y[int(a * sound.SR):int(b * sound.SR)])
+    assert len(y) == 20 * sound.SR and seg(8.0, 8.9) < 0.02 * seg(2, 5) and seg(10, 13) > 0.5 * ref and seg(15.5, 19) > 0.5 * ref, "silent is silent, an unknown mood falls back to curious"
+    assert 0.6 * ref < seg(2, 5) < 1.4 * ref and 0.6 * ref < seg(10, 13) < 1.4 * ref, "moods are balanced to the same loudness"
+    assert sound.music_plan(10, [{"t": 0, "mood": "silent"}]).max() == 0
+    # the default path (no plan) is the old single underscore
+    d = TMP / "mixd"; (d / "audio").mkdir(parents=True)
+    sound.write_wav(d / "audio" / "vo.wav", np.zeros(sound.SR * 4)); (d / "cues.json").write_text(json.dumps([{"t": 1, "kind": "pop"}, {"t": 0, "kind": "music:tense"}]))
+    assert sound.mix(d, 4) == 1, "music cues are not counted as sound effects"
+    ok("music: nine moods, balanced loudness, distinct sound, silence and unknown-mood handling; music cues are read from cues.json")
+
+
 def slow_end_to_end():
     """the shipped wide example: voice, chapters, stills, thumbnail, all at the right sizes"""
     kitpy = Path(sys.executable)

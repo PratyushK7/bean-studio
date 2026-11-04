@@ -92,3 +92,14 @@ youtube/
 - **Upload + schedule** and **Post now** ask for confirmation first, and the uploader refuses to upload the same project twice.
 - YouTube OAuth secrets live in `tools/.secrets/` and are git-ignored. Never commit them.
 - Until your Google API project passes YouTube's audit, API uploads are locked Private (see `tools/yt_upload.md`).
+
+## Long videos: captions, scenes, music and the yt-* skills
+
+- **No burned-in captions in a long video** (the explainer-channel standard; the `.srt` is uploaded as YouTube's own captions). The wizard has a
+  "Burned-in captions" tick if you want them anyway. Shorts keep theirs.
+- **Scenes change with the script**: `sets.js` gives eight ready sets (`setScene('night' | 'room' | 'street' | 'stage' | 'desk' | 'space' | 'sunny' | 'blank')`)
+  and the agent writes a per-chapter `<project>-plan.md` before any shot.
+- **Music follows the script**: `musicMood(t, mood)` with nine moods (curious, playful, upbeat, calm, serious, tense, mystery, triumphant, silent),
+  matched in loudness and crossfaded. `build.py check` warns if a long video has no mood changes. Shorts audio is byte-identical to before.
+- **yt-* skills now used**: yt-script (five hooks scored with hookscore.py, Shorts and long), yt-chapters (titles + cross-check), yt-package and yt-seo
+  (as before), yt-retention (the analyst's hook leak / cliffs / slide framing), yt-shorts (the "Spin-off Shorts" button on a finished long video).

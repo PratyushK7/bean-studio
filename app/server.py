@@ -295,6 +295,16 @@ def run():
     act, name = b.get("action"), b.get("project", "")
     if act == "auth":
         return jsonify(start_job("YouTube sign-in", [c["python"], c["uploader"], "auth"], str(ROOT), unique=True))
+    if act == "spinoffs":      # the yt-shorts skill on a finished long video: which moments survive alone, with new scored first lines
+        p = proj_dir(name)
+        if not (p / f"{name}.srt").exists(): abort(400, "this video has no .srt yet: build the video first")
+        prompt = (f"Use the yt-shorts skill (read ~/.claude/skills/yt-shorts/SKILL.md) on the finished long video {name}. The transcript is {p / (name + '.srt')}; the "
+                  f"chapters are {p / (name + '-chapters.txt')} and the script is {p / 'script.json'}. Find the 5 best spans of 20 to 55 seconds that survive without the video around them "
+                  "(a complete opening thought, a turn, an ending line). For each of the top 5 write: the timecodes, a NEW first line (score five options with "
+                  "~/.claude/skills/yt-script/hookscore.py and keep the best, showing the score), different on-screen text for the first two seconds, a loop point, and the title. "
+                  "These are animated cartoons, so they cannot be cropped from the 16:9 video: say which beans and set each Short would need, to be remade vertically with the line-boil skill. "
+                  f"Write it all to {p / (name + '-shorts.md')} and finish by printing the ranked list. Do not make any video and do not touch other projects.")
+        return jsonify(start_agent(f"spinoffs · {name}", prompt, c.get("options_model") or None, "feed"))
     if act not in ACTIONS or not SLUG.match(name or ""): abort(400, "bad action or project")
     tool, args = ACTIONS[act]
     cmd = [c["python"], c[tool], args[0], name] + args[1:]
