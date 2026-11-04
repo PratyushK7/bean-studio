@@ -10,7 +10,7 @@ Alternates:
 
 == THUMBNAIL ==
 File: gum-seven-years-thumbnail.png
-Text: NOPE
+Text: STUCK INSIDE?
 Still: a custom frame (not a video still): the blue bean "you" wide-eyed and open-mouthed with take lines, next to the smug red gum lump with its hands on its hips
 Brief: both faces sit in the middle band, so they survive a centre-crop to square. Flat yellow background with a paper-white blob behind the characters. NOPE sits in the top third in paper-white with a thick ink outline, so it reads at feed size. The title asks the question, the thumbnail answers it.
 

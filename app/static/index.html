@@ -76,6 +76,9 @@
   .seg button.on { background:var(--yel); }
   .opt.pick { background:#fffbe8; border-color:var(--red); }
   .opt ul { margin:6px 0 0 16px; padding:0; font-size:12px; color:var(--mute); }
+  .bar { height:12px; border:2px solid var(--ink); border-radius:999px; background:#fff; overflow:hidden; margin:10px 0 6px; }
+  .bar i { display:block; height:100%; background:var(--blue); transition:width .6s; }
+  .now { font-size:12px; color:var(--mute); min-height:34px; line-height:1.35; word-break:break-word; }
 </style>
 </head>
 <body>
@@ -176,6 +179,7 @@
   <textarea id="prompt" rows="5" placeholder="e.g. Make a new Short with the line-boil skill about why onions make you cry. Go straight through without waiting for my OK."></textarea>
   <div class="row" style="margin:10px 0"><button class="act blue" onclick="askAgent()">Run agent</button>
     <label class="muted" style="font-weight:600">Length <select id="agentlen" title="Passed to the line-boil skill as a target length"></select></label>
+    <label class="muted" style="font-weight:600"><input type="checkbox" id="agentwin"> 🪟 own window</label>
     <span class="muted">Long jobs keep running if you switch tabs.</span></div>
   <div class="log" id="agentlog"></div>
 </section>
@@ -188,6 +192,9 @@
   <div class="jobs" id="joblist"></div>
   <div class="row" style="margin-bottom:6px"><b id="jobtitle" style="font-size:13px"></b><span style="flex:1"></span><button class="act red" id="stopbtn" onclick="stopJob()" style="display:none">Stop</button></div>
   <div class="log" id="joblog"></div>
+  <h4>Agent runs <span class="muted" id="runsum"></span></h4>
+  <p class="muted" style="margin:0 0 6px">The video itself (voice, drawing, rendering) runs on your computer for free. Only the agent that writes and checks it uses Claude. The cost is Claude's own estimate at API prices: on a subscription it counts against your plan's usage instead of being billed.</p>
+  <div class="card" style="padding:0; overflow:auto"><table id="runs"></table></div>
 </section>
 
 <section id="settings" class="tab">
@@ -256,11 +263,15 @@ async function loadProjects() {
   const [ps, jobs] = await Promise.all([api('/api/projects'), api('/api/jobs')]);
   const making = jobs.filter(j => !j.done && j.label.startsWith('make · '));
   $('#count').textContent = `${ps.length} videos · ${ps.filter(p => p.ready && !p.steps.uploaded).length} ready to upload · ${ps.filter(p => p.yt && p.yt.state === 'live').length} live`;
-  const html = making.map(j => { const slug = j.label.slice(7), p = ps.find(x => x.name === slug);
+  const html = making.map(j => { const slug = j.label.slice(7), p = ps.find(x => x.name === slug), g = j.progress || {pct: 0, stage: 'Starting'};
     return `<div class="card making"><div class="ph" style="border-style:dashed"><div style="text-align:center"><div class="spin" style="font-size:28px">⟳</div><div>the agent is making<br><b>${esc(slug)}</b></div></div></div>
-      <h3>${p && p.title ? esc(p.title) : esc(slug)}</h3><div class="slug">usually 10–25 minutes · <a href="#" onclick="show('jobs');watch('${j.id}');return false">watch the log</a></div>
-      <div class="chips">${stepChips(p)}</div></div>`; }).join('') +
-  ps.map(p => `
+      <h3>${p && p.title ? esc(p.title) : esc(slug)}</h3>
+      <div class="bar"><i style="width:${g.pct}%"></i></div>
+      <div class="slug"><b>${g.pct}%</b> · ${esc(g.stage)} · ${esc(j.elapsed || '')}</div>
+      <div class="now">${j.window ? '🪟 running in its own Claude window' : '▸ ' + esc(j.activity || 'starting…')}</div>
+      <div class="chips">${stepChips(p)}</div>
+      <div style="margin-top:8px"><a href="#" onclick="show('jobs');watch('${j.id}');return false">watch every step live →</a></div></div>`; }).join('') +
+  ps.filter(p => !making.some(j => j.label.slice(7) === p.name)).map(p => `
     <div class="card proj" onclick="openProject('${p.name}')">
       ${p.steps.thumbnail ? `<img loading="lazy" src="/media/${p.name}/${p.name}-thumbnail.png?${p.modified}">` : `<div class="ph">${p.kind === 'long' ? 'long video<br>script package' : 'no thumbnail yet'}</div>`}
       <h3>${esc(p.title || p.name)}</h3>
@@ -269,9 +280,9 @@ async function loadProjects() {
         <button class="del" style="float:right" title="Delete from disk" onclick="event.stopPropagation(); deleteProject('${p.name}', ${p.yt ? "'" + p.yt.state + "'" : 'null'})">🗑 Delete</button></div>
       <div class="chips">${stepChips(p)}</div>
     </div>`).join('');
-  const sig = JSON.stringify([making.map(j => j.id), ps.map(p => [p.name, p.modified, p.title, p.yt && p.yt.state + p.yt.when, p.steps])]);
+  const sig = JSON.stringify([making.map(j => [j.id, j.progress && j.progress.pct, j.activity, j.elapsed]), ps.map(p => [p.name, p.modified, p.title, p.yt && p.yt.state + p.yt.when, p.steps])]);
   if (sig !== GRIDSIG) { GRIDSIG = sig; $('#grid').innerHTML = html; }       // only redraw when something changed (no flicker while a video is being made)
-  clearInterval(MAKEPOLL); if (making.length) MAKEPOLL = setInterval(() => { if ($('#projects').classList.contains('on') && $('#detail').style.display === 'none') loadProjects(); else clearInterval(MAKEPOLL); }, 6000);
+  clearInterval(MAKEPOLL); if (making.length) MAKEPOLL = setInterval(() => { if ($('#projects').classList.contains('on') && $('#detail').style.display === 'none') loadProjects(); else clearInterval(MAKEPOLL); }, 4000);
 }
 async function deleteProject(name, ytState) {
   const live = ytState ? `\n\nIt is ${ytState.toUpperCase()} on YouTube. Deleting here does NOT remove it from YouTube.` : '';
@@ -376,7 +387,12 @@ let CUR = null; const POLLS = {};
 async function run(body) { const j = await api('/api/run', {method: 'POST', body}); show('jobs'); watch(j.id); }
 async function loadJobs() {
   const js = await api('/api/jobs', {silent: true});
-  $('#joblist').innerHTML = js.map(j => `<div class="job ${j.id === CUR ? 'sel' : ''}" onclick="watch('${j.id}')"><span>${esc(j.label)}</span><span>${j.done ? (j.code === 0 ? '✓ done' : '✗ exit ' + j.code) : '… running'}</span></div>`).join('') || '<span class="muted">Nothing run yet.</span>';
+  api('/api/runs', {silent: true}).then(r => {
+    $('#runsum').textContent = r.count ? `${r.count} runs · about $${r.total} in total at API prices` : '';
+    $('#runs').innerHTML = `<tr><th>When</th><th>What</th><th>Time</th><th>Turns</th><th>Est. cost</th><th></th></tr>` +
+      (r.runs.length ? r.runs.map(x => `<tr><td>${esc(x.when)}</td><td>${esc(x.label)}</td><td>${Math.floor(x.secs / 60)} min ${x.secs % 60} s</td><td>${x.turns ?? ''}</td><td>$${(x.cost || 0).toFixed(2)}</td><td>${x.code === 0 ? '✓' : '✗'}</td></tr>`).join('') : '<tr><td colspan=6 class="muted" style="padding:14px">Runs appear here after the next video, idea set or agent request finishes.</td></tr>');
+  }).catch(() => {});
+  $('#joblist').innerHTML = js.map(j => `<div class="job ${j.id === CUR ? 'sel' : ''}" onclick="watch('${j.id}')"><span>${esc(j.label)}</span><span>${j.done ? (j.code === 0 ? '✓ done' : '✗ exit ' + j.code) : (j.progress ? j.progress.pct + '%' : '…') + ' running'}</span></div>`).join('') || '<span class="muted">Nothing run yet.</span>';
 }
 function watch(id, target = '#joblog', onDone) {       // each log pane has its own poller, so watching one job never cancels another's callback
   if (target === '#joblog') CUR = id;
@@ -407,7 +423,7 @@ $('#quick').innerHTML = QUICK.map(([l, t], i) => `<button class="act sec" onclic
   `<button class="act blue" onclick="show('analytics'); analyze()" title="Reads your Analytics tab, writes a report with decisions">📊 Analyze analytics</button>`;
 async function askAgent() {
   const prompt = $('#prompt').value.trim(); if (!prompt) return;
-  const j = await api('/api/agent', {method: 'POST', body: {prompt, duration: $('#agentlen').value || null}});
+  const j = await api('/api/agent', {method: 'POST', body: {prompt, duration: $('#agentlen').value || null, window: $('#agentwin').checked}});
   watch(j.id, '#agentlog');
 }
 
@@ -426,6 +442,7 @@ async function loadTopics() {
   const [t, pk] = await Promise.all([api('/api/topics?kind=' + k), api('/api/topics/picks?kind=' + k)]);
   if (k !== TKIND) return;                               // switched format while this was loading
   TPICK[k] = pk.picks;
+  if (!TOPT[k].length && pk.last.length) TOPT[k] = pk.last;          // the last five ideas are still here after a reload
   $('#tpdesc').innerHTML = TDESC[k]; if ($('#tpcat')) $('#tpcat').textContent = t.category || 'your category';
   $('#tpmeta').textContent = t.fetched ? `${t.videos} ${k === 'short' ? 'Shorts' : 'long videos'} from ${t.channels.length} channels · studied ${ago(t.fetched)}` : '';
   $('#tprefresh').disabled = t.refreshing; $('#tprefresh').textContent = t.refreshing ? `↻ Studying… ${t.progress}` : '↻ Refresh sources';
@@ -495,6 +512,9 @@ function openWizard(src, i) {
     <label>Characters</label><select id="w_cast"><option value="new">A new cast of different beans for this topic</option><option value="host">Our red host bean as the hero, plus other beans</option></select>
     <label>Ending</label><select id="w_end"><option>a punchy callback line</option><option>a question to the viewer for the comments</option><option>a teaser for the next bad idea</option></select>
     <div class="row" style="margin-top:12px"><label style="margin:0"><input type="checkbox" id="w_music" checked> Background music</label><label style="margin:0"><input type="checkbox" id="w_outro" checked> Channel outro (3.5 s)</label></div>
+    <label>Quality <span class="muted">(the video itself renders on your computer for free; this is the AI that writes and draws it)</span></label>
+    <select id="w_model"><option value="">The studio default (Settings: video_model)</option><option value="sonnet">Balanced · Sonnet: lighter on your usage, good for most Shorts</option><option value="opus">Best · Opus: strongest writing and staging, uses more</option></select>
+    <div class="row" style="margin-top:10px"><label style="margin:0"><input type="checkbox" id="w_window"> 🪟 Open in its own Claude window so I can watch every step (it may ask for permissions)</label></div>
     <label>Thumbnail text <span class="muted">(optional, up to 3 words; blank = the agent chooses)</span></label><input type="text" id="w_thumb" maxlength="24" placeholder="e.g. TOO TALL?">
     <label>Anything else? <span class="muted">(optional)</span></label><textarea id="w_notes" rows="3" placeholder="e.g. keep it gentle, include the 1982 lawn chair story, avoid mentioning X"></textarea>
     <div class="row" style="margin-top:16px; justify-content:flex-end"><button class="act sec" onclick="closeWizard()">Cancel</button><button class="act red" id="wizgo" onclick="makeVideo('${src}', ${i})">${long ? '📝 Prepare the package' : '🎬 Make the video'}</button></div>`;
@@ -506,6 +526,7 @@ async function makeVideo(src, i) {
   const o = Object.assign({}, (src === 'pick' ? TPICK : TOPT)[TKIND][i], {title: $('#w_title').value.trim()});
   const answers = {voice: $('#w_voice').value, speed: +$('#w_speed').value, tone: $('#w_tone').value, cast: $('#w_cast').value, ending: $('#w_end').value,
     music: $('#w_music').checked, outro: $('#w_outro').checked, thumb_text: $('#w_thumb').value.trim(), notes: $('#w_notes').value.trim(),
+    model: $('#w_model').value, window: $('#w_window').checked,
     ...(long ? {minutes: +$('#w_min').value, structure: $('#w_struct').value} : {duration: +$('#w_dur').value})};
   const btn = $('#wizgo'), label = btn.textContent; btn.disabled = true; btn.textContent = 'Starting…';          // a second click would start a second video
   try { await api('/api/topics/make', {method: 'POST', body: {kind: TKIND, topic: o, answers}}); closeWizard(); show('projects'); }

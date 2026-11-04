@@ -149,7 +149,7 @@ def test_upload_lock():
 
 def test_agent_duration():
     seen, orig = [], server.start_job
-    server.start_job = lambda label, cmd, cwd, unique=False: seen.append(cmd[-1]) or {"id": "x", "label": label}
+    server.start_job = lambda label, cmd, cwd, unique=False, **kw: seen.append(cmd[-1]) or {"id": "x", "label": label}
     try:
         assert c.post("/api/agent", json={"prompt": "Make a Short about onions", "duration": 50}, headers=H).status_code == 200
         p = seen[-1]
@@ -193,6 +193,9 @@ def test_long_topics():
     o = c3.get(f"/api/topics/batch/{r['batch']}").json["options"]
     assert len(o) == 5 and o[0]["runtime_min"] == 7 and o[1]["runtime_min"] == 15 and o[0]["fact_risk"] == "medium" and o[2]["type"] == "Other"
     assert len(o[0]["chapters"]) == 9 and o[0]["reuse_shorts"] == []
+    last = c3.get("/api/topics/picks?kind=long").json
+    assert [x["title"] for x in last["last"]] == [x["title"] for x in o] and last["last_when"], "the last five ideas persist for the next visit"
+    assert c3.get("/api/topics/picks?kind=short").json["last"] == []
     pick = c3.get("/api/topics/picks?kind=long").json["picks"][0]
     m = c3.post("/api/topics/make", json={"kind": "long", "topic": pick, "answers": {"minutes": 7, "voice": "bf_emma", "structure": "ranked", "speed": "x"}}).json
     mp = launched[-1][-1]
@@ -219,6 +222,65 @@ def test_long_topics():
     finally:
         server.ROOT, server.CONFIG = old_root, old_cfg; server._cfg.update(stamp="unset", val=None)
     ok("topics (long): separate pool, picks with brief, sanitised ideas, package prompt, safe brief path, long project view")
+
+
+def test_live_feed_and_progress():
+    import agentlog
+    job, ev = {}, lambda **k: json.dumps(k)
+    assert "Agent started" in agentlog.parse(ev(type="system", subtype="init", model="claude-sonnet-5-5"), job)[0]
+    out = agentlog.parse(ev(type="assistant", message={"content": [{"type": "tool_use", "name": "Bash", "input": {"command": "python build.py voice demo --target 40"}}]}), job)
+    assert out == ["▸ Recording the voiceover and timing every word"] and job["steps"] == 1 and job["activity"].startswith("Recording")
+    assert agentlog.parse(ev(type="assistant", message={"content": [{"type": "tool_use", "name": "Read", "input": {"file_path": "C:\\x\\SKILL.md"}}]}), job) == ["▸ Reading SKILL.md"]
+    assert agentlog.parse(ev(type="assistant", message={"content": [{"type": "text", "text": "Writing the   script now"}]}), job) == ["💬 Writing the script now"]
+    assert agentlog.parse(ev(type="user", message={"content": [{"type": "tool_result", "is_error": True, "content": "boom"}]}), job) == ["✗ boom"]
+    res = agentlog.parse(ev(type="result", is_error=False, duration_ms=125000, num_turns=20, total_cost_usd=0.1234, result="All done", usage={"output_tokens": 900}), job)
+    assert "Finished after 2 min 5 s and 20 turns, about $0.12" in res[0] and res[1] == "All done" and job["cost"] == 0.1234
+    assert agentlog.parse("plain text line", job) == ["plain text line"] and agentlog.parse("   ", job) == []
+    proj = TMP / "prog" / "vid"; assert agentlog.make_progress(proj)["pct"] == 0
+    proj.mkdir(parents=True); (proj / "web").mkdir(); (proj / "audio").mkdir()
+    (proj / "script.json").write_text(json.dumps(["word " * 40])); g = agentlog.make_progress(proj)
+    assert g["pct"] == 10 and g["stage"] == "Recording the voiceover"
+    (proj / "audio" / "words.json").write_text("[]"); (proj / "web" / "shots.js").write_text("x" * 900); (proj / "web" / "cast.js").write_text("y" * 400)
+    assert agentlog.make_progress(proj)["pct"] == 50 and agentlog.make_progress(proj)["stage"] == "Checking the pictures"
+    for f in ("vid.mp4", "vid.srt", "vid-thumbnail.png", "vid-youtube.txt"): (proj / f).write_text("z")
+    g = agentlog.make_progress(proj); assert g["pct"] == 100 and g["stage"] == "All done", g     # no stills folder: still reaches 100
+    lp = TMP / "prog" / "lng"; lp.mkdir(); (lp / "script.json").write_text(json.dumps(["word " * 80]))
+    assert agentlog.make_progress(lp, "long")["pct"] == 20
+    ok("agent feed: steps in plain words, cost captured; progress comes from real files and skipped stages don't stall it")
+
+
+def test_agent_modes_and_runs():
+    import agentlog
+    calls, orig = [], server.start_job
+    server.start_job = lambda label, cmd, cwd, unique=False, parser=None, window=False: calls.append((cmd, parser, window)) or {"id": "x", "label": label}
+    try:
+        server.start_agent("t", "PROMPT", "opus", "feed"); cmd, parser, window = calls[-1]
+        assert cmd[-1] == "PROMPT" and "-p" in cmd and cmd[cmd.index("--model") + 1] == "opus" and cmd[-4:-1] == ["--output-format", "stream-json", "--verbose"] and parser is agentlog.parse and not window
+        server.start_agent("t", "PROMPT", None, "window"); cmd, parser, window = calls[-1]
+        assert window and "-p" not in cmd and cmd[-1] == "PROMPT" and "--model" not in cmd and "--permission-mode" in cmd
+        server.start_agent("t", "PROMPT", "sonnet", "plain"); cmd, parser, window = calls[-1]
+        assert parser is None and "--output-format" not in cmd and cmd[-1] == "PROMPT"
+    finally: server.start_job = orig
+    # a finished run lands in the ledger with its cost
+    old_root = server.ROOT; server.ROOT = TMP / "ledger"
+    try:
+        script = ("import json;print(json.dumps({'type':'assistant','message':{'content':[{'type':'tool_use','name':'WebSearch','input':{'query':'x'}}]}}));"
+                  "print(json.dumps({'type':'result','is_error':False,'duration_ms':3000,'num_turns':3,'total_cost_usd':0.05,'result':'ok','usage':{'output_tokens':321}}))")
+        j = server.start_job("make · vid", [sys.executable, "-c", script], str(TMP), parser=agentlog.parse)
+        for _ in range(60):
+            if j["done"]: break
+            time.sleep(0.1)
+        assert j["activity"] == "Finished" and j["steps"] == 1 and j["log"][0] == "▸ Searching the web: x"
+        r = c.get("/api/runs", headers=H).json
+        assert r["count"] == 1 and r["runs"][0]["cost"] == 0.05 and r["runs"][0]["turns"] == 3 and r["runs"][0]["output_tokens"] == 321 and r["total"] == 0.05
+        # the jobs list shows a video being made with its progress
+        server.CONFIG = TMP / "cfg-prog.json"; server.CONFIG.write_text(json.dumps({"projects_dir": str(TMP / "prog")})); server._cfg.update(stamp="unset", val=None)
+        sj = server.start_job("make · vid", [sys.executable, "-c", "import time;time.sleep(1.5)"], str(TMP))
+        v = next(x for x in c.get("/api/jobs", headers=H).json if x["id"] == sj["id"])
+        assert v["progress"]["pct"] == 100 and v["kind"] == "short" and "elapsed" in v and v["window"] is False
+    finally:
+        server.ROOT = old_root; server._cfg.update(stamp="unset", val=None)
+    ok("agent modes: feed / own window / plain command lines; the run ledger records cost; the jobs list carries progress")
 
 
 def test_delete_and_media():

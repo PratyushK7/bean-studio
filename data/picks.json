@@ -42,13 +42,13 @@
       "brief": "research/long-form-topic/brief-money-bugs.md"
     },
     {
-      "title": "7 Mosquito Bite Hacks That Don't Work (And What Does)",
+      "title": "7 Mosquito Hacks, Tested Against the Science",
       "type": "Ranking",
-      "promise": "Seven popular ways to stop mosquito bites, ranked from useless to almost-works, each tested against a real study; then the three boring things that actually work.",
-      "visual": "Kit the blue bean tries every hack while Moz the mosquito holds up a score card; each bad idea gets its own gag prop.",
+      "promise": "Seven popular ways to stop mosquito bites, each checked against a real study, ranked from no effect to partly works; then the three boring things that actually do.",
+      "visual": "Kit the blue bean tries every hack while Moz the mosquito holds up a score card; each hack gets its own gag prop.",
       "runtime_min": 7,
       "chapters": [
-        "Seven things that don't work",
+        "Seven hacks, one verdict each",
         "Why mosquitoes pick you",
         "1-7. Garlic, vitamin B, ultrasonic apps, wristbands, bug zappers, mosquito plants, citronella candles",
         "What actually works: repellent, a fan, tipping out water",
@@ -69,7 +69,7 @@
       "why": [
         "Demand next door: TED-Ed's 'why mosquitoes bite some people more' has 2.2M views; MinuteEarth's mosquito-magnet video is 8.1x its channel median.",
         "A real gap: the best result for 'mosquito repellent myths science' has 54k views and the median result 471.",
-        "It is our format: a ranked list of bad ideas, each a myth test.",
+        "It is a practical, funny myth test: seven hacks, one verdict each, and what to do instead.",
         "It reuses Moz and the mosquito Short."
       ],
       "inspired_by": {

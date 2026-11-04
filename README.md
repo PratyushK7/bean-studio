@@ -32,6 +32,19 @@ money, tech, history, psychology, how things work, everyday life), told by a cas
 | **Activity** | Live logs of everything running, with a Stop button. YouTube sign-in and upload status live here. |
 | **Settings** | `config.json`: paths, posting slots, the agent command, the port, hidden folders. |
 
+## Watching the agent, and what it costs
+
+- **A video being made shows a progress bar** on its card in Videos: the percentage comes from the files the agent has really
+  produced (script, voiceover, shots, stills, video, captions, thumbnail, sheet), plus the stage, the time so far and the agent's
+  latest step in plain words ("Recording the voiceover", "Searching the web: ..."). **Watch every step live** opens the full feed in Activity.
+- **Own window:** tick **🪟 Open in its own Claude window** in the wizard or the Agent tab (or set `agent_window` in Settings) and the
+  agent runs as a normal interactive Claude Code session you can read and answer. The progress bar still works.
+- **What uses Claude, and what doesn't:** the agent that writes the script, fact-checks, writes the drawing code and checks the pictures
+  uses Claude. Everything else (voice, word timing, drawing and rendering the frames, ffmpeg, yt-dlp, YouTube's API) runs on your computer
+  for free. Activity keeps a ledger of agent runs with Claude's own cost estimate at API prices (on a subscription it counts against your
+  plan's usage instead of being billed). Pick **Quality** per video (Sonnet is lighter, Opus strongest). Stills are checked from one contact
+  sheet instead of ten separate images.
+
 ## Folder layout
 
 ```

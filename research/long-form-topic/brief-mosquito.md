@@ -1,4 +1,5 @@
-# Long-form #1: "7 Mosquito Bite Hacks That Don't Work (And What Does)"
+# Long-form: "7 Mosquito Hacks, Tested Against the Science"
+(Working title; the earlier "7 Mosquito Bite Hacks That Don't Work (And What Does)" linted at 98/100.)
 
 Researched 4 Nov 2026. Format: ranked myth-test, ~7 to 8 minutes, landscape 16:9, hand-drawn line-boil style.
 Title linted with yt-package: 53 characters, score 98/100, subject survives the mobile cut. Thumbnail words (different from the title): **NOPE**.
@@ -12,7 +13,7 @@ Title linted with yt-package: 53 characters, score 98/100, subject survives the 
 
 **2. A real gap on the exact angle.** Searching YouTube for "mosquito repellent myths science" (25 results, yt-dlp, 4 Nov): the best direct result is a 54k-view garden channel ("I Tested 11 Mosquito Plants"), then 22k, 8.6k and 7.5k. Median results: 471 views. Nobody has made a polished, animated, ranked "what doesn't work and why" explainer that also tells you what does.
 
-**3. It is our format.** The channel is "bad ideas, explained with real science". Folk remedies are literally bad ideas. The ranked-list and myth-test formats are already two of our 13 types, and they ranked well in the study (Mark Rober "Are Bananas Actually Slippery?" 10.6x, SciShow "Ranking Ridiculous Exoplanets" 13.3x on Shorts).
+**3. It is our format.** It is a practical, funny myth test: folk remedies checked against real studies. The ranked-list and myth-test formats are already two of our 13 types, and they ranked well in the study (Mark Rober "Are Bananas Actually Slippery?" 10.6x, SciShow "Ranking Ridiculous Exoplanets" 13.3x on Shorts).
 
 **4. It reuses what exists.** Moz the mosquito, the blue bean and the red host from the mosquito Short; the spin-off Shorts below.
 

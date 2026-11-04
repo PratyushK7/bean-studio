@@ -65,6 +65,11 @@ What was found, what was fixed, what was simplified, and what could be added nex
 - **Still to build for long videos:** a 16:9 mode in the line-boil engine (canvas, world size, captions, camera, thumbnail size),
   then the same wizard renders the video instead of stopping at the package.
 
+- **Live agent view:** progress bar from real files, readable step feed, optional own Claude window, run ledger with cost,
+  per-video Quality choice, one contact sheet of stills instead of ten image reads.
+- **Thumbnails:** the skill now requires the subject object to be drawn large (subject test) and text that points at the topic or its
+  stakes (text test); the gum, cola and nails thumbnails were redrawn.
+
 ## Known limits (not bugs)
 
 - YouTube's API has no "Viewed vs swiped away" metric, so Engaged % (engaged views / views) stands in for it.

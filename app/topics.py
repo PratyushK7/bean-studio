@@ -71,8 +71,15 @@ def kind_of(v):
     return v if v in KINDS else "short"
 
 
-def register(app, ROOT, cfg, start_job, JOBS):
+def register(app, ROOT, cfg, start_job, JOBS, start_agent=None):
     DATA = ROOT / "data"
+
+    def run_agent(label, prompt, model=None, mode="plain"):
+        """the studio's start_agent (live feed / own window); a plain job when none is given (tests)"""
+        if start_agent: return start_agent(label, prompt, model, mode)
+        cmd = list(cfg()["agent_command"]) + (["--model", model] if model else [])
+        return start_job(label, cmd + [prompt], cfg()["agent_cwd"])
+
     POOL = {"short": DATA / "topic-pool.json", "long": DATA / "topic-pool-long.json"}
     STATEF, PICKS = DATA / "topic-state.json", DATA / "picks.json"
     st = {k: {"refreshing": False, "progress": "", "error": None} for k in KINDS}
@@ -189,6 +196,7 @@ def register(app, ROOT, cfg, start_job, JOBS):
                              "inspired_by": {"title": c["title"], "channel": c["channel"], "multiple": c["multiple"], "url": c["url"]}, "adapted": False})
         for i, o in enumerate(good[:5]): o["n"] = i
         b["options"], b["status"] = good[:5], "ready"
+        save_json(DATA / f"topic-last-{b['kind']}.json", {"options": good[:5], "when": dt.datetime.now().isoformat(timespec="seconds")})   # shown again on the next visit
 
     @app.get("/api/topics")
     def topics_get():
@@ -205,7 +213,8 @@ def register(app, ROOT, cfg, start_job, JOBS):
         """hand-researched topics (data/picks.json), shown above the generated ideas"""
         kind = kind_of(request.args.get("kind"))
         picks = (load_json(PICKS, {}) or {}).get(kind, [])
-        return jsonify(picks=[dict(p, n=i, pick=True, adapted=True) for i, p in enumerate(picks)])
+        last = load_json(DATA / f"topic-last-{kind}.json", {}) or {}
+        return jsonify(picks=[dict(p, n=i, pick=True, adapted=True) for i, p in enumerate(picks)], last=last.get("options", []), last_when=last.get("when"))
 
     @app.post("/api/topics/refresh")
     def topics_refresh():
@@ -252,9 +261,7 @@ Pick FIVE different candidates and adapt each into an ORIGINAL topic for our cha
 Write a JSON array of exactly 5 objects to {out} and nothing else on disk. Each object:
 {what[3]}
 Do not use any other tool than reading that file and writing that file. When done, also print the same JSON array as your final message."""
-        cmd = list(c["agent_command"])
-        if c.get("options_model"): cmd += ["--model", c["options_model"]]
-        j = start_job(f"topics · 5 {kind} ideas", cmd + [prompt], c["agent_cwd"])
+        j = run_agent(f"topics · 5 {kind} ideas", prompt, c.get("options_model") or None, "plain")
         b = {"id": bid, "kind": kind, "job": j["id"], "out": str(out), "status": "running", "candidates": cands, "options": [], "started": time.time()}
         st["batches"][bid] = b
         state[skey] = list(seen | {x["id"] for x in cands})[-400:]
@@ -339,7 +346,7 @@ IMPORTANT: the line-boil engine renders 9:16 Shorts only, so do NOT run build.py
 Do not upload anything and do not touch other projects. Finish by printing the folder, the real voiceover length, the chapters and anything that could not be verified."""
         (DATA / "make").mkdir(parents=True, exist_ok=True)
         save_json(DATA / "make" / f"{slug}.json", {"kind": kind, "topic": t, "answers": a, "when": dt.datetime.now().isoformat(timespec="seconds")})
-        cmd = list(c["agent_command"])
-        if c.get("video_model"): cmd += ["--model", c["video_model"]]
-        j = start_job(f"make · {slug}", cmd + [prompt], c["agent_cwd"])
-        return jsonify(job=j["id"], project=slug, title=title, kind=kind)
+        mode = "window" if (a.get("window") or c.get("agent_window")) else "feed"      # watch it live, or in its own Claude window
+        model = a.get("model") if a.get("model") in ("opus", "sonnet", "haiku") else (c.get("video_model") or None)
+        j = run_agent(f"make · {slug}", prompt, model, mode)
+        return jsonify(job=j["id"], project=slug, title=title, kind=kind, mode=mode)

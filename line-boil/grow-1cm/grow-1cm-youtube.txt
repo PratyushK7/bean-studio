@@ -1,0 +1,52 @@
+YOUTUBE UPLOAD SHEET: grow-1cm
+Video: grow-1cm.mp4 (about 64 s with the 3.5 s outro, 9:16 Short)    Captions: grow-1cm.srt    Thumbnail: grow-1cm-thumbnail.png
+
+== TITLE ==
+What If You Grew 1cm Every Second?
+
+Alternates:
+- What If You Grew 1cm Every Second for a Day?  (score 100)
+- What Happens If You Grow 1cm Every Second?  (score 100)
+
+== THUMBNAIL ==
+File: grow-1cm-thumbnail.png
+Text: TOO TALL!
+Still: Bo, the tall red bean, mid-growth with wide eyes and an "o" mouth, tiny blue trousers stuck at his ankles, Pip the tiny blue sceptic glancing up at him.
+Brief: Flat yellow sunburst with a blue blob behind Bo so the red body pops at feed size. Two growth arrows either side. Words in the top third: TOO in paper, TALL! in red. Face sits in the middle band, so it survives the square crop.
+
+== DESCRIPTION ==
+What if you grew one centimetre every single second? Here is how tall you would be after a minute, an hour, a day and a few months, and what would go wrong first.
+A centimetre a second is about 36 metres an hour. Your bones would give out long before the Moon.
+
+The short answer: at one centimetre a second you pass the tallest human on record (Robert Wadlow, 2.72 m) in under two minutes, pass the Burj Khalifa (828 m) in under a day and Everest (8,849 m) in about ten days. The catch is that double your height and your weight goes up eight times while your bones get only about four times stronger, so past roughly three metres you would probably collapse. Pretend your body keeps up and your head reaches the edge of space (100 km) in about four months and the Moon (384,400 km) in roughly twelve hundred years. Your trousers would not keep up.
+
+Sources:
+- https://www.guinnessworldrecords.com/world-records/tallest-man-ever
+- https://www.britannica.com/place/Mount-Everest
+- https://www.burjkhalifa.ae/en/the-tower/facts-and-figures/
+- https://www.britannica.com/place/Karman-line
+- https://science.nasa.gov/moon/facts/
+- https://en.wikipedia.org/wiki/Square%E2%80%93cube_law
+
+#shorts #whatif #science
+
+== TAGS ==
+what if you grew 1cm every second, what if you kept growing, how tall would you be, growing one centimetre a second, how fast would you grow, tallest man ever, Robert Wadlow height, square cube law, why giants cannot exist, how tall is the Burj Khalifa, how tall is Mount Everest, edge of space, distance to the Moon, what if explained, funny science explainer
+
+== TARGET SEARCH QUERIES ==
+1. what if you grew 1 cm every second
+2. how tall would you be if you kept growing
+3. why can't humans grow giant (square cube law)
+
+== PINNED COMMENT ==
+Which bad idea should Bo try next: growing one centimetre a second, or shrinking one? 🫘
+
+== SETTINGS ==
+Audience: Not made for kids (the user's call; this is the usual choice for a general science Short)
+Category: Education
+Language / caption language: English
+Subtitles: upload grow-1cm.srt (Subtitles > Upload file > With timing)
+Altered or synthetic content: No (an animated cartoon; the voice is TTS narration, not a real person)
+Education fields (Studio only, the upload API can't set them): Type = Concept overview; Academic system = None (remove the country);
+  Level = None; Exam, course or standard = None; Problems = empty
+Visibility: user's call

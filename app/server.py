@@ -10,7 +10,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 from flask import Flask, jsonify, request, send_from_directory, abort
 
-import planner, store
+import agentlog, planner, store
 
 APP = Path(__file__).resolve().parent
 ROOT = APP.parent                                      # the youtube folder
@@ -36,6 +36,7 @@ DEFAULTS = {
                        "CleoAbram", "TheOdd1sOut", "JaidenAnimations", "Nerdwriter1", "ColdFusion"],   # explainer channels across genres the Topics tab studies
     "options_model": "sonnet",          # model that adapts outliers into 5 ideas
     "video_model": "opus",              # model that makes the video (the hard creative part)
+    "agent_window": False,              # True: every video the agent makes opens in its own visible Claude window
 }
 SLUG = re.compile(r"^[a-z0-9][a-z0-9-]{0,60}$")
 HHMM = re.compile(r"^([01]\d|2[0-3]):[0-5]\d$")
@@ -105,8 +106,9 @@ def body():
 JOBS = {}
 MAX_LOG, KEEP_JOBS = 4000, 40
 
-def start_job(label, cmd, cwd, unique=False):
-    """runs cmd in the background. unique=True returns the job already running under the same label instead of starting a second"""
+def start_job(label, cmd, cwd, unique=False, parser=None, window=False):
+    """runs cmd in the background. unique=True returns the job already running under the same label instead of starting a second.
+    parser(line, job) turns raw output lines into log lines (the agent feed); window=True opens the command in its own console window"""
     if unique:
         same = next((j for j in JOBS.values() if j["label"] == label and not j["done"]), None)
         if same: return same
@@ -118,29 +120,77 @@ def start_job(label, cmd, cwd, unique=False):
     def run():
         env = dict(os.environ, PYTHONUTF8="1", PYTHONIOENCODING="utf-8", BEAN_PROJECTS_DIR=cfg()["projects_dir"])
         try:
-            p = subprocess.Popen(cmd, cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL,
-                                 text=True, encoding="utf-8", errors="replace", env=env)
-            job["pid"] = p.pid
-            for line in p.stdout:
-                job["log"].append(line.rstrip("\n"))
-                if len(job["log"]) > MAX_LOG:
-                    del job["log"][:500]; job["dropped"] += 500
-            job["code"] = p.wait()
+            if window:      # its own console window: you watch (and can answer) the real Claude session
+                p = subprocess.Popen(cmd, cwd=cwd, env=env, creationflags=subprocess.CREATE_NEW_CONSOLE)
+                job.update(pid=p.pid, window=True, activity="Running in its own Claude window")
+                job["log"].append("▸ Opened in its own Claude window. Watch it there; it stays open when it finishes, so close it (or type /exit) afterwards.")
+                job["code"] = p.wait()
+            else:
+                p = subprocess.Popen(cmd, cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL,
+                                     text=True, encoding="utf-8", errors="replace", env=env)
+                job["pid"] = p.pid
+                for line in p.stdout:
+                    for text in (parser(line, job) if parser else [line.rstrip("\n")]):
+                        job["log"].append(text)
+                    if len(job["log"]) > MAX_LOG:
+                        del job["log"][:500]; job["dropped"] += 500
+                job["code"] = p.wait()
         except Exception as e:
             job["log"].append(f"[could not start] {e}"); job["code"] = -1
+        job["ended"] = time.time()
+        try: record_run(job)
+        except Exception: pass
         job["done"] = True
     threading.Thread(target=run, daemon=True).start()
     return job
 
+
+def record_run(job):
+    """keeps a small ledger of agent runs (time, steps, Claude's own cost estimate) so the cost of a video is visible"""
+    if job.get("cost") is None: return
+    f = ROOT / "data" / "runs.json"
+    with store.lock_for(f):
+        runs = store.read(f, []) or []
+        u = job.get("usage") or {}
+        runs.append({"when": time.strftime("%Y-%m-%d %H:%M"), "label": job["label"], "secs": round(job["ended"] - job["started"]), "turns": job.get("turns"),
+                     "cost": round(job["cost"], 4), "output_tokens": u.get("output_tokens"), "code": job.get("code")})
+        store.write(f, runs[-200:])
+
+@app.get("/api/runs")
+def runs():
+    rs = store.read(ROOT / "data" / "runs.json", []) or []
+    return jsonify(runs=rs[-30:][::-1], total=round(sum(r.get("cost") or 0 for r in rs), 2), count=len(rs))
+
+
+def start_agent(label, prompt, model=None, mode="plain"):
+    """one place that builds the agent's command line. mode: "plain" (output as is), "feed" (live readable steps),
+    "window" (its own visible Claude window, interactive)"""
+    c = cfg()
+    if mode == "window":
+        cmd = [x for x in c["agent_command"] if x != "-p"] + (["--model", model] if model else []) + [prompt]   # interactive: no -p
+        return start_job(label, cmd, c["agent_cwd"], window=True)
+    cmd = list(c["agent_command"]) + (["--model", model] if model else [])
+    if mode == "feed": cmd += ["--output-format", "stream-json", "--verbose"]
+    return start_job(label, cmd + [prompt], c["agent_cwd"], parser=agentlog.parse if mode == "feed" else None)
+
+def job_view(j):
+    v = {k: j[k] for k in ("id", "label", "done", "code", "started")}
+    v.update(activity=j.get("activity"), window=bool(j.get("window")), steps=j.get("steps", 0))
+    if j["label"].startswith("make · "):         # a video being made: how far along it is, from the files it has produced
+        slug = j["label"][7:]
+        kind = (store.read(ROOT / "data" / "make" / f"{slug}.json", {}) or {}).get("kind", "short")
+        v.update(progress=agentlog.make_progress(Path(cfg()["projects_dir"]) / slug, kind), elapsed=agentlog.clock((time.time() if not j["done"] else j.get("ended", time.time())) - j["started"]), kind=kind)
+    return v
+
 @app.get("/api/jobs")
 def jobs():
-    return jsonify([{k: j[k] for k in ("id", "label", "done", "code", "started")} for j in sorted(JOBS.values(), key=lambda j: -j["started"])][:30])
+    return jsonify([job_view(j) for j in sorted(JOBS.values(), key=lambda j: -j["started"])][:30])
 
 @app.get("/api/jobs/<jid>")
 def job(jid):
     j = JOBS.get(jid) or abort(404, "that job is gone (the studio restarted?)")
     since = int(request.args.get("since", 0))
-    return jsonify({"id": jid, "label": j["label"], "done": j["done"], "code": j["code"],
+    return jsonify({"id": jid, "label": j["label"], "done": j["done"], "code": j["code"], "activity": j.get("activity"), "window": bool(j.get("window")),
                     "log": j["log"][max(0, since - j["dropped"]):], "n": j["dropped"] + len(j["log"])})
 
 @app.post("/api/jobs/<jid>/stop")
@@ -266,7 +316,8 @@ def agent():
         except (TypeError, ValueError): abort(400, "duration must be a number of seconds")
         if not 20 <= seconds <= 1800: abort(400, "duration must be between 20 seconds and 30 minutes")
         prompt += "\n\n" + topics.length_instructions(seconds)
-    return jsonify(start_job("agent · " + prompt[:50], list(c["agent_command"]) + [prompt], c["agent_cwd"]))
+    mode = "window" if (b.get("window") or c.get("agent_window")) else "feed"
+    return jsonify(start_agent("agent · " + prompt[:50], prompt, mode=mode))
 
 
 # ---------- schedule: YouTube is the truth, the planner only fills in what is still to come ----------
@@ -315,7 +366,7 @@ def open_planner():
 import analytics, ytstate, topics   # noqa: E402
 analytics.register(app, ROOT, cfg, start_job)
 refresh_youtube = ytstate.register(app, ROOT, cfg)      # live posted / scheduled / private state for every tab
-topics.register(app, ROOT, cfg, start_job, JOBS)        # topic selector + the "make this video" job
+topics.register(app, ROOT, cfg, start_job, JOBS, start_agent)   # topic selector + the "make this video" job
 
 
 # ---------- settings and housekeeping ----------
