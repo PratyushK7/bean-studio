@@ -46,7 +46,10 @@ DEFAULTS = {
         "ColdFusion", "Fireship", "Computerphile", "TwoMinutePapers", "Mrwhosetheboss", "Techquickie", "MKBHD", "ThomasFrank", "CleoAbram", "Nerdwriter1", "TomScottGo", "LegalEagle", "dhruvrathee", "DailyDoseOfInternet",
     ],
     "options_model": "sonnet",          # model that adapts outliers into 5 ideas
-    "video_model": "opus",              # model that makes the video (the hard creative part)
+    "thumbnail_model": "opus",          # the thumbnail is the biggest lever on clicks: ideas and drawing both use Opus
+    "video_model": "",                  # one model for every video; empty = use the per-format defaults below
+    "video_model_short": "sonnet",      # a Short is a short script, ~10 shots: Sonnet is enough
+    "video_model_long": "opus",         # a long video is 100+ sentences and 70+ shots with sourced facts: Opus's extra care pays off
     "agent_window": False,              # True: every video the agent makes opens in its own visible Claude window
 }
 SLUG = re.compile(r"^[a-z0-9][a-z0-9-]{0,60}$")
@@ -78,7 +81,7 @@ def validate_config(new):
     if not isinstance(new, dict): return ["settings must be a JSON object { ... }"]
     kinds = {"port": int, "open_browser": bool, "projects_dir": str, "planner": str, "python": str, "engine": str, "uploader": str,
              "agent_command": list, "agent_cwd": str, "slots": dict, "channel": str, "hide_projects": list,
-             "analytics_sync_hours": (int, float), "topic_category": str, "topic_channels": list, "options_model": str, "video_model": str}
+             "analytics_sync_hours": (int, float), "topic_category": str, "topic_channels": list, "options_model": str, "video_model": str, "video_model_short": str, "video_model_long": str, "thumbnail_model": str}
     errs = [f'"{k}" has the wrong type' for k, t in kinds.items() if k in new and (not isinstance(new[k], t) or (t is not bool and isinstance(new[k], bool)))]
     if errs: return errs
     if "agent_command" in new and (not new["agent_command"] or not all(isinstance(x, str) for x in new["agent_command"])):
@@ -388,7 +391,9 @@ def open_planner():
 import analytics, ytstate, topics   # noqa: E402
 analytics.register(app, ROOT, cfg, start_job)
 refresh_youtube = ytstate.register(app, ROOT, cfg)      # live posted / scheduled / private state for every tab
-topics.register(app, ROOT, cfg, start_job, JOBS, start_agent)   # topic selector + the "make this video" job
+topics.register(app, ROOT, cfg, start_job, JOBS, start_agent)
+import thumbs
+thumbs.register(app, ROOT, cfg, start_agent, proj_dir, JOBS)   # five thumbnail ideas, then the picked one drawn (Opus)   # topic selector + the "make this video" job
 
 
 # ---------- settings and housekeeping ----------

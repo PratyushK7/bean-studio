@@ -318,6 +318,7 @@ async function openProject(name) {
           <button class="act sec" onclick="run({action:'check',project:'${name}'})">2 · Check</button>
           <button class="act" onclick="run({action:'video',project:'${name}'})">3 · Build video</button>
           <button class="act sec" onclick="run({action:'thumb',project:'${name}'})">4 · Thumbnail</button>
+          <button class="act red" title="Five new thumbnail ideas built on different click triggers; pick one and it is drawn (Opus)" onclick="thumbIdeas('${name}')">🖼 Better thumbnail</button>
           <button class="act sec" onclick="run({action:'sheet',project:'${name}'})">Contact sheet</button>${long && p.steps.video ? `<button class="act blue" title="yt-shorts: which moments survive alone, with new scored first lines" onclick="run({action:'spinoffs',project:'${name}'})">✂ Spin-off Shorts</button>` : ''}${long ? `<button class="act sec" onclick="run({action:'chapters',project:'${name}'})">Chapters</button>` : ''}
           <button class="act blue" onclick="agentFor('${name}')">Ask agent…</button>
         </div>
@@ -516,7 +517,7 @@ function openWizard(src, i) {
     ${long ? `<div class="row" style="margin-top:12px"><label style="margin:0"><input type="checkbox" id="w_caps"> Burned-in captions <span class="muted">(not the long-form standard: YouTube's own captions come from the uploaded .srt)</span></label></div>` : ''}
     <div class="row" style="margin-top:12px"><label style="margin:0"><input type="checkbox" id="w_music" checked> Background music <span class="muted">(follows the script's mood)</span></label><label style="margin:0"><input type="checkbox" id="w_outro" checked> Channel outro (3.5 s)</label></div>
     <label>Quality <span class="muted">(the video itself renders on your computer for free; this is the AI that writes and draws it)</span></label>
-    <select id="w_model"><option value="">The studio default (Settings: video_model)</option><option value="sonnet">Balanced · Sonnet: lighter on your usage, good for most Shorts</option><option value="opus">Best · Opus: strongest writing and staging, uses more</option></select>
+    <select id="w_model"><option value="">The studio default (Sonnet for Shorts, Opus for long videos)</option><option value="sonnet">Balanced · Sonnet: lighter on your usage, good for most Shorts</option><option value="opus">Best · Opus: strongest writing and staging, uses more</option></select>
     <div class="row" style="margin-top:10px"><label style="margin:0"><input type="checkbox" id="w_window"> 🪟 Open in its own Claude window so I can watch every step (it may ask for permissions)</label></div>
     <label>Thumbnail text <span class="muted">(optional, up to 3 words; blank = the agent chooses)</span></label><input type="text" id="w_thumb" maxlength="24" placeholder="e.g. TOO TALL?">
     <label>Anything else? <span class="muted">(optional)</span></label><textarea id="w_notes" rows="3" placeholder="e.g. keep it gentle, include the 1982 lawn chair story, avoid mentioning X"></textarea>
@@ -534,6 +535,41 @@ async function makeVideo(src, i) {
   const btn = $('#wizgo'), label = btn.textContent; btn.disabled = true; btn.textContent = 'Starting…';          // a second click would start a second video
   try { await api('/api/topics/make', {method: 'POST', body: {kind: TKIND, topic: o, answers}}); closeWizard(); show('projects'); }
   finally { btn.disabled = false; btn.textContent = label; }
+}
+
+// ---------- a better thumbnail: five ideas, pick one, it is drawn (Opus) ----------
+let THPOLL;
+function drawThumbIdeas(name, ideas) {
+  window.THIDEAS = ideas;
+  $('#wizbox').innerHTML = `<h2 style="margin:0 0 4px">Pick a thumbnail</h2><p class="muted" style="margin:0 0 10px">Best first. The old thumbnail is kept as <code>${name}-thumbnail-prev.png</code>. Nothing is uploaded.</p>` + ideas.map((o, k) => `
+    <div class="card" style="margin-bottom:10px"><div class="row" style="justify-content:space-between"><b>${k + 1}. ${esc(o.name)}</b><span class="chip">${esc(o.trigger)}</span></div>
+      ${o.words ? `<div style="font-size:22px;font-weight:800;margin:6px 0">“${esc(o.words)}”</div>` : ''}
+      <div>${esc(o.concept)}</div><div class="muted" style="margin-top:4px"><b>Why it clicks:</b> ${esc(o.why)}</div>${o.risk ? `<div class="muted"><b>Watch out:</b> ${esc(o.risk)}</div>` : ''}
+      <div class="row" style="justify-content:flex-end;margin-top:8px"><button class="act red" onclick="thumbMake('${name}', ${k})">Draw this one</button></div></div>`).join('') +
+    `<div class="row" style="justify-content:flex-end"><button class="act sec" onclick="closeThumb()">Close</button><button class="act sec" title="Throw these away and analyse again for five new ideas (Opus)" onclick="thumbIdeas('${name}', true)">↻ Reroll</button></div>`;
+}
+async function thumbIdeas(name, reroll = false) {
+  const box = $('#wizbox'); $('#wiz').classList.add('on');
+  if (!reroll) {                                                              // already analysed: show the saved five, don't start another run
+    box.innerHTML = '<p class="muted"><span class="spin">⟳</span> Opening…</p>';
+    const saved = await api(`/api/thumbnail/ideas/${name}`, {silent: true}).catch(() => null);
+    if (saved && saved.ideas && saved.ideas.length) { drawThumbIdeas(name, saved.ideas); return; }
+  }
+  box.innerHTML = `<h2 style="margin:0 0 4px">A better thumbnail</h2><p class="muted" id="thstatus"><span class="spin">⟳</span> Opus is studying the script and the current thumbnail, then writing five ideas built on different click triggers… (usually 1–2 minutes)</p><div class="row" style="justify-content:flex-end"><button class="act sec" onclick="closeThumb()">Cancel</button></div>`;
+  let r; try { r = await api('/api/thumbnail/ideas', {method: 'POST', body: {project: name}}); } catch (e) { closeWizard(); return; }
+  clearInterval(THPOLL);
+  THPOLL = setInterval(async () => {
+    let b; try { b = await api(`/api/thumbnail/ideas/${name}?job=${r.job}`, {silent: true}); } catch (e) { clearInterval(THPOLL); $('#thstatus').textContent = 'Lost track of that request. Close this and try again.'; return; }
+    if (b.status === 'running') return;
+    clearInterval(THPOLL);
+    if (!b.ideas.length) { box.innerHTML = `<h2 style="margin:0 0 4px">A better thumbnail</h2><p>The agent did not produce usable ideas (your earlier ideas, if any, are kept).</p><div class="row" style="justify-content:flex-end"><button class="act sec" onclick="closeThumb()">Close</button><button class="act" onclick="thumbIdeas('${name}')">Open saved / try again</button></div>`; return; }
+    drawThumbIdeas(name, b.ideas);
+  }, 2500);
+}
+function closeThumb() { clearInterval(THPOLL); closeWizard(); }
+async function thumbMake(name, k) {
+  const j = await api('/api/thumbnail/make', {method: 'POST', body: {project: name, idea: window.THIDEAS[k]}});
+  closeWizard(); show('jobs'); watch(j.id);
 }
 
 // ---------- analytics ----------

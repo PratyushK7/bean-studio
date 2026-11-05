@@ -348,6 +348,6 @@ Do not upload anything and do not touch other projects. Finish by printing the p
         (DATA / "make").mkdir(parents=True, exist_ok=True)
         save_json(DATA / "make" / f"{slug}.json", {"kind": kind, "topic": t, "answers": a, "when": dt.datetime.now().isoformat(timespec="seconds")})
         mode = "window" if (a.get("window") or c.get("agent_window")) else "feed"      # watch it live, or in its own Claude window
-        model = a.get("model") if a.get("model") in ("opus", "sonnet", "haiku") else (c.get("video_model") or None)
+        model = a.get("model") if a.get("model") in ("opus", "sonnet", "haiku") else (c.get("video_model") or c.get(f"video_model_{kind}") or None)
         j = run_agent(f"make · {slug}", prompt, model, mode)
         return jsonify(job=j["id"], project=slug, title=title, kind=kind, mode=mode)
