@@ -214,7 +214,7 @@ def test_long_topics():
     assert "Make a new Short" in sp and "TARGET LENGTH: 50 seconds" in sp and "build.py video" in sp
     assert "hookscore.py" in sp and "yt-script" in sp, "a Short is also opened with a scored hook"
     assert json.loads((root / "data" / "make" / f"{m['project']}.json").read_text())["kind"] == "long"
-    assert server.DEFAULTS["video_model_short"] == "sonnet" and server.DEFAULTS["video_model_long"] == "opus" and not server.DEFAULTS["video_model"]
+    assert server.DEFAULTS["video_model_short"] == "opus" and server.DEFAULTS["video_model_long"] == "opus" and not server.DEFAULTS["video_model"]
     # the Videos tab sees a long project as a package, with its own checklist and documents
     pdir = root / "proj" / m["project"]; (pdir / "script.json").write_text(json.dumps(["word " * 40]))
     (pdir / f"{m['project']}-sources.md").write_text("claim | link"); (pdir / f"{m['project']}-youtube.txt").write_text("== TITLE ==\nA long title\n")

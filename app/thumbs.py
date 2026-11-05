@@ -1,5 +1,5 @@
-"""Bean Studio: a better thumbnail for a finished video, in two steps, both on Opus (the thumbnail is the biggest lever on clicks).
-  1. POST /api/thumbnail/ideas {project}   an agent reads the video's script, title and current thumbnail and writes FIVE different
+"""Bean Studio: a better thumbnail for a finished video, in two steps, both on Opus for a long video and on Sonnet only for a Short.
+  1. POST /api/thumbnail/ideas {project}   an agent reads the video's script, title and current thumbnail and writes THREE different
                                            thumbnail ideas, each built on a different click trigger; GET /api/thumbnail/ideas/<project> reads them.
   2. POST /api/thumbnail/make {project, idea}   the picked idea is drawn (web/thumb.js), rendered, checked at feed size, fixed, and saved
                                            (the old one is kept as <project>-thumbnail-prev.png). Nothing is uploaded."""
@@ -30,7 +30,8 @@ def words_of(v):
 
 
 def register(app, ROOT, cfg, start_agent, proj_dir, JOBS):
-    def model():
+    def model(wide):
+        if not wide: return cfg().get("thumbnail_model_short") or "sonnet"      # a Short's thumbnail: Sonnet only, ideas and drawing
         return cfg().get("thumbnail_model") or "opus"
 
     def ideas_file(p): return p / f"{p.name}-thumb-ideas.json"          # the saved five (what the button shows)
@@ -52,7 +53,7 @@ def register(app, ROOT, cfg, start_agent, proj_dir, JOBS):
             ideas.append({"name": clean(o.get("name"), 60) or "Idea", "trigger": o.get("trigger") if o.get("trigger") in TRIGGERS else "Curiosity",
                           "words": words_of(o.get("words")), "concept": clean(o.get("concept")), "subject": clean(o.get("subject"), 120),
                           "face": clean(o.get("face"), 120), "why": clean(o.get("why")), "risk": clean(o.get("risk"))})
-        return ideas[:5]
+        return ideas[:3]
 
     def harvest(p, jobs):
         """a finished batch that nobody collected (the window was closed): the agent's side file, else what it printed, else nothing"""
@@ -81,7 +82,7 @@ def register(app, ROOT, cfg, start_agent, proj_dir, JOBS):
 
 Read: {p / 'script.json'} (the whole voiceover), {p / (name + '-youtube.txt')} (title and current thumbnail brief; title now: "{title_of(p) or 'unknown'}"), {p / (name + '-sources.md')} if it exists, {p / 'web' / 'cast.js'} (the characters and props we can draw), {p / 'web' / 'thumb.js'} (the current thumbnail code) and, if it exists yet, look at the current picture {p / (name + '-thumbnail.png')} (a long video has none until this runs). Also read the thumbnail rules in {ENGINE_SKILL}/SKILL.md (step 9) and, for a long video, {ENGINE_SKILL.replace('line-boil', 'line-boil-wide')}/references/wide.md ("16:9 thumbnails").
 
-First, in two lines, say honestly what is WRONG with the current thumbnail if there is one (does a stranger know what the video is about in one second? is there one clear subject? is there a reason to click?), or what the thumbnail must achieve for this topic if there is none. Then write FIVE different thumbnail ideas for a {size}.
+First, in two lines, say honestly what is WRONG with the current thumbnail if there is one (does a stranger know what the video is about in one second? is there one clear subject? is there a reason to click?), or what the thumbnail must achieve for this topic if there is none. Then write THREE different thumbnail ideas for a {size}.
 
 The goal: a viewer scrolling at feed size (about 246 px wide) knows EXACTLY what the video is about in one second, and feels they want the answer. The model to copy is a TED-Ed thumbnail: big plain lettering "HOW DOES CAFFEINE KEEP US AWAKE?" with one big character yawning in a chair beside a mug. Nothing is cryptic. Rules:
 - THE WORDS STATE THE TOPIC, OUTRIGHT. The on-image text is the title's key words in plain language, 2 to 6 words (a question is best), with the topic noun biggest and in the strongest colour. Repeating the title is wanted. Cover the picture: the words alone must say exactly what the video is about. A teaser that hides the topic ("3 PM TO MIDNIGHT", "NOPE", a bare number) is a FAIL.
@@ -89,14 +90,14 @@ The goal: a viewer scrolling at feed size (about 246 px wide) knows EXACTLY what
 - ONE strong, readable emotion on that character, exaggerated.
 - Add the hook on top of the topic, never instead of it: phrase the words as the question the viewer wants answered, or add a short stake word ("...AT NIGHT?", "...WITHOUT KNOWING?"), but only a promise this video pays off honestly (no lies, no fake numbers).
 - Flat high-contrast palette colours, a clean background, nothing important in the bottom-right corner (the duration badge) or in the bottom 15%.
-- The five ideas differ in the picture and the hook angle, each on a DIFFERENT trigger from: {', '.join(TRIGGERS)}; all five name the topic in their words. At least one leans on fear or loss the video honestly delivers on, at least one on curiosity.
+- The three ideas differ in the picture and the hook angle, each on a DIFFERENT trigger from: {', '.join(TRIGGERS)}; all three name the topic in their words. At least one leans on fear or loss the video honestly delivers on, at least one on curiosity.
 
 Be unbiased and strict: rank them by how likely a stranger is to click AND feel the video delivered, best first.
 
-Write a JSON array of exactly 5 objects to {out} and nothing else on disk (no other file changes). Each object:
+Write a JSON array of exactly 3 objects to {out} and nothing else on disk (no other file changes). Each object:
 {{"name": "3 to 6 word label", "trigger": one of the triggers, "words": "the on-image text: the title's key words naming the topic, 2 to 6 words", "concept": "the whole picture in two sentences: what is drawn, where, doing what", "subject": "the one big object", "face": "which bean, what expression", "why": "one sentence: what makes a stranger click and why the video pays it off", "risk": "one sentence: how this could mislead or fail, and how it is avoided"}}
 Do not use any other tool than reading files and writing that one file. When done, print the same JSON array as your final message."""
-        j = start_agent(label_of(name), prompt, model(), "plain")
+        j = start_agent(label_of(name), prompt, model(wide), "plain")
         return jsonify(job=j["id"], project=name)
 
     @app.get("/api/thumbnail/ideas/<name>")
@@ -147,5 +148,5 @@ How:
    Fix and re-render until all three pass (at most 5 rounds). Be strict.
 4. In {p / (name + '-youtube.txt')} update the THUMBNAIL section (File:, Text:, Still:, Brief:) to match what you drew (replace a "Not made yet" line); the title linter's "thumbnail repeats the title" flag is intentionally ignored. Change nothing else in that file.
 5. Finish by printing the final text, what is drawn, and the result of each of the three tests, honestly (say so if one still fails)."""
-        j = start_agent(f"thumb · {name}", prompt, model(), "feed")
+        j = start_agent(f"thumb · {name}", prompt, model(wide), "feed")
         return jsonify(job=j["id"], project=name)

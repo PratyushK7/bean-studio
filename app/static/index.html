@@ -127,8 +127,8 @@
   <div id="tppicks" style="margin-bottom:16px"></div>
   <div class="grid" id="tpopts" style="grid-template-columns:repeat(auto-fill,minmax(300px,1fr))"></div>
   <div class="row" style="margin:18px 0; justify-content:center">
-    <button class="act blue" id="tpgo" onclick="getIdeas()">✨ Get 5 ideas</button>
-    <button class="act" id="tpreroll" onclick="getIdeas()" style="display:none">🎲 Re-roll: 5 new ideas</button>
+    <button class="act blue" id="tpgo" onclick="getIdeas()">✨ Get 3 ideas</button>
+    <button class="act" id="tpreroll" onclick="getIdeas()" style="display:none">🎲 Re-roll: 3 new ideas</button>
   </div>
   <div id="tpstatus" class="muted" style="text-align:center"></div>
   <h4>Top performers it is learning from</h4>
@@ -239,11 +239,30 @@ function fillLengths() {           // the Agent tab's Length option: what you pi
     `<optgroup label="Short (9:16)">${L.short.map(x => `<option value="${x}">${x} seconds</option>`).join('')}</optgroup>` +
     `<optgroup label="Long video (16:9)">${L.long.map(x => `<option value="${x}">${x / 60} minutes</option>`).join('')}</optgroup>`;
 }
-async function initMeta() { await checkMeta(); setInterval(checkMeta, 60000); }
-async function checkMeta() {
+async function initMeta() { await checkMeta(true); setInterval(checkMeta, 60000); }
+let RESTARTING = false;
+async function restartStudio() {          // start.bat restarts the server on exit code 3; wait for the new copy, then reload the page
+  if (RESTARTING) return; RESTARTING = true;
+  const was = META && META.started;
+  $('#stale').textContent = '↻ Restarting Bean Studio with the new code…'; $('#stale').style.display = '';
+  try { await fetch('/api/restart', {method: 'POST'}); } catch (e) {}
+  for (let i = 0; i < 60; i++) {
+    await new Promise(r => setTimeout(r, 1000));
+    try { const m = await (await fetch('/api/meta')).json(); if (m.started !== was) return location.reload(); } catch (e) {}
+  }
+  RESTARTING = false; $('#stale').textContent = '⚠ The restart did not come back. Close the console window and run start.bat again.';
+}
+async function checkMeta(onLoad) {
   const m = await api('/api/meta', {silent: true}).catch(() => null); if (!m) return;
   if (!META) { META = m; TYPES = m.types; VOICES = m.voices; fillLengths(); if (m.config_problem) toast('⚠ ' + m.config_problem, 15000); }
-  $('#stale').style.display = m.current > m.started + 1 ? '' : 'none';
+  const stale = m.current > m.started + 1;
+  if (RESTARTING) return;
+  $('#stale').style.display = stale ? '' : 'none';
+  if (!stale) return;
+  if (m.restartable) {
+    $('#stale').innerHTML = '⚠ The studio\'s code changed after it started. <button class="act" onclick="restartStudio()">↻ Restart now</button>' + (m.busy ? ' <span class="muted">(a job is running: it would be stopped)</span>' : '');
+    if (onLoad === true && !m.busy) restartStudio();             // a page refresh picks up the new code by itself, unless a job would be cut off
+  }
 }
 let CFG = {};
 document.querySelectorAll('nav button').forEach(b => b.onclick = () => show(b.dataset.tab));
@@ -318,7 +337,7 @@ async function openProject(name) {
           <button class="act sec" onclick="run({action:'check',project:'${name}'})">2 · Check</button>
           <button class="act" onclick="run({action:'video',project:'${name}'})">3 · Build video</button>
           <button class="act sec" onclick="run({action:'thumb',project:'${name}'})">4 · Thumbnail</button>
-          <button class="act red" title="Five new thumbnail ideas built on different click triggers; pick one and it is drawn (Opus)" onclick="thumbIdeas('${name}')">🖼 Better thumbnail</button>
+          <button class="act red" title="Three new thumbnail ideas built on different click triggers; pick one and it is drawn (Sonnet for Shorts, Opus for long videos)" onclick="thumbIdeas('${name}')">🖼 Better thumbnail</button>
           <button class="act sec" onclick="run({action:'sheet',project:'${name}'})">Contact sheet</button>${long && p.steps.video ? `<button class="act blue" title="yt-shorts: which moments survive alone, with new scored first lines" onclick="run({action:'spinoffs',project:'${name}'})">✂ Spin-off Shorts</button>` : ''}${long ? `<button class="act sec" onclick="run({action:'chapters',project:'${name}'})">Chapters</button>` : ''}
           <button class="act blue" onclick="agentFor('${name}')">Ask agent…</button>
         </div>
@@ -434,8 +453,8 @@ async function askAgent() {
 let TKIND = 'short', TPPOLL = null;
 const TOPT = {short: [], long: []}, TPICK = {short: [], long: []};
 const TDESC = {
-  short: `Studies what is beating its own channel's average on other channels in your category (<span id="tpcat"></span>), then adapts the best into <b>5 original ideas</b> for you: the topic and format are borrowed, never the script or title. Pick one, answer a few questions, and the agent makes the whole video.`,
-  long: `The same study for <b>long videos</b> (4 to 40 minutes) on other channels, adapted into 5 ideas with chapters, a runtime and sources to check. <b>Researched picks</b> sit on top. A long video is made end to end in <b>16:9</b> with the line-boil-wide skill: sourced script, chapters timed from the real voiceover, the animation, a 1280×720 thumbnail and the upload sheet.`};
+  short: `Studies what is beating its own channel's average on other channels in your category (<span id="tpcat"></span>), then adapts the best into <b>3 original ideas</b> for you: the topic and format are borrowed, never the script or title. Pick one, answer a few questions, and the agent makes the whole video.`,
+  long: `The same study for <b>long videos</b> (4 to 40 minutes) on other channels, adapted into 3 ideas with chapters, a runtime and sources to check. <b>Researched picks</b> sit on top. A long video is made end to end in <b>16:9</b> with the line-boil-wide skill: sourced script, chapters timed from the real voiceover, the animation, a 1280×720 thumbnail and the upload sheet.`};
 function setKind(k) {
   TKIND = k; $('#kshort').classList.toggle('on', k === 'short'); $('#klong').classList.toggle('on', k === 'long');
   clearInterval(TPPOLL); $('#tpstatus').textContent = ''; loadTopics();
@@ -519,7 +538,7 @@ function openWizard(src, i) {
     <label>Quality <span class="muted">(the video itself renders on your computer for free; this is the AI that writes and draws it)</span></label>
     <select id="w_model"><option value="">The studio default (Sonnet for Shorts, Opus for long videos)</option><option value="sonnet">Balanced · Sonnet: lighter on your usage, good for most Shorts</option><option value="opus">Best · Opus: strongest writing and staging, uses more</option></select>
     <div class="row" style="margin-top:10px"><label style="margin:0"><input type="checkbox" id="w_window"> 🪟 Open in its own Claude window so I can watch every step (it may ask for permissions)</label></div>
-    ${long ? `<p class="muted" style="margin:12px 0 0">🖼 The thumbnail is made afterwards, from the <b>Better thumbnail</b> button on the finished video: five ideas, you pick one.</p><input type="hidden" id="w_thumb" value="">` : `<label>Thumbnail text <span class="muted">(optional, up to 3 words; blank = the agent chooses)</span></label><input type="text" id="w_thumb" maxlength="24" placeholder="e.g. TOO TALL?">`}
+    ${long ? `<p class="muted" style="margin:12px 0 0">🖼 The thumbnail is made afterwards, from the <b>Better thumbnail</b> button on the finished video: three ideas, you pick one.</p><input type="hidden" id="w_thumb" value="">` : `<label>Thumbnail text <span class="muted">(optional, up to 3 words; blank = the agent chooses)</span></label><input type="text" id="w_thumb" maxlength="24" placeholder="e.g. TOO TALL?">`}
     <label>Anything else? <span class="muted">(optional)</span></label><textarea id="w_notes" rows="3" placeholder="e.g. keep it gentle, include the 1982 lawn chair story, avoid mentioning X"></textarea>
     <div class="row" style="margin-top:16px; justify-content:flex-end"><button class="act sec" onclick="closeWizard()">Cancel</button><button class="act red" id="wizgo" onclick="makeVideo('${src}', ${i})">${long ? '🎬 Make the long video' : '🎬 Make the video'}</button></div>`;
   $('#wiz').classList.add('on');
@@ -537,7 +556,7 @@ async function makeVideo(src, i) {
   finally { btn.disabled = false; btn.textContent = label; }
 }
 
-// ---------- a better thumbnail: five ideas, pick one, it is drawn (Opus) ----------
+// ---------- a better thumbnail: three ideas, pick one, it is drawn (Sonnet for Shorts, Opus for long) ----------
 let THPOLL;
 function drawThumbIdeas(name, ideas) {
   window.THIDEAS = ideas;
@@ -546,7 +565,7 @@ function drawThumbIdeas(name, ideas) {
       ${o.words ? `<div style="font-size:22px;font-weight:800;margin:6px 0">“${esc(o.words)}”</div>` : ''}
       <div>${esc(o.concept)}</div><div class="muted" style="margin-top:4px"><b>Why it clicks:</b> ${esc(o.why)}</div>${o.risk ? `<div class="muted"><b>Watch out:</b> ${esc(o.risk)}</div>` : ''}
       <div class="row" style="justify-content:flex-end;margin-top:8px"><button class="act red" onclick="thumbMake('${name}', ${k})">Draw this one</button></div></div>`).join('') +
-    `<div class="row" style="justify-content:flex-end"><button class="act sec" onclick="closeThumb()">Close</button><button class="act sec" title="Throw these away and analyse again for five new ideas (Opus)" onclick="thumbIdeas('${name}', true)">↻ Reroll</button></div>`;
+    `<div class="row" style="justify-content:flex-end"><button class="act sec" onclick="closeThumb()">Close</button><button class="act sec" title="Throw these away and analyse again for three new ideas" onclick="thumbIdeas('${name}', true)">↻ Reroll</button></div>`;
 }
 async function thumbIdeas(name, reroll = false) {
   const box = $('#wizbox'); $('#wiz').classList.add('on');
@@ -555,7 +574,7 @@ async function thumbIdeas(name, reroll = false) {
     const saved = await api(`/api/thumbnail/ideas/${name}`, {silent: true}).catch(() => null);
     if (saved && saved.ideas && saved.ideas.length) { drawThumbIdeas(name, saved.ideas); return; }
   }
-  box.innerHTML = `<h2 style="margin:0 0 4px">A better thumbnail</h2><p class="muted" id="thstatus"><span class="spin">⟳</span> Opus is studying the script and the current thumbnail, then writing five ideas built on different click triggers… (usually 1–2 minutes)</p><div class="row" style="justify-content:flex-end"><button class="act sec" onclick="closeThumb()">Cancel</button></div>`;
+  box.innerHTML = `<h2 style="margin:0 0 4px">A better thumbnail</h2><p class="muted" id="thstatus"><span class="spin">⟳</span> The agent is studying the script and the current thumbnail, then writing three ideas built on different click triggers… (usually 1–2 minutes)</p><div class="row" style="justify-content:flex-end"><button class="act sec" onclick="closeThumb()">Cancel</button></div>`;
   let r; try { r = await api('/api/thumbnail/ideas', {method: 'POST', body: {project: name}}); } catch (e) { closeWizard(); return; }
   clearInterval(THPOLL);
   THPOLL = setInterval(async () => {

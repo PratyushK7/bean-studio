@@ -2,6 +2,10 @@
 rem Bean Studio: double-click to start. Sets itself up the first time, and again whenever requirements.txt changes
 rem (for example after a git pull adds a package).
 cd /d "%~dp0"
+rem The studio exits with code 3 when the page asks it to restart (after the code changed): this loop starts it again,
+rem re-checking requirements.txt first.
+set BEAN_AUTORESTART=1
+:run
 if not exist ".venv\Scripts\python.exe" (
   echo Setting up Bean Studio for the first time...
   python -m venv .venv || (echo Python 3.10+ is needed: https://www.python.org/downloads/ & pause & exit /b 1)
@@ -17,4 +21,5 @@ if not "%REQHASH%"=="%OLDHASH%" (
   >".venv\req.hash" echo %REQHASH%
 )
 ".venv\Scripts\python.exe" app\server.py
+if %errorlevel%==3 goto run
 if errorlevel 1 pause

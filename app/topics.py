@@ -189,14 +189,14 @@ def register(app, ROOT, cfg, start_job, JOBS, start_agent=None):
                     try: o["runtime_min"] = int(min(15, max(4, float(o.get("runtime_min") or 7))))
                     except (TypeError, ValueError): o["runtime_min"] = 7
                 o["adapted"] = True; good.append(o)
-        if len(good) < 5:                         # fill up (or replace) with the raw outliers, clearly marked
+        if len(good) < 3:                         # fill up (or replace) with the raw outliers, clearly marked
             for c in b["candidates"]:
-                if len(good) >= 5: break
+                if len(good) >= 3: break
                 good.append({"title": c["title"], "type": c["type"], "promise": "", "visual": "", "fact_risk": "medium", "fact_note": "",
                              "inspired_by": {"title": c["title"], "channel": c["channel"], "multiple": c["multiple"], "url": c["url"]}, "adapted": False})
-        for i, o in enumerate(good[:5]): o["n"] = i
-        b["options"], b["status"] = good[:5], "ready"
-        save_json(DATA / f"topic-last-{b['kind']}.json", {"options": good[:5], "when": dt.datetime.now().isoformat(timespec="seconds")})   # shown again on the next visit
+        for i, o in enumerate(good[:3]): o["n"] = i
+        b["options"], b["status"] = good[:3], "ready"
+        save_json(DATA / f"topic-last-{b['kind']}.json", {"options": good[:3], "when": dt.datetime.now().isoformat(timespec="seconds")})   # shown again on the next visit
 
     @app.get("/api/topics")
     def topics_get():
@@ -232,7 +232,7 @@ def register(app, ROOT, cfg, start_job, JOBS, start_agent=None):
         skey = "seen" if kind == "short" else "seen_long"
         seen = set(state.get(skey, [])); made = already_made()
         cands = pick_candidates(pool["videos"], seen, made)
-        if len(cands) < 5: abort(400, f"only {len(cands)} usable source videos out of {len(pool['videos'])} (after removing topics you already made); refresh sources or add more channels in Settings")
+        if len(cands) < 3: abort(400, f"only {len(cands)} usable source videos out of {len(pool['videos'])} (after removing topics you already made); refresh sources or add more channels in Settings")
         bid = uuid.uuid4().hex[:8]
         out = DATA / f"topic-options-{bid}.json"
         cfile = DATA / f"topic-candidates-{bid}.json"
@@ -250,18 +250,18 @@ def register(app, ROOT, cfg, start_job, JOBS, start_agent=None):
 
 Read {cfile}. "candidates" are {what[1]} from other channels that beat their own channel's median views by the "multiple" shown. "already_made_titles" are topics we have made or planned: never repeat or closely echo them.
 
-Pick FIVE different candidates and adapt each into an ORIGINAL topic for our channel. Borrow the topic area and the video format only: never copy a title, a script or a distinctive phrase. Rules:
-- 5 different video types (from {TYPES}); at most one "What if". Title in the channel voice: a plain question or claim, under 60 characters, no hype words, no all caps.
+Pick THREE different candidates and adapt each into an ORIGINAL topic for our channel. Borrow the topic area and the video format only: never copy a title, a script or a distinctive phrase. Rules:
+- 3 different video types (from {TYPES}); at most one "What if". Title in the channel voice: a plain question or claim, under 60 characters, no hype words, no all caps.
 - Every topic must be tellable by a cast of different beans (one bean per idea or role, so abstract ideas are welcome), funny without being silly (the joke lives in the picture and the last line), and {what[2]}.
-- Vary the GENRE across the five (do not make all five science), and prefer topics where the viewer learns something they can use or explain to a friend.
+- Vary the GENRE across the three (do not make all three science), and prefer topics where the viewer learns something they can use or explain to a friend.
 - "Bad ideas" is only the channel's name: do not force a bad-idea framing onto every topic.
 - Only topics whose facts you are confident about, or flag the risk honestly.
 - Prefer the highest "multiple", but variety beats ranking.
 
-Write a JSON array of exactly 5 objects to {out} and nothing else on disk. Each object:
+Write a JSON array of exactly 3 objects to {out} and nothing else on disk. Each object:
 {what[3]}
 Do not use any other tool than reading that file and writing that file. When done, also print the same JSON array as your final message."""
-        j = run_agent(f"topics · 5 {kind} ideas", prompt, c.get("options_model") or None, "plain")
+        j = run_agent(f"topics · 3 {kind} ideas", prompt, c.get("options_model") or None, "plain")
         b = {"id": bid, "kind": kind, "job": j["id"], "out": str(out), "status": "running", "candidates": cands, "options": [], "started": time.time()}
         st["batches"][bid] = b
         state[skey] = list(seen | {x["id"] for x in cands})[-400:]

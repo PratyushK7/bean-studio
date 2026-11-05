@@ -46,10 +46,11 @@ DEFAULTS = {
         "ColdFusion", "Fireship", "Computerphile", "TwoMinutePapers", "Mrwhosetheboss", "Techquickie", "MKBHD", "ThomasFrank", "CleoAbram", "Nerdwriter1", "TomScottGo", "LegalEagle", "dhruvrathee", "DailyDoseOfInternet",
     ],
     "options_model": "sonnet",          # model that adapts outliers into 5 ideas
-    "thumbnail_model": "opus",          # the thumbnail is the biggest lever on clicks: ideas and drawing both use Opus
+    "thumbnail_model": "opus",          # a long video's thumbnail is the biggest lever on clicks: ideas and drawing both use Opus
+    "thumbnail_model_short": "sonnet",  # a Short's better thumbnail (ideas and drawing) uses Sonnet only
     "video_model": "",                  # one model for every video; empty = use the per-format defaults below
-    "video_model_short": "sonnet",      # a Short is a short script, ~10 shots: Sonnet is enough
-    "video_model_long": "opus",         # a long video is 100+ sentences and 70+ shots with sourced facts: Opus's extra care pays off
+    "video_model_short": "opus",        # Opus for every video: the user saw a visible quality gap with Sonnet
+    "video_model_long": "opus",         # Opus for every video (long ones also have 100+ sentences and 70+ shots with sourced facts)
     "agent_window": False,              # True: every video the agent makes opens in its own visible Claude window
 }
 SLUG = re.compile(r"^[a-z0-9][a-z0-9-]{0,60}$")
@@ -405,7 +406,15 @@ STARTED = code_stamp()
 def meta():
     """shared lists (so the page never hard-codes them) and whether the code on disk is newer than this running copy"""
     cfg()
-    return jsonify(types=topics.TYPES, voices=topics.VOICES, lengths=topics.LENGTHS, started=STARTED, current=code_stamp(), config_problem=_cfg["problem"])
+    return jsonify(types=topics.TYPES, voices=topics.VOICES, lengths=topics.LENGTHS, started=STARTED, current=code_stamp(), config_problem=_cfg["problem"],
+                   restartable=bool(os.environ.get("BEAN_AUTORESTART")), busy=any(not j["done"] for j in JOBS.values()))
+
+@app.post("/api/restart")
+def restart():
+    """start.bat runs the studio in a loop and starts it again on exit code 3: the page uses this to load newer code by itself"""
+    if not os.environ.get("BEAN_AUTORESTART"): abort(400, "started without start.bat: close this console window and run start.bat again")
+    threading.Timer(0.5, lambda: os._exit(3)).start()
+    return jsonify(ok=True)
 
 @app.get("/api/config")
 def get_config():

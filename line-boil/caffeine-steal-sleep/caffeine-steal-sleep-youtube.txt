@@ -1,5 +1,5 @@
 YOUTUBE UPLOAD SHEET: caffeine-steal-sleep
-Video: caffeine-steal-sleep.mp4 (453 s = 7:33 with the voiced channel outro; 7:16 of voiceover; 16:9 long video, 1920x1080)    Captions: caffeine-steal-sleep.srt    Thumbnail: caffeine-steal-sleep-thumbnail.png
+Video: caffeine-steal-sleep.mp4 (451 s = 7:31 with the voiced channel outro; 7:13 of voiceover; 16:9 long video, 1920x1080)    Captions: caffeine-steal-sleep.srt    Thumbnail: caffeine-steal-sleep-thumbnail.png
 
 == TITLE ==
 How Does Caffeine Steal Your Sleep?
@@ -12,9 +12,9 @@ Alternates:
 
 == THUMBNAIL ==
 File: caffeine-steal-sleep-thumbnail.png (1280x720)
-Text: 9 HOURS LATER
-Still: 233.8 s, the 3 p.m. coffee maths: the caffeine curve reaches MIDNIGHT with "ABOUT 30 MG" still on it ("By midnight, nine hours after the cup, you've still got roughly thirty"). The thumbnail turns that into one picture: the afternoon's mug, long empty, still has its caffeine wide awake at midnight.
-Brief: a flat ink-black night with a few stars and a big yellow full moon right of centre. On a red bedside table stands a huge white mug (about 40% of the frame height), empty and steamless, drunk hours ago. The red caffeine bean peeks over the rim with its hands gripping the edge and its spiky hair against the moon: bulging wide eyes, take lines and a tight manic grin of clenched teeth, staring down at YOU asleep in bed below-left (blue beanie, blue blanket, Zs rising toward the mug). The words sit in the upper left: "9 HOURS" in yellow over "LATER" in paper-white, with thick ink outlines. Nothing important in the bottom-right corner (the duration badge): only the table's edge and the floor. Subject test: a mug at the bedside with a wired bean staring at a sleeper says "coffee and sleep" with the text covered. Text test: "9 HOURS LATER" is a number and repeats nothing from the title, but on its own it only says that something lasts; it names the stake (caffeine still working nine hours on) together with the title and the picture. Honest framing: the mug is empty so it does not suggest a bedtime coffee, and the video calls its 100 mg, 5-hour half-life numbers an example (the range is 2 to 8 hours).
+Text: HOW DOES CAFFEINE STEAL YOUR SLEEP?
+Still: 375.9 s, the last chapter's opening question, "So, how does caffeine steal your sleep?", word for word the thumbnail's text. The picture borrows the 3 p.m. scene (from 353.1 s, "For a 3 p.m. cup, that means bed no earlier than about midnight") where YOU holds a steaming red mug beside its bed, and moves the mug and the bed to night.
+Brief: a flat dark-blue night (the palette's blue, darkened) with a few stars and a big yellow moon cut by the top-right corner. In the middle, on a small yellow bedside table with a drawer, a giant red coffee mug (about 45% of the frame height, handle on the right, dark coffee at the rim, a paper shine) sends up three thick paper-white curls of steam. Just right of it YOU (paper-white bean, blue nightcap with a yellow pom) sits bolt upright in a yellow bed seen from the front, against the headboard and a white pillow, its fists clutching a blue blanket bunched to its chest: eyes stretched huge with tiny pupils sliding toward the mug, dark bags, worried brows, a wobbly mouth and a bead of sweat. The words run down the left: "HOW DOES" and "STEAL YOUR" in paper-white, "CAFFEINE" and "SLEEP?" bigger in yellow, all with thick ink outlines. Nothing important in the bottom-right corner (the duration badge): only the floor and a bed leg. Subject test: a steaming coffee mug at the bedside and a wide-awake bean in bed say "coffee and sleep" with the text covered. Topic test: the words are the title itself, in the TED-Ed form ("HOW DOES CAFFEINE KEEP US AWAKE?"); the title linter's "thumbnail repeats the title" flag is ignored on purpose. Honest framing: the picture shows lying awake beside a steaming cup, while the video says an afternoon coffee mostly lets you fall asleep as usual and costs sleep you may not notice; the words promise only the "how", and the claims stay within the review (about 45 minutes less sleep on average, about 9 more minutes to fall asleep and about 12 more awake in the night).
 
 == DESCRIPTION ==
 How does caffeine affect sleep, and how long does caffeine stay in your system? Caffeine doesn't give you energy: it blocks the signal that says you're tired.
@@ -26,13 +26,13 @@ A general science explainer, not medical advice. If you're pregnant or on medica
 
 Chapters:
 0:00 A coffee you can't feel
-0:45 Where tiredness comes from
-1:40 How caffeine blocks tiredness
-2:39 How long caffeine stays
-3:31 The 3 p.m. coffee math
-4:21 What a sleep study found
-5:20 Less sleep, less deep sleep
-6:18 How caffeine steals your sleep
+0:44 Where tiredness comes from
+1:39 How caffeine blocks tiredness
+2:38 How long caffeine stays
+3:30 The 3 p.m. coffee math
+4:20 What a sleep study found
+5:19 Less sleep, less deep sleep
+6:15 How caffeine steals your sleep
 
 Sources:
 - Drake et al. (2013), Caffeine effects on sleep taken 0, 3, or 6 hours before going to bed, J Clin Sleep Med: https://pmc.ncbi.nlm.nih.gov/articles/PMC3805807/
