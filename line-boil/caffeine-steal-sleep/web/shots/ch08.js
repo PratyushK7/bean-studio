@@ -69,7 +69,7 @@ musicMood(at('Until then') - 0.1, 'upbeat');                        // the ask, 
     draw(lt, t) {
       setNight(t);
       clockFace(150, 110, 50, hourAt(t, t0 + 0.3, 3, 12, tm - t0 - 0.3), 8401);
-      popLabel(t, t0 + 0.1, t < tm ? '3 P.M.' : 'MIDNIGHT', 150, 190, 20, { seed: 8405, fill: PAPER });
+      popLabel(t, t0 + 0.1, t < tm ? '3PM' : 'MIDNIGHT', 150, 190, 20, { seed: 8405, fill: PAPER });
       [330, 480, 630, 780].forEach((x, i) => {
         const slot = mailbox(x, 432, 1.1, 8410 + i * 9, { face: i === 0 || i === 2 ? 'o' : 'sleepy' });
         if (i === 0 || i === 2) cafInSlot(slot, cafs[i ? 1 : 0], t, { k: 0.5 });

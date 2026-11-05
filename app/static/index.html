@@ -502,7 +502,7 @@ function openWizard(src, i) {
   const long = TKIND === 'long', o = (src === 'pick' ? TPICK : TOPT)[TKIND][i];
   const near = long ? ([5, 7, 9, 12].reduce((a, b) => Math.abs(b - (o.runtime_min || 7)) < Math.abs(a - (o.runtime_min || 7)) ? b : a)) : 40;
   $('#wizbox').innerHTML = `<h2 style="margin:0 0 4px">${long ? 'Make this long video' : 'Make this video'}</h2><p class="muted" style="margin:0">${long
-      ? 'A few questions, then the agent writes the script chapter by chapter, fact-checks every claim against sources, times the chapters from the real voiceover, draws and renders the 16:9 video, and makes the thumbnail and upload sheet. This is a long job (it can take an hour or more of the agent\'s time); watch it in Videos.'
+      ? 'A few questions, then the agent writes the script chapter by chapter, fact-checks every claim against sources, times the chapters from the real voiceover, draws and renders the 16:9 video, and makes the upload sheet. This is a long job (it can take an hour or more of the agent\'s time); watch it in Videos.'
       : 'A few questions, then the agent writes the script, fact-checks it, draws and renders the video, and makes the thumbnail and upload sheet. You can watch it in Videos.'}</p>
     <label>Title</label><input type="text" id="w_title" value="${esc(o.title)}">
     <label>Length</label>${long
@@ -519,7 +519,7 @@ function openWizard(src, i) {
     <label>Quality <span class="muted">(the video itself renders on your computer for free; this is the AI that writes and draws it)</span></label>
     <select id="w_model"><option value="">The studio default (Sonnet for Shorts, Opus for long videos)</option><option value="sonnet">Balanced · Sonnet: lighter on your usage, good for most Shorts</option><option value="opus">Best · Opus: strongest writing and staging, uses more</option></select>
     <div class="row" style="margin-top:10px"><label style="margin:0"><input type="checkbox" id="w_window"> 🪟 Open in its own Claude window so I can watch every step (it may ask for permissions)</label></div>
-    <label>Thumbnail text <span class="muted">(optional, up to 3 words; blank = the agent chooses)</span></label><input type="text" id="w_thumb" maxlength="24" placeholder="e.g. TOO TALL?">
+    ${long ? `<p class="muted" style="margin:12px 0 0">🖼 The thumbnail is made afterwards, from the <b>Better thumbnail</b> button on the finished video: five ideas, you pick one.</p><input type="hidden" id="w_thumb" value="">` : `<label>Thumbnail text <span class="muted">(optional, up to 3 words; blank = the agent chooses)</span></label><input type="text" id="w_thumb" maxlength="24" placeholder="e.g. TOO TALL?">`}
     <label>Anything else? <span class="muted">(optional)</span></label><textarea id="w_notes" rows="3" placeholder="e.g. keep it gentle, include the 1982 lawn chair story, avoid mentioning X"></textarea>
     <div class="row" style="margin-top:16px; justify-content:flex-end"><button class="act sec" onclick="closeWizard()">Cancel</button><button class="act red" id="wizgo" onclick="makeVideo('${src}', ${i})">${long ? '🎬 Make the long video' : '🎬 Make the video'}</button></div>`;
   $('#wiz').classList.add('on');

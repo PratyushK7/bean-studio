@@ -25,8 +25,8 @@ def title_of(p):
 
 
 def words_of(v):
-    """up to 3 words, upper case"""
-    return " ".join(re.findall(r"[A-Za-z0-9$%'?!+\u2192-]+", str(v or "").upper())[:3])
+    """2 to 6 words, upper case (the title's key words, topic named outright)"""
+    return " ".join(re.findall(r"[A-Za-z0-9$%'?!+\u2192-]+", str(v or "").upper())[:6])
 
 
 def register(app, ROOT, cfg, start_agent, proj_dir, JOBS):
@@ -79,22 +79,22 @@ def register(app, ROOT, cfg, start_agent, proj_dir, JOBS):
         size = "1280x720 (16:9, web/thumb.js, one still shot)" if wide else "1080x1920 (9:16 cover, web/thumb.js, gridSafe)"
         prompt = f"""You are the thumbnail strategist for the YouTube channel "{cfg()['channel']}": hand-drawn cartoon explainers told by beans. The video is {name} in {p}.
 
-Read: {p / 'script.json'} (the whole voiceover), {p / (name + '-youtube.txt')} (title and current thumbnail brief; title now: "{title_of(p) or 'unknown'}"), {p / (name + '-sources.md')} if it exists, {p / 'web' / 'cast.js'} (the characters and props we can draw), {p / 'web' / 'thumb.js'} (the current thumbnail code) and look at the current picture {p / (name + '-thumbnail.png')}. Also read the thumbnail rules in {ENGINE_SKILL}/SKILL.md (step 9) and, for a long video, {ENGINE_SKILL.replace('line-boil', 'line-boil-wide')}/references/wide.md ("16:9 thumbnails").
+Read: {p / 'script.json'} (the whole voiceover), {p / (name + '-youtube.txt')} (title and current thumbnail brief; title now: "{title_of(p) or 'unknown'}"), {p / (name + '-sources.md')} if it exists, {p / 'web' / 'cast.js'} (the characters and props we can draw), {p / 'web' / 'thumb.js'} (the current thumbnail code) and, if it exists yet, look at the current picture {p / (name + '-thumbnail.png')} (a long video has none until this runs). Also read the thumbnail rules in {ENGINE_SKILL}/SKILL.md (step 9) and, for a long video, {ENGINE_SKILL.replace('line-boil', 'line-boil-wide')}/references/wide.md ("16:9 thumbnails").
 
-First, in two lines, say honestly what is WRONG with the current thumbnail (does a stranger know what the video is about in one second? is there one clear subject? is there a reason to click?). Then write FIVE different thumbnail ideas for a {size}.
+First, in two lines, say honestly what is WRONG with the current thumbnail if there is one (does a stranger know what the video is about in one second? is there one clear subject? is there a reason to click?), or what the thumbnail must achieve for this topic if there is none. Then write FIVE different thumbnail ideas for a {size}.
 
-The goal: a viewer scrolling at feed size (about 246 px wide) understands the topic in one second AND feels they must click to resolve something. Use real click psychology, but only promises this video actually pays off (no lies, no fake numbers, no hype the video cannot back):
-- ONE huge subject that makes the topic obvious from the picture alone (cover the words: is it still clear?). A bean's face is never the subject on its own.
-- ONE strong emotion on one face (shock, dread, smug, panic), exaggerated, with the eyes looking at the thing that matters.
-- A curiosity gap or a stake: something unresolved that the video resolves (a loss the viewer might be suffering without knowing, a surprising contrast, a thing that looks wrong).
-- At most 3 words, big, none repeated from the title, adding information the picture lacks (a number, a time, a stake, a question). Words and picture must be one message, not two.
-- Flat high-contrast colours from the palette, a clean background, nothing important in the bottom-right corner (the duration badge) or in the bottom 15%.
-- Each idea uses a DIFFERENT trigger from this list: {', '.join(TRIGGERS)}. At least one must be built on fear or loss that the video honestly delivers on (for example a hidden cost), and at least one on curiosity.
+The goal: a viewer scrolling at feed size (about 246 px wide) knows EXACTLY what the video is about in one second, and feels they want the answer. The model to copy is a TED-Ed thumbnail: big plain lettering "HOW DOES CAFFEINE KEEP US AWAKE?" with one big character yawning in a chair beside a mug. Nothing is cryptic. Rules:
+- THE WORDS STATE THE TOPIC, OUTRIGHT. The on-image text is the title's key words in plain language, 2 to 6 words (a question is best), with the topic noun biggest and in the strongest colour. Repeating the title is wanted. Cover the picture: the words alone must say exactly what the video is about. A teaser that hides the topic ("3 PM TO MIDNIGHT", "NOPE", a bare number) is a FAIL.
+- THE PICTURE SAYS THE SAME THING: ONE big character doing the topic's action (yawning, panicking, staring at it) beside the topic's own object, drawn large (at least a third of the frame). Cover the words: a stranger should still guess the topic. No second idea, no clutter.
+- ONE strong, readable emotion on that character, exaggerated.
+- Add the hook on top of the topic, never instead of it: phrase the words as the question the viewer wants answered, or add a short stake word ("...AT NIGHT?", "...WITHOUT KNOWING?"), but only a promise this video pays off honestly (no lies, no fake numbers).
+- Flat high-contrast palette colours, a clean background, nothing important in the bottom-right corner (the duration badge) or in the bottom 15%.
+- The five ideas differ in the picture and the hook angle, each on a DIFFERENT trigger from: {', '.join(TRIGGERS)}; all five name the topic in their words. At least one leans on fear or loss the video honestly delivers on, at least one on curiosity.
 
 Be unbiased and strict: rank them by how likely a stranger is to click AND feel the video delivered, best first.
 
 Write a JSON array of exactly 5 objects to {out} and nothing else on disk (no other file changes). Each object:
-{{"name": "3 to 6 word label", "trigger": one of the triggers, "words": "the on-image text, up to 3 words", "concept": "the whole picture in two sentences: what is drawn, where, doing what", "subject": "the one big object", "face": "which bean, what expression", "why": "one sentence: what makes a stranger click and why the video pays it off", "risk": "one sentence: how this could mislead or fail, and how it is avoided"}}
+{{"name": "3 to 6 word label", "trigger": one of the triggers, "words": "the on-image text: the title's key words naming the topic, 2 to 6 words", "concept": "the whole picture in two sentences: what is drawn, where, doing what", "subject": "the one big object", "face": "which bean, what expression", "why": "one sentence: what makes a stranger click and why the video pays it off", "risk": "one sentence: how this could mislead or fail, and how it is avoided"}}
 Do not use any other tool than reading files and writing that one file. When done, print the same JSON array as your final message."""
         j = start_agent(label_of(name), prompt, model(), "plain")
         return jsonify(job=j["id"], project=name)
@@ -133,19 +133,19 @@ THE IDEA ({clean(i.get('trigger'), 30)}): {clean(i.get('name'), 60)}
 - Picture: {concept}
 - The one big subject: {clean(i.get('subject'), 120)}
 - Face: {clean(i.get('face'), 120)}
-- Words on the image (at most 3, big, none repeated from the title "{title}"): {words or '(choose up to 3 that add a number, a stake or a question)'}
+- Words on the image (the topic named outright, 2 to 6 words, big; repeating the title "{title}" is fine and wanted): {words or '(the title shortened to its key words, as a question)'}
 - Why it should work: {clean(i.get('why'))}
 - Watch out for: {clean(i.get('risk'))}
 
 How:
-1. Read {ENGINE_SKILL}/SKILL.md step 9 and {ENGINE_SKILL}/references/api.md, {p / 'web' / 'cast.js'} and the current {p / 'web' / 'thumb.js'}. First copy the current picture {p / (name + '-thumbnail.png')} to {p / (name + '-thumbnail-prev.png')} (keep the old one).
+1. Read {ENGINE_SKILL}/SKILL.md step 9 and {ENGINE_SKILL}/references/api.md, {p / 'web' / 'cast.js'} and the current {p / 'web' / 'thumb.js'}. If {p / (name + '-thumbnail.png')} exists, first copy it to {p / (name + '-thumbnail-prev.png')} (keep the old one); if web/thumb.js does not exist yet, create it.
 2. Rewrite {p / 'web' / 'thumb.js'} (CAP.on = false, one still shot, flat high-contrast palette colours, {'1280x720: the words in the upper left or left third, faces in the middle and right, nothing important in the bottom 15% of the right 20% (duration badge)' if wide else '1080x1920: headline, subject and faces inside gridSafe'}). Draw the big subject large (at least a third of the frame, recognisable by silhouette); add props to cast.js if the subject does not exist yet.
 3. Run: {py} {eng} thumb {name} and look at stills/thumb-crops.png (full, small feed size, and the badge corner). Judge the SMALL copy only:
-   - Subject test: cover the words. Can a stranger name the topic from the picture alone?
-   - Text test: cover the picture. Do the words alone point at the topic or its stakes, in at most 3 words, without repeating the title?
+   - Subject test: cover the words. Can a stranger name the topic from the picture alone (one big character doing the topic's action beside the topic's own object)?
+   - Topic test: cover the picture. Do the words alone say exactly what the video is about (the topic noun is in them)? Compare with a TED-Ed style "HOW DOES CAFFEINE KEEP US AWAKE?".
    - Click test: is there one strong emotion, one unresolved thing, nothing cluttered, nothing in the badge corner?
    Fix and re-render until all three pass (at most 5 rounds). Be strict.
-4. In {p / (name + '-youtube.txt')} update the THUMBNAIL section (Text:, Still:, Brief:) to match what you drew; change nothing else in that file.
+4. In {p / (name + '-youtube.txt')} update the THUMBNAIL section (File:, Text:, Still:, Brief:) to match what you drew (replace a "Not made yet" line); the title linter's "thumbnail repeats the title" flag is intentionally ignored. Change nothing else in that file.
 5. Finish by printing the final text, what is drawn, and the result of each of the three tests, honestly (say so if one still fails)."""
         j = start_agent(f"thumb · {name}", prompt, model(), "feed")
         return jsonify(job=j["id"], project=name)

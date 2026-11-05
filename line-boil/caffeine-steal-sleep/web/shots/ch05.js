@@ -22,7 +22,7 @@ function chartBoard() {
   shape(boxPts(CHART.x, CHART.y, CHART.w, CHART.h, 5010), PAPER, 4, 5010, 1);
   line([[chX(0), chY(105)], [chX(0), chY(0)]], 3.4, 5011, INK, 0.8, false);
   line([[chX(0), chY(0)], [chX(16.4), chY(0)]], 3.4, 5009, INK, 0.8, false);
-  [[0, '3 PM'], [5, '8 PM'], [9, 'MIDNIGHT'], [16, '7 AM']].forEach(([h, s], i) => { line([[chX(h), chY(0)], [chX(h), chY(0) + 8]], 3, 5012 + i); ink(s, chX(h), chY(0) + 22, 13, INK, 5016 + i); });
+  [[0, '3PM'], [5, '8PM'], [9, 'MIDNIGHT'], [16, '7AM']].forEach(([h, s], i) => { line([[chX(h), chY(0)], [chX(h), chY(0) + 8]], 3, 5012 + i); ink(s, chX(h), chY(0) + 22, 13, INK, 5016 + i); });
   [[100, '100'], [50, '50']].forEach(([mg, s], i) => { line([[chX(0) - 8, chY(mg)], [chX(0), chY(mg)]], 3, 5020 + i); ink(s, chX(0) - 30, chY(mg), 13, INK, 5022 + i); });
   ink('MG', chX(0) - 30, chY(100) - 26, 12, INK, 5024);
 }
@@ -180,7 +180,7 @@ function decay(hmax, half, color, seed, dose = 100) {
       drawChar(YOU, poseAt(you, t), { hold: h => { if (t > tj) mug(h[1][0] + 4, h[1][1] + 16, 0.9, 5710, { steam: true }); } });
       drawChar(CAFS[3], poseAt(tiny, t));
       drawChar(CAF, poseAt(fresh, t));
-      popLabel(t, tt, '7 AM: ABOUT 10 MG', 480, 110, 26, { seed: 5720, fill: YEL });
+      popLabel(t, tt, '7AM: ABOUT 10 MG', 480, 110, 26, { seed: 5720, fill: YEL });
     },
   });
 }

@@ -104,7 +104,6 @@ STAGES = {
              ("Checking the pictures", 3, lambda p, n: (p / "stills").is_dir() and any((p / "stills").iterdir())),
              ("Rendering the video", 25, lambda p, n: (p / f"{n}.mp4").exists()),
              ("Adding captions", 3, lambda p, n: (p / f"{n}.srt").exists()),
-             ("Making the thumbnail", 6, lambda p, n: (p / f"{n}-thumbnail.png").exists()),
              ("Writing the upload sheet", 6, lambda p, n: (p / f"{n}-youtube.txt").exists())],
 }
 

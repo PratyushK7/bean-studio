@@ -103,7 +103,7 @@ function sea(t) {
   });
 }
 
-// 5. "For a 3 p.m. cup, that means bed no earlier than about midnight."  3 P.M. on the left, the bed and MIDNIGHT on the right.
+// 5. "For a 3 p.m. cup, that means bed no earlier than about midnight."  3PM on the left, the bed and MIDNIGHT on the right.
 {
   const t0 = at('For a 3', 2), tm = at('about midnight');
   const you = [{ t: t0, x: 170, y: 443, size: 1.1, expr: 'happy', arms: 'hold', look: [4, 0] }, ...A.walk(t0 + 0.8, 170, 520, 443, { speed: 170 }), { t: tm, expr: 'sleepy', ease: 'hold' }];
@@ -114,7 +114,7 @@ function sea(t) {
       clockFace(560, 92, 34, hourAt(t, t0 + 0.6, 3, 11.8, 2.2), 7501);
       bed(760, 443, 220, 7510);
       drawChar(YOU, poseAt(you, t), { hold: h => mug(h[1][0] + 4, h[1][1] + 16, 0.85, 7520, { steam: true }) });
-      popLabel(t, t0 + 0.1, '3 P.M.', 170, 230, 26, { seed: 7530, fill: PAPER });
+      popLabel(t, t0 + 0.1, '3PM', 170, 230, 26, { seed: 7530, fill: PAPER });
       popLabel(t, tm, 'BED: ABOUT MIDNIGHT', 760, 250, 24, { seed: 7535, fill: BLUE, ink: PAPER });
     },
   });
@@ -140,8 +140,8 @@ function sea(t) {
       drawChar(GYMB, poseAt(gym, t), { hold: h => { if (t < t7 - 0.5) { dumbbell(h[0][0] - 4, h[0][1], 0.7, 7620, 0.3); dumbbell(h[1][0] + 4, h[1][1], 0.7, 7625, -0.3); } } });
       popLabel(t, tt, 'ABOUT 2X THE CAFFEINE', 520, 70, 22, { seed: 7630, fill: YEL });
       popLabel(t, t13, 'MORE THAN 13 HOURS', 520, 125, 24, { seed: 7635, fill: PAPER });
-      popLabel(t, t6, '6 P.M. WORKOUT', 180, 200, 20, { seed: 7640, fill: PAPER, rot: -0.04 });
-      popLabel(t, t7, 'BEDTIME: 7 A.M.', 640, 220, 26, { seed: 7645, fill: BLUE, ink: PAPER, rot: 0.03 });
+      popLabel(t, t6, '6PM WORKOUT', 180, 200, 20, { seed: 7640, fill: PAPER, rot: -0.04 });
+      popLabel(t, t7, 'BEDTIME: 7AM', 640, 220, 26, { seed: 7645, fill: BLUE, ink: PAPER, rot: 0.03 });
     },
   });
 }

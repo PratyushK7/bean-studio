@@ -19,7 +19,7 @@ musicMood(at("Here's the thing") - 0.2, 'curious');   // the turn: now we explai
     draw(lt, t) {
       setDesk(t, { wall: YEL });
       clockFace(780, 118, 46, hourAt(t, tm, 3, 12), 1101);
-      popLabel(t, at('3 p.m.'), t < tm ? '3 P.M.' : 'MIDNIGHT', 780, 196, 22, { seed: 1105, rot: -0.03 });
+      popLabel(t, at('3 p.m.'), t < tm ? '3PM' : 'MIDNIGHT', 780, 196, 22, { seed: 1105, rot: -0.03 });
       drawChar(YOU, poseAt(you, t), { hold: h => mug(h[1][0] + 4, h[1][1] + 16, 0.78, 1110, { steam: true }) });
     },
   });

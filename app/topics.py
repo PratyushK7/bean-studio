@@ -7,7 +7,7 @@
    channel (topic and format borrowed, never the script or title). "Re-roll" samples a fresh set, skipping sources already shown.
    data/picks.json holds hand-researched topics (with a brief file) that show above the generated ones.
 3. A chosen topic + the answers from the form become one agent job. A Short is made with the line-boil skill (9:16); a long video with
-   the line-boil-wide skill (16:9, chapters), both to a rendered video, thumbnail and upload sheet.
+   the line-boil-wide skill (16:9, chapters), both to a rendered video and upload sheet (a long video's thumbnail comes later, from the Better thumbnail button).
 
 length_instructions(seconds) is the one place that turns a duration into instructions for the skill; the Agent tab uses it too.
 register(app, ROOT, cfg, start_job, JOBS) adds /api/topics*.
@@ -322,7 +322,7 @@ THE USER'S ANSWERS (follow them):
 - Ending: {clean(a.get('ending') or 'a punchy callback line', 80)}
 - Background music: {'on, and it follows the script: musicMood() changes the mood with the feeling (see the skill)' if a.get('music', True) else 'off (pass --no-music to build.py video)'}
 - Channel outro: {'appended' if a.get('outro', True) else 'left off (pass --no-outro to build.py video)'}
-- Thumbnail text: {clean(a.get('thumb_text'), 40) or 'you choose: at most 3 words, none repeated from the title'}
+- Thumbnail: do NOT make one. Long videos get theirs from Bean Studio's Better thumbnail button (five ideas, the user picks one, drawn on Opus).
 - Extra notes: {clean(a.get('notes'), 400) or 'none'}
 """
         if kind == "short":
@@ -343,8 +343,8 @@ The user has already approved this topic and these settings, so do NOT stop to a
 4. The SCENE AND SOUND PLAN: {slug}-plan.md, one row per chapter with the set and place, time of day and colour, the beans on screen, props, the music mood and why, the sound or silence beat and the joke (the scenes and the music must change with what the script says: see references/wide.md). Then a cast of different beans (see "A cast of beans" in references/style.md) in web/cast.js, then web/shots/ch01.js, ch02.js, ... ONE CHAPTER AT A TIME: write the chapter's shots, render 2 or 3 stills per chapter with build.py stills (read the single stills/sheet.jpg it writes), fix what is wrong, then the next chapter. build.py check must show no [error], no shot over 20 s and no music warning (use setScene() sets and musicMood() moods, at least 4 moods).
    Burned-in captions: {'ON (set CAP.on = true at the top of cast.js)' if a.get('captions') else 'OFF, the long-form standard: the .srt is uploaded as YouTube captions; put numbers and key words on screen as label shapes'}.
 5. build.py video {slug}{'' if a.get('music', True) else ' --no-music'}{'' if a.get('outro', True) else ' --no-outro'}, then build.py sheet {slug} and look at the sheet once.
-6. The thumbnail (1280x720, web/thumb.js, build.py thumb {slug}; check stills/thumb-crops.png) and {slug}-youtube.txt for a long video (references/youtube.md: no #shorts, chapters from {slug}-chapters.txt, 6 to 8 sources, tags, a pinned comment, no list of spin-off Shorts: the user has a separate button for that).
-Do not upload anything and do not touch other projects. Finish by printing the project folder, the real length, the chapters, the title and thumbnail text, and anything you could not verify."""
+6. NO thumbnail: do not write web/thumb.js, do not run build.py thumb, do not create a thumbnail file. Write {slug}-youtube.txt for a long video (references/youtube.md, but its THUMBNAIL section is the single line "Not made yet: use the Better thumbnail button in Bean Studio", and lint the title with title.py without --thumb: no #shorts, chapters from {slug}-chapters.txt, 6 to 8 sources, tags, a pinned comment, no list of spin-off Shorts: the user has a separate button for that).
+Do not upload anything and do not touch other projects. Finish by printing the project folder, the real length, the chapters, the title, and anything you could not verify (the thumbnail is made afterwards from the Better thumbnail button)."""
         (DATA / "make").mkdir(parents=True, exist_ok=True)
         save_json(DATA / "make" / f"{slug}.json", {"kind": kind, "topic": t, "answers": a, "when": dt.datetime.now().isoformat(timespec="seconds")})
         mode = "window" if (a.get("window") or c.get("agent_window")) else "feed"      # watch it live, or in its own Claude window

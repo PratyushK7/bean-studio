@@ -1,0 +1,52 @@
+[
+ {
+  "name": "Coffee still awake at midnight",
+  "trigger": "Curiosity",
+  "words": "9 HOURS LATER",
+  "concept": "A flat ink-black night with a few stars and a big yellow full moon right of centre; on a bedside table stands a huge white mug (no steam, drunk hours ago), and the red caffeine bean pokes its spiky hair and enormous wide-awake eyes over the rim, with the moon behind its hair so the spikes read. Belo",
+  "subject": "a huge white coffee mug on the bedside table, about 40% of the frame height, with the caffeine bean in it",
+  "face": "the caffeine bean in the mug: bulging wired eyes with take lines and a tight manic grin, eyes locked on the sleeping bea",
+  "why": "Anyone with an afternoon coffee wonders if it's still working while they sleep, and the video answers exactly that with the 3 p.m. maths (roughly 30 mg still in you at midnight, nine hours later) and the review's suggestion to stop about nine hours before bed.",
+  "risk": "It could suggest everyone still carries a strong dose at midnight, or that the bean drank coffee at bedtime; the mug is drawn empty and steamless, and the video gives the 2-to-8-hour half-life range and calls its numbers an example."
+ },
+ {
+  "name": "Bitten clock, morning coffee",
+  "trigger": "Fear",
+  "words": "FEEL FINE?",
+  "concept": "A flat blue morning with a yellow sunburst behind a giant white alarm clock with red bells in the centre, a big jagged bite taken out of its right side with teeth marks and crumbs falling. Right of centre, the YOU bean sits up in bed in its blue nightcap holding a steaming mug of black coffee (ink i",
+  "subject": "a giant alarm clock with a bite taken out of it",
+  "face": "the YOU bean (white, blue nightcap): horrified shock with take lines, eyes fixed on the missing chunk of the clock",
+  "why": "It challenges the viewer's own belief that coffee doesn't affect them, a loss they might be suffering without knowing, and the video opens and closes on exactly that: the Drake 2013 sleepers lost over an hour on the headband while their diaries didn't clearly register it, and 24 studies average abou",
+  "risk": "The bite could read as a guaranteed loss for every cup, and Drake's hour came from a large 400 mg dose; the video says so, calls the 45 minutes an average and not a law, and the question mark keeps the thumbnail a question rather than a verdict."
+ },
+ {
+  "name": "Mug burglar with a sack",
+  "trigger": "Absurd",
+  "words": "-45 MIN",
+  "concept": "A flat ink-black bedroom at night with a yellow moon in the window; the YOU bean sleeps contentedly in bed left of centre while a giant white coffee mug wearing a black robber's eye mask tiptoes away on little legs towards the centre-right, a bulging yellow sack printed with a crescent moon and star",
+  "subject": "the masked coffee mug carrying a sack of sleep",
+  "face": "the mug's face: a smug, sly grin, eyes sliding back over its shoulder at the sleeper",
+  "why": "A coffee cup sneaking off with your night is funny and readable at a glance, the number puts a price on it, and the video pays it off with the 2023 review of 24 studies (about 45 minutes less sleep on average) and its own line about 'the most polite kind of theft'.",
+  "risk": "The picture mostly restates the title's 'steal', and '-45 MIN' could read as the cost of every single cup; the video frames it as an average across studies with different doses, so it is honest, but it adds the least new information of the top three."
+ },
+ {
+  "name": "Afternoon mug, midnight mug",
+  "trigger": "Before / after",
+  "words": "3 PM MIDNIGHT",
+  "concept": "The frame splits down a wavy line: the left 45% is flat yellow afternoon with a sunburst, the right 55% flat ink-black night with a moon, and each half holds the same big see-through glass mug, the left one crammed to the brim with eight tiny wide-eyed red caffeine beans and the right one with two o",
+  "subject": "two identical glass mugs: full of caffeine beans at 3 PM, still about a quarter full at midnight",
+  "face": "the YOU bean: shocked disbelief, eyes on the beans left in the midnight mug",
+  "why": "The visual sum 'still that much, that late?' is instantly readable, and the video does exactly this calculation: a 100 mg cup with a 5-hour half-life leaves about 30 mg, more than a quarter, at midnight.",
+  "risk": "Two scenes plus a bean is busier at 246 px than one subject and close to the current text, and the quarter depends on a 5-hour half-life; the video states that assumption and the 2-to-8-hour range, and filling the mugs with beans rather than coffee avoids implying an unfinished drink."
+ },
+ {
+  "name": "Coffee with a dead battery",
+  "trigger": "Shock",
+  "words": "NO ENERGY?",
+  "concept": "A flat blue background with a yellow sunburst; a giant steaming white mug of black coffee fills the centre-right, with a big battery drawn on its front showing a single red sliver of charge. The YOU bean holds the handle on the right, eyes huge and brows up, staring at the empty battery, with 'NO EN",
+  "subject": "a giant steaming coffee mug with an empty battery on its front",
+  "face": "the YOU bean: shocked disbelief, eyes on the battery",
+  "why": "'Coffee gives you no energy' contradicts what nearly everyone believes, and the video pays it off early: black coffee has about two calories, and caffeine works by blocking the tiredness signal, not by adding fuel.",
+  "risk": "Nothing in the picture says sleep, so it drifts from the title's promise and could read as 'coffee makes you tired'; the title carries sleep and the video talks about caffeine and black coffee, but this pairing fails the subject test for the real topic, which is why it ranks last."
+ }
+]

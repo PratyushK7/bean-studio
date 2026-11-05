@@ -201,7 +201,7 @@ def test_long_topics():
     mp = launched[-1][-1]
     assert m["kind"] == "long" and (root / "proj" / m["project"]).is_dir(), "the folder is reserved straight away"
     assert "LONG video (7 minutes, 16:9)" in mp and "line-boil-wide skill" in mp and "TARGET LENGTH: 420 seconds" in mp and "--target 420" in mp
-    assert "RESEARCH BRIEF" in mp and str(root / "research" / "brief.md") in mp and "build.py new " in mp and " --wide" in mp and "build.py video " in mp and "ONE CHAPTER AT A TIME" in mp and "1280x720" in mp and "--voice bf_emma --speed 1.0" in mp
+    assert "RESEARCH BRIEF" in mp and str(root / "research" / "brief.md") in mp and "build.py new " in mp and " --wide" in mp and "build.py video " in mp and "ONE CHAPTER AT A TIME" in mp and "NO thumbnail" in mp and "Better thumbnail button" in mp and "do not run build.py thumb" in mp and "web/thumb.js, build.py thumb" not in mp and "--voice bf_emma --speed 1.0" in mp
     evil = c3.post("/api/topics/make", json={"kind": "long", "topic": dict(pick, brief="../../outside.md"), "answers": {}}).json
     for needle in ("hookscore.py", "{slug}-hooks.txt".replace("{slug}", m["project"]), "no channel intro", "SCENE AND SOUND PLAN", m["project"] + "-plan.md", "setScene()", "musicMood()", "yt-chapters", "3 to 5 words", "Burned-in captions: OFF"):
         assert needle in mp, needle
@@ -248,10 +248,10 @@ def test_thumbnail_flow():
     label, prompt, model, mode = calls[-1]
     assert label == "thumb ideas · demo" and model == "opus" and "FIVE different thumbnail ideas" in prompt and "fear or loss" in prompt and "1280x720" in prompt
     assert c4.get(f"/api/thumbnail/ideas/demo?job={r['job']}").json["status"] == "running"
-    (proj / "demo-thumb-ideas-new.json").write_text(json.dumps([{"name": f"Idea {i}", "trigger": "Fear" if i == 0 else "Nope", "words": "too many words here friend", "concept": f"A mug {i}"} for i in range(7)] + ["junk", {"name": "no concept"}]))
+    (proj / "demo-thumb-ideas-new.json").write_text(json.dumps([{"name": f"Idea {i}", "trigger": "Fear" if i == 0 else "Nope", "words": "how does caffeine keep us awake at night", "concept": f"A mug {i}"} for i in range(7)] + ["junk", {"name": "no concept"}]))
     JOBS[r["job"]]["done"] = True
     d = c4.get(f"/api/thumbnail/ideas/demo?job={r['job']}").json
-    assert d["status"] == "done" and len(d["ideas"]) == 5 and d["ideas"][0]["trigger"] == "Fear" and d["ideas"][1]["trigger"] == "Curiosity" and d["ideas"][0]["words"] == "TOO MANY WORDS"
+    assert d["status"] == "done" and len(d["ideas"]) == 5 and d["ideas"][0]["trigger"] == "Fear" and d["ideas"][1]["trigger"] == "Curiosity" and d["ideas"][0]["words"] == "HOW DOES CAFFEINE KEEP US AWAKE" and "EXACTLY what the video is about" in prompt and "TED-Ed" in prompt and "A teaser that hides the topic" in prompt
     n_calls = len(calls)
     again = c4.get("/api/thumbnail/ideas/demo").json
     assert again["status"] == "done" and [x["name"] for x in again["ideas"]] == [x["name"] for x in d["ideas"]] and len(calls) == n_calls, "saved ideas reopen with no new run"
@@ -262,6 +262,7 @@ def test_thumbnail_flow():
     (proj / "demo-thumb-ideas.json").unlink(); (proj / "demo-thumb-ideas-new.json").write_text(json.dumps([{"name": "Late", "concept": "Collected later"}]))
     n2 = len(calls); late = c4.get("/api/thumbnail/ideas/demo").json
     assert late["status"] == "done" and late["ideas"][0]["name"] == "Late" and len(calls) == n2 and (proj / "demo-thumb-ideas.json").exists(), "an unseen finished batch is saved and shown"
+    time.sleep(0.1)                                           # file times and job times come from different clocks; real runs are minutes apart
     r3 = c4.post("/api/thumbnail/ideas", json={"project": "demo"}).json; r4 = c4.post("/api/thumbnail/ideas", json={"project": "demo"}).json
     assert r3["job"] == r4["job"] and r4.get("running") and len(calls) == n2 + 1, "pressing again while it runs reattaches"
     assert c4.get("/api/thumbnail/ideas/demo").json["status"] == "running"
