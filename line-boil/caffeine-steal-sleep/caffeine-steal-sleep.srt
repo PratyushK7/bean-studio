@@ -1,0 +1,1243 @@
+1
+00:00:00,000 --> 00:00:01,760
+Why does a 3 p.m.
+
+2
+00:00:01,760 --> 00:00:03,840
+coffee still cost you sleep at midnight,
+
+3
+00:00:03,840 --> 00:00:05,680
+when you feel completely fine?
+
+4
+00:00:05,680 --> 00:00:07,120
+You drank it hours ago.
+
+5
+00:00:07,120 --> 00:00:08,880
+The mug is already washed and back
+
+6
+00:00:08,880 --> 00:00:09,760
+in the cupboard.
+
+7
+00:00:09,760 --> 00:00:10,960
+You don't feel wired,
+
+8
+00:00:10,960 --> 00:00:12,560
+you climb into bed on time,
+
+9
+00:00:12,560 --> 00:00:14,080
+and you drift off more or less
+
+10
+00:00:14,080 --> 00:00:14,800
+as usual.
+
+11
+00:00:14,800 --> 00:00:15,520
+In the morning,
+
+12
+00:00:15,520 --> 00:00:16,960
+you'd swear you slept fine.
+
+13
+00:00:16,960 --> 00:00:19,040
+But a sleep monitor might disagree.
+
+14
+00:00:19,040 --> 00:00:20,480
+Here's the thing most people get
+
+15
+00:00:20,480 --> 00:00:21,360
+backwards:
+
+16
+00:00:21,360 --> 00:00:23,600
+caffeine doesn't actually give you energy.
+
+17
+00:00:23,600 --> 00:00:25,360
+It blocks the message that says you're
+
+18
+00:00:25,360 --> 00:00:25,920
+tired.
+
+19
+00:00:25,920 --> 00:00:28,000
+And that message doesn't go away just
+
+20
+00:00:28,000 --> 00:00:29,440
+because you stopped hearing it.
+
+21
+00:00:29,440 --> 00:00:31,440
+In this video we'll meet the messenger,
+
+22
+00:00:31,440 --> 00:00:33,040
+the bean that blocks it,
+
+23
+00:00:33,040 --> 00:00:34,800
+and the clock that decides how long
+
+24
+00:00:34,800 --> 00:00:35,848
+it stays blocked.
+
+25
+00:00:35,848 --> 00:00:37,688
+So let's follow the message,
+
+26
+00:00:37,688 --> 00:00:39,368
+from the moment it's written to the
+
+27
+00:00:39,368 --> 00:00:41,368
+moment it finally gets delivered.
+
+28
+00:00:41,368 --> 00:00:42,888
+For a 3 p.m.
+
+29
+00:00:42,888 --> 00:00:43,528
+coffee,
+
+30
+00:00:43,528 --> 00:00:44,968
+that can be well after you've gone
+
+31
+00:00:44,968 --> 00:00:45,608
+to bed.
+
+32
+00:00:45,608 --> 00:00:46,968
+Every hour you're awake,
+
+33
+00:00:46,968 --> 00:00:49,448
+your brain cells burn through energy,
+
+34
+00:00:49,448 --> 00:00:50,968
+and one of the leftovers is a
+
+35
+00:00:50,968 --> 00:00:52,808
+molecule called adenosine.
+
+36
+00:00:52,808 --> 00:00:54,968
+Think of adenosine as a mail carrier
+
+37
+00:00:54,968 --> 00:00:56,568
+with one letter to deliver,
+
+38
+00:00:56,568 --> 00:00:57,608
+over and over.
+
+39
+00:00:57,608 --> 00:00:58,968
+The letter says one word:
+
+40
+00:00:58,968 --> 00:00:59,768
+tired.
+
+41
+00:00:59,768 --> 00:01:00,888
+No return address,
+
+42
+00:01:00,888 --> 00:01:01,848
+no small talk.
+
+43
+00:01:01,848 --> 00:01:04,008
+Your brain has mailboxes built just for
+
+44
+00:01:04,008 --> 00:01:04,968
+those letters,
+
+45
+00:01:04,968 --> 00:01:07,048
+called adenosine receptors.
+
+46
+00:01:07,048 --> 00:01:08,888
+Every time a letter drops in,
+
+47
+00:01:08,888 --> 00:01:10,328
+the parts of your brain that keep
+
+48
+00:01:10,328 --> 00:01:11,928
+you alert slow down a little.
+
+49
+00:01:11,928 --> 00:01:13,128
+The longer you're awake,
+
+50
+00:01:13,128 --> 00:01:14,380
+the more letters arrive.
+
+51
+00:01:14,380 --> 00:01:15,820
+By the end of a long day,
+
+52
+00:01:15,820 --> 00:01:17,740
+the mail carrier is shoving them through
+
+53
+00:01:17,740 --> 00:01:18,780
+with both hands.
+
+54
+00:01:18,780 --> 00:01:19,420
+That heavy,
+
+55
+00:01:19,420 --> 00:01:21,660
+yawning feeling is what scientists call
+
+56
+00:01:21,660 --> 00:01:22,540
+sleep pressure.
+
+57
+00:01:22,540 --> 00:01:25,420
+Adenosine isn't the only thing behind it,
+
+58
+00:01:25,420 --> 00:01:27,020
+but scientists think it's one of the
+
+59
+00:01:27,020 --> 00:01:27,740
+big ones.
+
+60
+00:01:27,740 --> 00:01:28,620
+Then you sleep,
+
+61
+00:01:28,620 --> 00:01:30,700
+the letters get cleared away overnight,
+
+62
+00:01:30,700 --> 00:01:32,860
+and you wake up with empty mailboxes.
+
+63
+00:01:32,860 --> 00:01:33,580
+Sleep is,
+
+64
+00:01:33,580 --> 00:01:34,620
+among other things,
+
+65
+00:01:34,620 --> 00:01:36,300
+your brain doing its paperwork.
+
+66
+00:01:36,300 --> 00:01:37,820
+It's a tidy system,
+
+67
+00:01:37,820 --> 00:01:39,580
+right up until someone tampers with the
+
+68
+00:01:39,580 --> 00:01:40,060
+mail.
+
+69
+00:01:40,060 --> 00:01:41,260
+Enter caffeine.
+
+70
+00:01:41,260 --> 00:01:43,100
+About fifteen to thirty minutes after your
+
+71
+00:01:43,100 --> 00:01:43,980
+first sip,
+
+72
+00:01:43,980 --> 00:01:45,180
+it starts to kick in.
+
+73
+00:01:45,180 --> 00:01:47,100
+Caffeine happens to be shaped a lot
+
+74
+00:01:47,100 --> 00:01:48,380
+like adenosine.
+
+75
+00:01:48,380 --> 00:01:50,220
+Close enough to slide right into the
+
+76
+00:01:50,220 --> 00:01:51,260
+mailbox slot.
+
+77
+00:01:51,260 --> 00:01:52,300
+But it isn't a letter,
+
+78
+00:01:52,300 --> 00:01:53,938
+so it doesn't deliver anything.
+
+79
+00:01:53,938 --> 00:01:55,138
+It just sits there,
+
+80
+00:01:55,138 --> 00:01:56,978
+wearing a sign that says closed.
+
+81
+00:01:56,978 --> 00:01:59,538
+Now the tiredness letters arrive and find
+
+82
+00:01:59,538 --> 00:02:00,578
+the slot taken.
+
+83
+00:02:00,578 --> 00:02:01,698
+They can't get in,
+
+84
+00:02:01,698 --> 00:02:03,458
+so your brain never gets the message
+
+85
+00:02:03,458 --> 00:02:04,418
+that you're tired.
+
+86
+00:02:04,418 --> 00:02:05,858
+It checks the mailbox,
+
+87
+00:02:05,858 --> 00:02:07,138
+finds nothing new,
+
+88
+00:02:07,138 --> 00:02:08,818
+and decides you must be fine.
+
+89
+00:02:08,818 --> 00:02:10,018
+That's the whole trick.
+
+90
+00:02:10,018 --> 00:02:11,858
+Caffeine doesn't hand you fuel;
+
+91
+00:02:11,858 --> 00:02:13,618
+a cup of black coffee has about
+
+92
+00:02:13,618 --> 00:02:14,658
+two calories.
+
+93
+00:02:14,658 --> 00:02:16,258
+It just stops your brain from reading
+
+94
+00:02:16,258 --> 00:02:17,218
+the bad news.
+
+95
+00:02:17,218 --> 00:02:18,658
+At everyday doses,
+
+96
+00:02:18,658 --> 00:02:20,738
+blocking adenosine is the main thing
+
+97
+00:02:20,738 --> 00:02:22,418
+caffeine does in your brain.
+
+98
+00:02:22,418 --> 00:02:23,058
+Meanwhile,
+
+99
+00:02:23,058 --> 00:02:24,018
+you're still awake,
+
+100
+00:02:24,018 --> 00:02:25,938
+so adenosine keeps being made.
+
+101
+00:02:25,938 --> 00:02:27,378
+The mail carrier knocks,
+
+102
+00:02:27,378 --> 00:02:28,018
+waits,
+
+103
+00:02:28,018 --> 00:02:29,858
+and leaves another letter on the step.
+
+104
+00:02:29,858 --> 00:02:31,298
+The letters don't vanish;
+
+105
+00:02:31,298 --> 00:02:32,836
+they stack up outside the door.
+
+106
+00:02:32,836 --> 00:02:35,236
+Caffeine doesn't cancel your tiredness,
+
+107
+00:02:35,236 --> 00:02:36,436
+it puts it on hold.
+
+108
+00:02:36,436 --> 00:02:38,596
+And everything on hold gets delivered
+
+109
+00:02:38,596 --> 00:02:39,316
+eventually.
+
+110
+00:02:39,316 --> 00:02:40,996
+So how long does caffeine stay in
+
+111
+00:02:40,996 --> 00:02:41,796
+the slot?
+
+112
+00:02:41,796 --> 00:02:42,996
+That's up to your liver,
+
+113
+00:02:42,996 --> 00:02:44,836
+which slowly breaks caffeine down and
+
+114
+00:02:44,836 --> 00:02:45,796
+clears it out.
+
+115
+00:02:45,796 --> 00:02:48,356
+Scientists measure this with a half-life:
+
+116
+00:02:48,356 --> 00:02:49,796
+the time it takes your body to
+
+117
+00:02:49,796 --> 00:02:50,836
+get rid of half of it.
+
+118
+00:02:50,836 --> 00:02:52,596
+For a typical healthy adult,
+
+119
+00:02:52,596 --> 00:02:54,836
+caffeine's half-life is around four to
+
+120
+00:02:54,836 --> 00:02:56,196
+five hours on average.
+
+121
+00:02:56,196 --> 00:02:57,956
+That's a long time for something you
+
+122
+00:02:57,956 --> 00:02:59,316
+finished in ten minutes.
+
+123
+00:02:59,316 --> 00:03:00,916
+And that average hides a lot of
+
+124
+00:03:00,916 --> 00:03:01,636
+wobble.
+
+125
+00:03:01,636 --> 00:03:03,156
+Some people clear half of it in
+
+126
+00:03:03,156 --> 00:03:04,116
+about two hours.
+
+127
+00:03:04,116 --> 00:03:04,836
+For others,
+
+128
+00:03:04,836 --> 00:03:06,356
+it takes eight hours or more.
+
+129
+00:03:06,356 --> 00:03:08,116
+Your speed depends on things like your
+
+130
+00:03:08,116 --> 00:03:08,756
+genes,
+
+131
+00:03:08,756 --> 00:03:09,556
+your age,
+
+132
+00:03:09,556 --> 00:03:10,596
+whether you smoke,
+
+133
+00:03:10,596 --> 00:03:11,751
+and even your diet.
+
+134
+00:03:11,751 --> 00:03:14,231
+Pregnancy and some medicines can slow it
+
+135
+00:03:14,231 --> 00:03:14,951
+down too.
+
+136
+00:03:14,951 --> 00:03:15,751
+If that's you,
+
+137
+00:03:15,751 --> 00:03:17,751
+the person to ask is your doctor,
+
+138
+00:03:17,751 --> 00:03:19,111
+not a cartoon bean.
+
+139
+00:03:19,111 --> 00:03:19,751
+Either way,
+
+140
+00:03:19,751 --> 00:03:21,591
+caffeine never leaves all at once.
+
+141
+00:03:21,591 --> 00:03:22,791
+After one half-life,
+
+142
+00:03:22,791 --> 00:03:23,991
+half of it is gone.
+
+143
+00:03:23,991 --> 00:03:24,871
+After another,
+
+144
+00:03:24,871 --> 00:03:25,991
+half of what's left.
+
+145
+00:03:25,991 --> 00:03:27,511
+It leaves the way a guest leaves
+
+146
+00:03:27,511 --> 00:03:28,391
+a party:
+
+147
+00:03:28,391 --> 00:03:29,111
+slowly,
+
+148
+00:03:29,111 --> 00:03:31,111
+and saying goodbye several times.
+
+149
+00:03:31,111 --> 00:03:32,631
+Let's run the numbers on that 3
+
+150
+00:03:32,631 --> 00:03:33,351
+p.m.
+
+151
+00:03:33,351 --> 00:03:34,151
+coffee.
+
+152
+00:03:34,151 --> 00:03:35,724
+Say it's a small cup with about
+
+153
+00:03:35,724 --> 00:03:37,511
+a hundred milligrams of caffeine.
+
+154
+00:03:37,511 --> 00:03:38,711
+Cups vary a lot,
+
+155
+00:03:38,711 --> 00:03:40,471
+so this is just a round number.
+
+156
+00:03:40,471 --> 00:03:42,631
+And say your half-life is five hours,
+
+157
+00:03:42,631 --> 00:03:44,071
+near the middle of the range.
+
+158
+00:03:44,071 --> 00:03:45,591
+Here's what's still in you as the
+
+159
+00:03:45,591 --> 00:03:46,631
+evening goes on.
+
+160
+00:03:46,631 --> 00:03:48,071
+By 8 p.m.,
+
+161
+00:03:48,071 --> 00:03:50,216
+about fifty milligrams are still on duty.
+
+162
+00:03:50,216 --> 00:03:51,176
+By midnight,
+
+163
+00:03:51,176 --> 00:03:52,696
+nine hours after the cup,
+
+164
+00:03:52,696 --> 00:03:54,456
+you've still got roughly thirty.
+
+165
+00:03:54,456 --> 00:03:55,576
+That's more than a quarter of the
+
+166
+00:03:55,576 --> 00:03:56,136
+cup,
+
+167
+00:03:56,136 --> 00:03:58,056
+sitting in your mailboxes while you try
+
+168
+00:03:58,056 --> 00:03:58,696
+to sleep.
+
+169
+00:03:58,696 --> 00:04:00,456
+If your half-life is closer to eight
+
+170
+00:04:00,456 --> 00:04:01,016
+hours,
+
+171
+00:04:01,016 --> 00:04:02,296
+it's nearer to half.
+
+172
+00:04:02,296 --> 00:04:03,816
+And if you had a big coffee-shop
+
+173
+00:04:03,816 --> 00:04:04,296
+cup,
+
+174
+00:04:04,296 --> 00:04:05,656
+start with a bigger number.
+
+175
+00:04:05,656 --> 00:04:07,656
+You probably won't feel thirty milligrams
+
+176
+00:04:07,656 --> 00:04:08,456
+as a buzz.
+
+177
+00:04:08,456 --> 00:04:09,896
+But it doesn't need to buzz to
+
+178
+00:04:09,896 --> 00:04:11,336
+keep a few slots closed.
+
+179
+00:04:11,336 --> 00:04:13,336
+The closed signs are smaller now,
+
+180
+00:04:13,336 --> 00:04:14,936
+but they're still up at bedtime.
+
+181
+00:04:14,936 --> 00:04:16,376
+And at 7 a.m.,
+
+182
+00:04:16,376 --> 00:04:17,816
+sixteen hours later,
+
+183
+00:04:17,816 --> 00:04:20,136
+there's still about ten milligrams left.
+
+184
+00:04:20,136 --> 00:04:21,896
+Just in time for the next coffee.
+
+185
+00:04:21,896 --> 00:04:24,056
+So does that leftover caffeine actually
+
+186
+00:04:24,056 --> 00:04:25,256
+cost you sleep?
+
+187
+00:04:25,256 --> 00:04:26,856
+In 2013,
+
+188
+00:04:26,856 --> 00:04:29,096
+researchers led by Christopher Drake
+
+189
+00:04:29,096 --> 00:04:30,357
+tested exactly that.
+
+190
+00:04:30,357 --> 00:04:32,437
+Twelve healthy sleepers took a caffeine
+
+191
+00:04:32,437 --> 00:04:33,397
+pill at bedtime,
+
+192
+00:04:33,397 --> 00:04:35,237
+three hours before bed,
+
+193
+00:04:35,237 --> 00:04:36,917
+or six hours before bed.
+
+194
+00:04:36,917 --> 00:04:38,757
+Each of them tried every version,
+
+195
+00:04:38,757 --> 00:04:40,117
+plus a dummy pill,
+
+196
+00:04:40,117 --> 00:04:42,117
+and nobody knew which night was which.
+
+197
+00:04:42,117 --> 00:04:43,557
+They went to bed at their usual
+
+198
+00:04:43,557 --> 00:04:44,117
+time,
+
+199
+00:04:44,117 --> 00:04:44,837
+at home,
+
+200
+00:04:44,837 --> 00:04:46,677
+wearing a headband that recorded their
+
+201
+00:04:46,677 --> 00:04:47,637
+brain waves.
+
+202
+00:04:47,637 --> 00:04:48,837
+The dose was big:
+
+203
+00:04:48,837 --> 00:04:50,357
+400 milligrams,
+
+204
+00:04:50,357 --> 00:04:52,357
+roughly four small cups of coffee.
+
+205
+00:04:52,357 --> 00:04:54,277
+That's the most the FDA considers
+
+206
+00:04:54,277 --> 00:04:56,117
+generally fine for a whole day,
+
+207
+00:04:56,117 --> 00:04:57,317
+in a single pill.
+
+208
+00:04:57,317 --> 00:04:59,077
+Even when the pill came six hours
+
+209
+00:04:59,077 --> 00:04:59,957
+before bed,
+
+210
+00:04:59,957 --> 00:05:01,397
+they lost more than an hour of
+
+211
+00:05:01,397 --> 00:05:01,957
+sleep.
+
+212
+00:05:01,957 --> 00:05:03,557
+And here's the strange part.
+
+213
+00:05:03,557 --> 00:05:05,237
+In their own sleep diaries,
+
+214
+00:05:05,237 --> 00:05:07,237
+the six-hour nights didn't clearly stand
+
+215
+00:05:07,237 --> 00:05:07,637
+out.
+
+216
+00:05:07,637 --> 00:05:08,917
+The headband noticed;
+
+217
+00:05:08,917 --> 00:05:10,469
+the sleepers mostly didn't.
+
+218
+00:05:10,469 --> 00:05:11,989
+It was a small study with a
+
+219
+00:05:11,989 --> 00:05:12,949
+large dose,
+
+220
+00:05:12,949 --> 00:05:14,549
+so it's not the final word.
+
+221
+00:05:14,549 --> 00:05:16,389
+But it showed caffeine can take sleep
+
+222
+00:05:16,389 --> 00:05:17,109
+quietly,
+
+223
+00:05:17,109 --> 00:05:18,629
+without you feeling robbed.
+
+224
+00:05:18,629 --> 00:05:20,069
+Which is the most polite kind of
+
+225
+00:05:20,069 --> 00:05:20,709
+theft.
+
+226
+00:05:20,709 --> 00:05:22,389
+One study is one study,
+
+227
+00:05:22,389 --> 00:05:23,909
+so here's the bigger picture.
+
+228
+00:05:23,909 --> 00:05:25,589
+In 2023,
+
+229
+00:05:25,589 --> 00:05:27,989
+a team pulled together 24 studies on
+
+230
+00:05:27,989 --> 00:05:29,429
+caffeine and sleep.
+
+231
+00:05:29,429 --> 00:05:30,229
+On average,
+
+232
+00:05:30,229 --> 00:05:32,709
+caffeine cut total sleep by about 45
+
+233
+00:05:32,709 --> 00:05:33,349
+minutes.
+
+234
+00:05:33,349 --> 00:05:35,349
+It added roughly nine minutes to falling
+
+235
+00:05:35,349 --> 00:05:36,069
+asleep,
+
+236
+00:05:36,069 --> 00:05:37,829
+and about twelve more minutes awake in
+
+237
+00:05:37,829 --> 00:05:38,389
+the night.
+
+238
+00:05:38,389 --> 00:05:40,149
+It also changed the kind of sleep
+
+239
+00:05:40,149 --> 00:05:40,709
+you get.
+
+240
+00:05:40,709 --> 00:05:42,469
+There was a bit more light sleep,
+
+241
+00:05:42,469 --> 00:05:44,709
+and about eleven minutes less deep sleep,
+
+242
+00:05:44,709 --> 00:05:45,349
+the slow,
+
+243
+00:05:45,349 --> 00:05:47,347
+heavy kind that's hardest to wake from.
+
+244
+00:05:47,347 --> 00:05:48,547
+From their numbers,
+
+245
+00:05:48,547 --> 00:05:50,787
+the authors suggested stopping coffee
+
+246
+00:05:50,787 --> 00:05:53,347
+about nine hours before bed to avoid
+
+247
+00:05:53,347 --> 00:05:54,547
+losing sleep time.
+
+248
+00:05:54,547 --> 00:05:55,987
+For a 3 p.m.
+
+249
+00:05:55,987 --> 00:05:56,627
+cup,
+
+250
+00:05:56,627 --> 00:05:58,307
+that means bed no earlier than about
+
+251
+00:05:58,307 --> 00:05:58,947
+midnight.
+
+252
+00:05:58,947 --> 00:06:00,547
+For a pre-workout powder,
+
+253
+00:06:00,547 --> 00:06:02,307
+with about twice the caffeine,
+
+254
+00:06:02,307 --> 00:06:04,467
+they suggested more than thirteen hours.
+
+255
+00:06:04,467 --> 00:06:06,387
+So a 6 p.m.
+
+256
+00:06:06,387 --> 00:06:08,467
+gym session would mean a bedtime around
+
+257
+00:06:08,467 --> 00:06:09,667
+7 the next morning.
+
+258
+00:06:09,667 --> 00:06:10,627
+It's an average,
+
+259
+00:06:10,627 --> 00:06:11,587
+not a law,
+
+260
+00:06:11,587 --> 00:06:13,427
+and some people are far more sensitive
+
+261
+00:06:13,427 --> 00:06:14,067
+than others.
+
+262
+00:06:14,067 --> 00:06:16,467
+But it explains why your afternoon coffee
+
+263
+00:06:16,467 --> 00:06:18,307
+keeps showing up for the night shift.
+
+264
+00:06:18,307 --> 00:06:18,547
+So,
+
+265
+00:06:18,547 --> 00:06:20,387
+how does caffeine steal your sleep?
+
+266
+00:06:20,387 --> 00:06:21,987
+It never gave you energy in the
+
+267
+00:06:21,987 --> 00:06:22,664
+first place.
+
+268
+00:06:22,664 --> 00:06:24,744
+It sat in your brain's mailboxes,
+
+269
+00:06:24,744 --> 00:06:26,264
+wearing a closed sign,
+
+270
+00:06:26,264 --> 00:06:28,184
+while the tiredness letters piled up
+
+271
+00:06:28,184 --> 00:06:28,824
+outside.
+
+272
+00:06:28,824 --> 00:06:30,424
+Your liver cleared it slowly,
+
+273
+00:06:30,424 --> 00:06:31,304
+half at a time,
+
+274
+00:06:31,304 --> 00:06:32,424
+over many hours.
+
+275
+00:06:32,424 --> 00:06:34,344
+And for a 3 p.m.
+
+276
+00:06:34,344 --> 00:06:35,064
+coffee,
+
+277
+00:06:35,064 --> 00:06:36,664
+enough can still be there at midnight
+
+278
+00:06:36,664 --> 00:06:38,264
+to keep a few slots shut.
+
+279
+00:06:38,264 --> 00:06:39,464
+Not enough to feel.
+
+280
+00:06:39,464 --> 00:06:41,144
+Just enough to cost you sleep you
+
+281
+00:06:41,144 --> 00:06:42,584
+might never notice losing.
+
+282
+00:06:42,584 --> 00:06:44,184
+Like the sleepers in that study,
+
+283
+00:06:44,184 --> 00:06:45,704
+you'd wake up and swear you slept
+
+284
+00:06:45,704 --> 00:06:46,264
+fine.
+
+285
+00:06:46,264 --> 00:06:48,104
+Tiredness doesn't get cancelled;
+
+286
+00:06:48,104 --> 00:06:49,544
+it gets rescheduled.
+
+287
+00:06:49,544 --> 00:06:51,384
+None of this makes coffee a villain.
+
+288
+00:06:51,384 --> 00:06:53,144
+It does exactly what it's built to
+
+289
+00:06:53,144 --> 00:06:53,704
+do,
+
+290
+00:06:53,704 --> 00:06:55,304
+just for much longer than the cup
+
+291
+00:06:55,304 --> 00:06:55,944
+suggests.
+
+292
+00:06:55,944 --> 00:06:58,104
+The cup and the caffeine simply keep
+
+293
+00:06:58,104 --> 00:06:59,304
+very different hours.
+
+294
+00:06:59,304 --> 00:07:00,963
+The mug was empty by four.
+
+295
+00:07:00,963 --> 00:07:02,483
+The closed sign is still up at
+
+296
+00:07:02,483 --> 00:07:02,996
+midnight.
+
+297
+00:07:02,996 --> 00:07:05,316
+But here's the question we didn't answer:
+
+298
+00:07:05,316 --> 00:07:07,876
+if caffeine only hides your tiredness,
+
+299
+00:07:07,876 --> 00:07:09,556
+what happens when you drink it every
+
+300
+00:07:09,556 --> 00:07:10,436
+single day?
+
+301
+00:07:10,436 --> 00:07:12,356
+That's a mailbox for another day.
+
+302
+00:07:12,356 --> 00:07:13,076
+Until then,
+
+303
+00:07:13,076 --> 00:07:14,516
+tell us in the comments:
+
+304
+00:07:14,516 --> 00:07:16,758
+what time is your last coffee?
+
+305
+00:07:18,667 --> 00:07:19,947
+Thanks for watching.
+
+306
+00:07:19,947 --> 00:07:21,147
+If you learned something,
+
+307
+00:07:21,147 --> 00:07:22,347
+give it a like and share it
+
+308
+00:07:22,347 --> 00:07:23,147
+with a friend.
+
+309
+00:07:23,147 --> 00:07:24,107
+And subscribe,
+
+310
+00:07:24,107 --> 00:07:26,107
+so the next bad idea finds you.
+
+311
+00:07:26,107 --> 00:07:28,648
+Your next video is right over here.

@@ -1,0 +1,79 @@
+Why does a 3 p.m. coffee still cost you sleep at midnight, when you feel completely fine?
+You never feel your 3 p.m. coffee at midnight, but your sleep does.
+Everyone thinks coffee gives you energy, but it gives you zero; you're paying for that 3 p.m. cup at midnight.
+You can drink your last coffee at 3 p.m., never feel wired, and still lose sleep to it at midnight.
+Caffeine taken 6 hours before bed cut more than an hour of sleep in one study, and you probably wouldn't notice it either.
+
+=================== SCORED PANEL (hookscore.py, final five) ===================
+
+  Why does a 3 p.m. coffee still cost you sleep at midnight, when you feel completely fine?
+  ------------------------------------------------------------------------
+    SPECIFICITY   56  ###########
+    ADDRESS       66  #############
+    STAKES        62  ############
+    CURIOSITY     59  ###########
+    BREVITY      100  ####################
+    VERDICT       64  WORKABLE
+    formula      The Question  (2 patterns matched)
+    weakest      SPECIFICITY - swap one adjective for a number, a name or a date
+
+  You never feel your 3 p.m. coffee at midnight, but your sleep does.
+  -------------------------------------------------------------------
+    SPECIFICITY   56  ###########
+    ADDRESS      100  ####################
+    STAKES        62  ############
+    CURIOSITY     41  ########
+    BREVITY      100  ####################
+    VERDICT       59  WORKABLE
+    formula      The Impossible Claim  (1 pattern matched)
+    weakest      CURIOSITY - cut the half of the sentence that answers itself
+
+  Everyone thinks coffee gives you energy, but it gives you zero; you're paying for that 3 p.m. cup at midnight.
+  ------------------------------------------------------------------------
+    SPECIFICITY   56  ###########
+    ADDRESS      100  ####################
+    STAKES        36  #######
+    CURIOSITY     41  ########
+    BREVITY      100  ####################
+    VERDICT       54  WEAK
+    formula      Contrarian Flip  (1 pattern matched)
+    weakest      STAKES - name what it costs them to keep doing it the current way
+
+  You can drink your last coffee at 3 p.m., never feel wired, and still lose sleep to it at midnight.
+  ------------------------------------------------------------------------
+    SPECIFICITY   56  ###########
+    ADDRESS       96  ###################
+    STAKES        88  #################
+    CURIOSITY     24  ####
+    BREVITY      100  ####################
+    VERDICT       53  WEAK
+    formula      The Impossible Claim  (1 pattern matched)
+    weakest      CURIOSITY - cut the half of the sentence that answers itself
+
+  Caffeine taken 6 hours before bed cut more than an hour of sleep in one study, and you probably wouldn't notice it either.
+  ------------------------------------------------------------------------
+    SPECIFICITY   56  ###########
+    ADDRESS       46  #########
+    STAKES        62  ############
+    CURIOSITY     41  ########
+    BREVITY      100  ####################
+    VERDICT       53  WEAK
+    formula      The Impossible Claim  (1 pattern matched)
+    weakest      CURIOSITY - cut the half of the sentence that answers itself
+
+  winner: Why does a 3 p.m. coffee still cost you sleep at midnight, when you feel completely fine?  (64, WORKABLE)
+
+
+=================== CHOICE ===================
+Kept (top two):
+  1. Why does a 3 p.m. coffee still cost you sleep at midnight, when you feel completely fine?   64 WORKABLE  (The Question)  <- USED as the opening line
+  2. You never feel your 3 p.m. coffee at midnight, but your sleep does.                          59 WORKABLE  (The Impossible Claim)
+Why the winner: it is the question the title promises, in the words people search, and "when you feel completely fine"
+opens the gap the video closes (the Drake 2013 sleepers' own diaries did not clearly register the loss at six hours).
+
+Round 1 (all WEAK, rewritten with digits and less self-answering):
+  49 You can drink your last coffee at three in the afternoon, never feel wired, and still lose sleep to it at midnight.
+  48 Why can one coffee at three in the afternoon still cost you sleep at midnight?
+  44 Everyone says coffee gives you energy, but caffeine doesn't give you anything; it hides the note that says you're tired.
+  42 Your coffee at three in the afternoon is still working on your brain at midnight, and you probably won't notice it.
+  40 In one sleep study, caffeine taken six hours before bed still cut more than an hour of sleep, and the sleepers barely noticed.

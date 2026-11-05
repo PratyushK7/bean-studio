@@ -1,0 +1,73 @@
+YOUTUBE UPLOAD SHEET: caffeine-steal-sleep
+Video: caffeine-steal-sleep.mp4 (453 s = 7:33 with the voiced channel outro; 7:16 of voiceover; 16:9 long video, 1920x1080)    Captions: caffeine-steal-sleep.srt    Thumbnail: caffeine-steal-sleep-thumbnail.png
+
+== TITLE ==
+How Does Caffeine Steal Your Sleep?
+
+Alternates:
+- Why Does Coffee Still Keep You Up Hours Later?  (score 84)
+- How Long Does Caffeine Really Stay in Your Brain?  (score 84)
+
+(Winner scored 98/100 with title.py against the thumbnail words. Its one flag is "no number"; the thumbnail carries the numbers.)
+
+== THUMBNAIL ==
+File: caffeine-steal-sleep-thumbnail.png (1280x720)
+Text: 3 PM → MIDNIGHT
+Still: 423.6 s, the caffeine bean sitting in the mailbox slot under a full moon, CLOSED sign up, clock at midnight (the last line). The thumbnail redraws that idea larger: the bean in a big red coffee mug.
+Brief: the caffeine bean, wide-eyed with take lines and arms up, sits in a big red mug wearing the CLOSED sign; a full yellow moon behind its head and a clock at midnight top right; flat black night with a few stars. The words sit in the left third: "3 PM" in yellow, a drawn arrow down, "MIDNIGHT" in paper-white, all with thick ink outlines. Nothing important in the bottom-right corner (the duration badge). Subject test: a coffee mug, a moon and a midnight clock say "coffee and sleep" with the text covered. Text test: "3 PM → MIDNIGHT" says something lasts from the afternoon into the night, without repeating the title.
+
+== DESCRIPTION ==
+How does caffeine affect sleep, and how long does caffeine stay in your system? Caffeine doesn't give you energy: it blocks the signal that says you're tired.
+Here's why a 3 p.m. coffee can still cost you sleep at midnight, told with cartoon beans and checked against the studies.
+
+The short answer: while you're awake, a molecule called adenosine builds up and tells your brain you're tired. Caffeine sits in adenosine's receptors and blocks the message. Your liver clears it slowly: the half-life is around four to five hours on average in healthy adults, but it ranges from about two hours to eight or more. So with a 5-hour half-life, more than a quarter of a 3 p.m. coffee is still in you at midnight. In a 2013 study, 400 mg of caffeine taken six hours before bed still cut more than an hour of sleep, and the sleepers' own diaries didn't clearly notice. A 2023 review of 24 studies found caffeine cut about 45 minutes of sleep on average, with less deep sleep.
+
+A general science explainer, not medical advice. If you're pregnant or on medication, ask your doctor about caffeine.
+
+Chapters:
+0:00 A coffee you can't feel
+0:45 Where tiredness comes from
+1:40 How caffeine blocks tiredness
+2:39 How long caffeine stays
+3:31 The 3 p.m. coffee math
+4:21 What a sleep study found
+5:20 Less sleep, less deep sleep
+6:18 How caffeine steals your sleep
+
+Sources:
+- Drake et al. (2013), Caffeine effects on sleep taken 0, 3, or 6 hours before going to bed, J Clin Sleep Med: https://pmc.ncbi.nlm.nih.gov/articles/PMC3805807/
+- Gardiner et al. (2023), The effect of caffeine on subsequent sleep: a systematic review and meta-analysis, Sleep Med Rev: https://doi.org/10.1016/j.smrv.2023.101764
+- Porkka-Heiskanen et al. (1997), Adenosine: a mediator of the sleep-inducing effects of prolonged wakefulness, Science: https://pubmed.ncbi.nlm.nih.gov/9157887/
+- Huang et al. (2005), Adenosine A2A, but not A1, receptors mediate the arousal effect of caffeine, Nat Neurosci: https://www.nature.com/articles/nn1491
+- EFSA, Caffeine explained (half-life and effects): https://www.efsa.europa.eu/sites/default/files/corporate_publications/files/efsaexplainscaffeine150527.pdf
+- Nehlig (2018), Interindividual differences in caffeine metabolism, Pharmacol Rev: https://pubmed.ncbi.nlm.nih.gov/29514871/
+- FDA, Spilling the Beans: How Much Caffeine Is Too Much?: https://www.fda.gov/consumers/consumer-updates/spilling-beans-how-much-caffeine-too-much
+- USDA FoodData Central, brewed coffee (calories and caffeine): https://fdc.nal.usda.gov/food-details/171890/nutrients
+
+#caffeine #sleep #science
+
+== TAGS ==
+caffeine and sleep, how does caffeine affect sleep, caffeine half life, how long does caffeine stay in your system, adenosine, adenosine receptors, caffeine adenosine, coffee and sleep, afternoon coffee, coffee before bed, why does coffee keep me awake, deep sleep, sleep pressure, caffeine explained, the bean with bad ideas
+
+== TARGET SEARCH QUERIES ==
+1. how does caffeine affect sleep
+2. how long does caffeine stay in your system
+3. can afternoon coffee affect sleep
+
+(Query test: the title and the first two description lines carry "caffeine", "sleep", "how long does caffeine stay in your system", "3 p.m. coffee" and "midnight". Query 3 is carried by "a 3 p.m. coffee can still cost you sleep", not the word "afternoon"; swap "a 3 p.m. coffee" for "an afternoon coffee" in line 2 if that query matters more.)
+
+== PINNED COMMENT ==
+What time is your last coffee of the day? Asking for a mailbox. 🫘 (Next up, maybe: what happens when you drink it every single day.)
+
+== SETTINGS ==
+Audience: Not made for kids (the user's call; this is the usual choice for a general science explainer)
+Category: Education
+Language / caption language: English
+Subtitles: upload caffeine-steal-sleep.srt (Subtitles > Upload file > With timing). No captions are burned into the picture.
+Chapters: in the description above (0:00 first, 8 chapters, each over 10 s); check "Automatic chapters" is off so YouTube uses these.
+End screen (Editor > End screen): the last 14 s are the channel outro, drawn for one. Set the elements to start at 7:26 (when it says
+"your next video is right over here") and run to the end: a Video element ("Most recent upload" or "Best for viewer") over the drawn
+frame on the right, and a Subscribe element. Keep both off the bean on the left.
+Altered or synthetic content: No (an animated cartoon; the voice is TTS narration, not a real person)
+Education fields (Studio only, the upload API can't set them): Type = Concept overview; Level = None; Exam, course or standard = None; Problems = empty
+Visibility: <user's call>
