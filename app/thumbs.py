@@ -1,5 +1,5 @@
-"""Bean Studio: a better thumbnail for a finished video, in two steps, both on Opus for a long video and on Sonnet only for a Short.
-  1. POST /api/thumbnail/ideas {project}   an agent reads the video's script, title and current thumbnail and writes THREE different
+"""Bean Studio: a better thumbnail for a finished video, in two steps, both on Sonnet only (Shorts and long videos).
+  1. POST /api/thumbnail/ideas {project}   an agent reads the video's script, title and current thumbnail and writes TWO different
                                            thumbnail ideas, each built on a different click trigger; GET /api/thumbnail/ideas/<project> reads them.
   2. POST /api/thumbnail/make {project, idea}   the picked idea is drawn (web/thumb.js), rendered, checked at feed size, fixed, and saved
                                            (the old one is kept as <project>-thumbnail-prev.png). Nothing is uploaded."""
@@ -32,7 +32,7 @@ def words_of(v):
 def register(app, ROOT, cfg, start_agent, proj_dir, JOBS):
     def model(wide):
         if not wide: return cfg().get("thumbnail_model_short") or "sonnet"      # a Short's thumbnail: Sonnet only, ideas and drawing
-        return cfg().get("thumbnail_model") or "opus"
+        return cfg().get("thumbnail_model") or "sonnet"
 
     def ideas_file(p): return p / f"{p.name}-thumb-ideas.json"          # the saved five (what the button shows)
     def new_file(p): return p / f"{p.name}-thumb-ideas-new.json"        # a reroll in progress: replaces the saved five only when it is done
@@ -53,7 +53,7 @@ def register(app, ROOT, cfg, start_agent, proj_dir, JOBS):
             ideas.append({"name": clean(o.get("name"), 60) or "Idea", "trigger": o.get("trigger") if o.get("trigger") in TRIGGERS else "Curiosity",
                           "words": words_of(o.get("words")), "concept": clean(o.get("concept")), "subject": clean(o.get("subject"), 120),
                           "face": clean(o.get("face"), 120), "why": clean(o.get("why")), "risk": clean(o.get("risk"))})
-        return ideas[:3]
+        return ideas[:2]
 
     def harvest(p, jobs):
         """a finished batch that nobody collected (the window was closed): the agent's side file, else what it printed, else nothing"""
@@ -90,11 +90,11 @@ The goal: a viewer scrolling at feed size (about 246 px wide) knows EXACTLY what
 - ONE strong, readable emotion on that character, exaggerated.
 - Add the hook on top of the topic, never instead of it: phrase the words as the question the viewer wants answered, or add a short stake word ("...AT NIGHT?", "...WITHOUT KNOWING?"), but only a promise this video pays off honestly (no lies, no fake numbers).
 - Flat high-contrast palette colours, a clean background, nothing important in the bottom-right corner (the duration badge) or in the bottom 15%.
-- The three ideas differ in the picture and the hook angle, each on a DIFFERENT trigger from: {', '.join(TRIGGERS)}; all three name the topic in their words. At least one leans on fear or loss the video honestly delivers on, at least one on curiosity.
+- The two ideas differ in the picture and the hook angle, each on a DIFFERENT trigger from: {', '.join(TRIGGERS)}; both name the topic in their words. One leans on fear or loss the video honestly delivers on, the other on curiosity.
 
 Be unbiased and strict: rank them by how likely a stranger is to click AND feel the video delivered, best first.
 
-Write a JSON array of exactly 3 objects to {out} and nothing else on disk (no other file changes). Each object:
+Write a JSON array of exactly 2 objects to {out} and nothing else on disk (no other file changes). Each object:
 {{"name": "3 to 6 word label", "trigger": one of the triggers, "words": "the on-image text: the title's key words naming the topic, 2 to 6 words", "concept": "the whole picture in two sentences: what is drawn, where, doing what", "subject": "the one big object", "face": "which bean, what expression", "why": "one sentence: what makes a stranger click and why the video pays it off", "risk": "one sentence: how this could mislead or fail, and how it is avoided"}}
 Do not use any other tool than reading files and writing that one file. When done, print the same JSON array as your final message."""
         j = start_agent(label_of(name), prompt, model(wide), "plain")

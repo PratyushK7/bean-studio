@@ -246,17 +246,17 @@ def test_thumbnail_flow():
     app4 = server.Flask("t4"); thumbs.register(app4, root, lambda: cfgd, fake, pdir, JOBS); c4 = app4.test_client()
     r = c4.post("/api/thumbnail/ideas", json={"project": "demo"}).json
     label, prompt, model, mode = calls[-1]
-    assert label == "thumb ideas · demo" and model == "opus" and "FIVE different thumbnail ideas" in prompt and "fear or loss" in prompt and "1280x720" in prompt
+    assert label == "thumb ideas · demo" and model == "sonnet" and "exactly 2 objects" in prompt and "fear or loss" in prompt and "1280x720" in prompt
     assert c4.get(f"/api/thumbnail/ideas/demo?job={r['job']}").json["status"] == "running"
     (proj / "demo-thumb-ideas-new.json").write_text(json.dumps([{"name": f"Idea {i}", "trigger": "Fear" if i == 0 else "Nope", "words": "how does caffeine keep us awake at night", "concept": f"A mug {i}"} for i in range(7)] + ["junk", {"name": "no concept"}]))
     JOBS[r["job"]]["done"] = True
     d = c4.get(f"/api/thumbnail/ideas/demo?job={r['job']}").json
-    assert d["status"] == "done" and len(d["ideas"]) == 5 and d["ideas"][0]["trigger"] == "Fear" and d["ideas"][1]["trigger"] == "Curiosity" and d["ideas"][0]["words"] == "HOW DOES CAFFEINE KEEP US AWAKE" and "EXACTLY what the video is about" in prompt and "TED-Ed" in prompt and "A teaser that hides the topic" in prompt
+    assert d["status"] == "done" and len(d["ideas"]) == 2 and d["ideas"][0]["trigger"] == "Fear" and d["ideas"][1]["trigger"] == "Curiosity" and d["ideas"][0]["words"] == "HOW DOES CAFFEINE KEEP US AWAKE" and "EXACTLY what the video is about" in prompt and "TED-Ed" in prompt and "A teaser that hides the topic" in prompt
     n_calls = len(calls)
     again = c4.get("/api/thumbnail/ideas/demo").json
     assert again["status"] == "done" and [x["name"] for x in again["ideas"]] == [x["name"] for x in d["ideas"]] and len(calls) == n_calls, "saved ideas reopen with no new run"
     r2 = c4.post("/api/thumbnail/ideas", json={"project": "demo"}).json
-    assert len(calls) == n_calls + 1 and [x["name"] for x in c4.get("/api/thumbnail/ideas/demo").json["ideas"]] == [x["name"] for x in d["ideas"]], "a reroll keeps the saved five until it finishes"
+    assert len(calls) == n_calls + 1 and [x["name"] for x in c4.get("/api/thumbnail/ideas/demo").json["ideas"]] == [x["name"] for x in d["ideas"]], "a reroll keeps the saved two until it finishes"
     JOBS[r2["job"]]["done"] = True; assert c4.get(f"/api/thumbnail/ideas/demo?job={r2['job']}").json["status"] == "failed" and c4.get("/api/thumbnail/ideas/demo").json["ideas"], "a failed reroll loses nothing"
     # a batch that finished while the window was closed is collected next time, without a new run; a running one is reattached
     (proj / "demo-thumb-ideas.json").unlink(); (proj / "demo-thumb-ideas-new.json").write_text(json.dumps([{"name": "Late", "concept": "Collected later"}]))
@@ -272,9 +272,9 @@ def test_thumbnail_flow():
     d["ideas"] = c4.get("/api/thumbnail/ideas/demo").json["ideas"]
     c4.post("/api/thumbnail/make", json={"project": "demo", "idea": d["ideas"][0]})
     label, prompt, model, mode = calls[-1]
-    assert label == "thumb · demo" and model == "opus" and mode == "feed" and "From the log" in prompt and "thumbnail-prev.png" in prompt and "upload nothing" in prompt
+    assert label == "thumb · demo" and model == "sonnet" and mode == "feed" and "From the log" in prompt and "thumbnail-prev.png" in prompt and "upload nothing" in prompt
     assert c4.post("/api/thumbnail/make", json={"project": "demo", "idea": {}}).status_code == 400
-    ok("thumbnail: five ideas on Opus, sanitised, then the picked one drawn on Opus with a backup of the old one")
+    ok("thumbnail: two ideas on Sonnet, sanitised, then the picked one drawn on Sonnet with a backup of the old one")
 
 
 def test_live_feed_and_progress():

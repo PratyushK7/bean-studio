@@ -46,7 +46,7 @@ DEFAULTS = {
         "ColdFusion", "Fireship", "Computerphile", "TwoMinutePapers", "Mrwhosetheboss", "Techquickie", "MKBHD", "ThomasFrank", "CleoAbram", "Nerdwriter1", "TomScottGo", "LegalEagle", "dhruvrathee", "DailyDoseOfInternet",
     ],
     "options_model": "sonnet",          # model that adapts outliers into 5 ideas
-    "thumbnail_model": "opus",          # a long video's thumbnail is the biggest lever on clicks: ideas and drawing both use Opus
+    "thumbnail_model": "sonnet",          # a long video's thumbnail is the biggest lever on clicks: ideas and drawing both use Opus
     "thumbnail_model_short": "sonnet",  # a Short's better thumbnail (ideas and drawing) uses Sonnet only
     "video_model": "",                  # one model for every video; empty = use the per-format defaults below
     "video_model_short": "opus",        # Opus for every video: the user saw a visible quality gap with Sonnet
