@@ -305,6 +305,15 @@ Do not use any other tool than reading that file and writing that file. When don
         if t.get("brief"):                                                       # a researched pick: the agent must follow its brief
             bp = (ROOT / str(t["brief"])).resolve()
             if ROOT.resolve() in bp.parents and bp.is_file(): brief = str(bp)
+        if kind == 'short':
+            thumb_line = 'make it at make time, like every Short: follow ~/.claude/skills/line-boil-thumbnail-short/SKILL.md (step 9)'
+        elif a.get('thumb_now'):
+            thumb_line = 'the user chose to draw it NOW, after the video: follow ~/.claude/skills/line-boil-thumbnail-long/SKILL.md (step 6 below)'
+        else:
+            thumb_line = 'do NOT make one at make time: a long video gets its own from the Better thumbnail button (three ideas, the user picks one)'
+        old6_text = f'6. NO thumbnail: do not write web/thumb.js, do not run build.py thumb, do not create a thumbnail file. Write {slug}-youtube.txt for a long video (references/youtube.md, but its THUMBNAIL section is the single line "Not made yet: use the Better thumbnail button in Bean Studio", and lint the title with title.py without --thumb: no #shorts, chapters from {slug}-chapters.txt, 6 to 8 sources, tags, a pinned comment, no list of spin-off Shorts: the user has a separate button for that).'
+        step6 = (f"6. Thumbnail: draw it now, following ~/.claude/skills/line-boil-thumbnail-long/SKILL.md (line-boil-wide step 10): web/thumb.js, build.py thumb {slug}, check stills/thumb-crops.png, and the YouTube sheet's THUMBNAIL section with the real File, Text, Still and Brief. Then {slug}-youtube.txt (references/youtube.md, no #shorts, chapters from {slug}-chapters.txt, 6 to 8 sources, tags, and lint the title with title.py --thumb \"<the thumbnail words>\")."
+                 if a.get('thumb_now') and kind == 'long' else old6_text)
         common = f"""TOPIC: {title}
 Video type: {clean(t.get('type'), 40)}
 What it shows: {clean(t.get('promise'), 300)}
@@ -322,14 +331,14 @@ THE USER'S ANSWERS (follow them):
 - Ending: {clean(a.get('ending') or 'a punchy callback line', 80)}
 - Background music: {'on, and it follows the script: musicMood() changes the mood with the feeling (see the skill)' if a.get('music', True) else 'off (pass --no-music to build.py video)'}
 - Channel outro: {'appended' if a.get('outro', True) else 'left off (pass --no-outro to build.py video)'}
-- Thumbnail: do NOT make one. Long videos get theirs from Bean Studio's Better thumbnail button (five ideas, the user picks one, drawn on Opus).
+- Thumbnail: {thumb_line}.
 - Extra notes: {clean(a.get('notes'), 400) or 'none'}
 """
         if kind == "short":
             prompt = f"""Make a new Short with the line-boil skill. Read ~/.claude/skills/line-boil/SKILL.md and the files it points to (references/api.md, references/style.md, references/youtube.md) first, and ~/.claude/youtube/voice.md for the channel voice.
 
 {common}
-The user has already approved this topic and these settings, so do NOT stop to ask or to show a plan. Go straight through: the hook (five candidate first lines scored with the yt-script skill's hookscore.py, as the line-boil skill says), script, fact-check (search the web; hedge anything uncertain; keep the sources for the sheet), cast, shots, build.py check, stills of every shot checked for overlaps and caption placement, build.py video, build.py sheet, the thumbnail (SKILL.md step 9) and the YouTube upload sheet (step 10). Do not upload anything and do not touch other projects. Finish by printing the project folder, the title and the thumbnail text."""
+The user has already approved this topic and these settings, so do NOT stop to ask or to show a plan. Go straight through, and keep it lean (a typical Short is about 30 tool calls): read each reference file once and do not re-read it; score the five candidate first lines in ONE hookscore.py call (the yt-script skill, as the line-boil skill says); at most 6 web searches or fetches in total; write each file with one Write, not many small edits; check the stills in at most two rounds; then script, fact-check (search the web; hedge anything uncertain; keep the sources for the sheet), cast, shots, build.py check, stills of every shot checked for overlaps and caption placement, build.py video, build.py sheet, the thumbnail (SKILL.md step 9) and the YouTube upload sheet (step 10). Do not upload anything and do not touch other projects. Finish by printing the project folder, the title and the thumbnail text."""
         else:
             structure = clean(a.get("structure") or "as in the research brief or the topic's chapters", 80)
             prompt = f"""Make a LONG video ({dur // 60} minutes, 16:9) for the channel with the line-boil-wide skill. Read ~/.claude/skills/line-boil-wide/SKILL.md and references/wide.md, then the files they point to in ~/.claude/skills/line-boil (SKILL.md, references/api.md, references/style.md, references/youtube.md), and ~/.claude/youtube/voice.md for the channel voice. Use the yt-chapters, yt-seo and yt-package skills' rules for the chapters, description and title.
@@ -343,11 +352,11 @@ The user has already approved this topic and these settings, so do NOT stop to a
 4. The SCENE AND SOUND PLAN: {slug}-plan.md, one row per chapter with the set and place, time of day and colour, the beans on screen, props, the music mood and why, the sound or silence beat and the joke (the scenes and the music must change with what the script says: see references/wide.md). Then a cast of different beans (see "A cast of beans" in references/style.md) in web/cast.js, then web/shots/ch01.js, ch02.js, ... ONE CHAPTER AT A TIME: write the chapter's shots, render 2 or 3 stills per chapter with build.py stills (read the single stills/sheet.jpg it writes), fix what is wrong, then the next chapter. build.py check must show no [error], no shot over 20 s and no music warning (use setScene() sets and musicMood() moods, at least 4 moods).
    Burned-in captions: {'ON (set CAP.on = true at the top of cast.js)' if a.get('captions') else 'OFF, the long-form standard: the .srt is uploaded as YouTube captions; put numbers and key words on screen as label shapes'}.
 5. build.py video {slug}{'' if a.get('music', True) else ' --no-music'}{'' if a.get('outro', True) else ' --no-outro'}, then build.py sheet {slug} and look at the sheet once.
-6. NO thumbnail: do not write web/thumb.js, do not run build.py thumb, do not create a thumbnail file. Write {slug}-youtube.txt for a long video (references/youtube.md, but its THUMBNAIL section is the single line "Not made yet: use the Better thumbnail button in Bean Studio", and lint the title with title.py without --thumb: no #shorts, chapters from {slug}-chapters.txt, 6 to 8 sources, tags, a pinned comment, no list of spin-off Shorts: the user has a separate button for that).
+6. {step6}
 Do not upload anything and do not touch other projects. Finish by printing the project folder, the real length, the chapters, the title, and anything you could not verify (the thumbnail is made afterwards from the Better thumbnail button)."""
         (DATA / "make").mkdir(parents=True, exist_ok=True)
         save_json(DATA / "make" / f"{slug}.json", {"kind": kind, "topic": t, "answers": a, "when": dt.datetime.now().isoformat(timespec="seconds")})
         mode = "window" if (a.get("window") or c.get("agent_window")) else "feed"      # watch it live, or in its own Claude window
-        model = a.get("model") if a.get("model") in ("opus", "sonnet", "haiku") else (c.get("video_model") or c.get(f"video_model_{kind}") or None)
+        model = a.get("model") if a.get("model") in ("opus", "sonnet", "haiku") else None
         j = run_agent(f"make · {slug}", prompt, model, mode)
         return jsonify(job=j["id"], project=slug, title=title, kind=kind, mode=mode)

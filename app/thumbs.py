@@ -1,5 +1,5 @@
-"""Bean Studio: a better thumbnail for a finished video, in two steps, both on Sonnet only (Shorts and long videos).
-  1. POST /api/thumbnail/ideas {project}   an agent reads the video's script, title and current thumbnail and writes TWO different
+"""Bean Studio: a better thumbnail for a finished video, in two steps.
+  1. POST /api/thumbnail/ideas {project}   an agent reads the video's script, title and current thumbnail and writes THREE different
                                            thumbnail ideas, each built on a different click trigger; GET /api/thumbnail/ideas/<project> reads them.
   2. POST /api/thumbnail/make {project, idea}   the picked idea is drawn (web/thumb.js), rendered, checked at feed size, fixed, and saved
                                            (the old one is kept as <project>-thumbnail-prev.png). Nothing is uploaded."""
@@ -25,16 +25,16 @@ def title_of(p):
 
 
 def words_of(v):
-    """2 to 6 words, upper case (the title's key words, topic named outright)"""
-    return " ".join(re.findall(r"[A-Za-z0-9$%'?!+\u2192-]+", str(v or "").upper())[:6])
+    """up to 3 words, upper case"""
+    return " ".join(re.findall(r"[A-Za-z0-9$%'?!+\u2192-]+", str(v or "").upper())[:3])
 
 
 def register(app, ROOT, cfg, start_agent, proj_dir, JOBS):
     def model(wide):
-        if not wide: return cfg().get("thumbnail_model_short") or "sonnet"      # a Short's thumbnail: Sonnet only, ideas and drawing
-        return cfg().get("thumbnail_model") or "sonnet"
+        if not wide: return cfg().get("thumbnail_model_short") or None      # a Short's thumbnail: the session default, ideas and drawing
+        return cfg().get("thumbnail_model") or None
 
-    def ideas_file(p): return p / f"{p.name}-thumb-ideas.json"          # the saved five (what the button shows)
+    def ideas_file(p): return p / f"{p.name}-thumb-ideas.json"          # the saved three (what the button shows)
     def new_file(p): return p / f"{p.name}-thumb-ideas-new.json"        # a reroll in progress: replaces the saved five only when it is done
 
     def label_of(name): return f"thumb ideas · {name}"
@@ -53,7 +53,7 @@ def register(app, ROOT, cfg, start_agent, proj_dir, JOBS):
             ideas.append({"name": clean(o.get("name"), 60) or "Idea", "trigger": o.get("trigger") if o.get("trigger") in TRIGGERS else "Curiosity",
                           "words": words_of(o.get("words")), "concept": clean(o.get("concept")), "subject": clean(o.get("subject"), 120),
                           "face": clean(o.get("face"), 120), "why": clean(o.get("why")), "risk": clean(o.get("risk"))})
-        return ideas[:2]
+        return ideas[:3]
 
     def harvest(p, jobs):
         """a finished batch that nobody collected (the window was closed): the agent's side file, else what it printed, else nothing"""
@@ -78,25 +78,20 @@ def register(app, ROOT, cfg, start_agent, proj_dir, JOBS):
         out = new_file(p)
         out.unlink(missing_ok=True)                                              # never read a stale batch
         size = "1280x720 (16:9, web/thumb.js, one still shot)" if wide else "1080x1920 (9:16 cover, web/thumb.js, gridSafe)"
-        prompt = f"""You are the thumbnail strategist for the YouTube channel "{cfg()['channel']}": hand-drawn cartoon explainers told by beans. The video is {name} in {p}.
+        THUMB_SKILL = "~/.claude/skills/line-boil-thumbnail-long/SKILL.md" if wide else "~/.claude/skills/line-boil-thumbnail-short/SKILL.md"
+        prompt = f"""
+You are the thumbnail strategist for the YouTube channel "{cfg()['channel']}": hand-drawn cartoon explainers told by beans. The video is {name} in {p}.
 
-Read: {p / 'script.json'} (the whole voiceover), {p / (name + '-youtube.txt')} (title and current thumbnail brief; title now: "{title_of(p) or 'unknown'}"), {p / (name + '-sources.md')} if it exists, {p / 'web' / 'cast.js'} (the characters and props we can draw), {p / 'web' / 'thumb.js'} (the current thumbnail code) and, if it exists yet, look at the current picture {p / (name + '-thumbnail.png')} (a long video has none until this runs). Also read the thumbnail rules in {ENGINE_SKILL}/SKILL.md (step 9) and, for a long video, {ENGINE_SKILL.replace('line-boil', 'line-boil-wide')}/references/wide.md ("16:9 thumbnails").
+Read: {p / 'script.json'} (the whole voiceover), {p / (name + '-youtube.txt')} (title and current thumbnail brief; title now: "{title_of(p) or 'unknown'}"), {p / (name + '-sources.md')} if it exists, {p / 'web' / 'cast.js'} (the characters and props we can draw), and {p / (name + '-thumbnail.png')} if it exists (the current thumbnail).
 
-First, in two lines, say honestly what is WRONG with the current thumbnail if there is one (does a stranger know what the video is about in one second? is there one clear subject? is there a reason to click?), or what the thumbnail must achieve for this topic if there is none. Then write THREE different thumbnail ideas for a {size}.
+Read {THUMB_SKILL} first and follow its rules for the words, the picture and the tests. The picture is {size}.
 
-The goal: a viewer scrolling at feed size (about 246 px wide) knows EXACTLY what the video is about in one second, and feels they want the answer. The model to copy is a TED-Ed thumbnail: big plain lettering "HOW DOES CAFFEINE KEEP US AWAKE?" with one big character yawning in a chair beside a mug. Nothing is cryptic. Rules:
-- THE WORDS STATE THE TOPIC, OUTRIGHT. The on-image text is the title's key words in plain language, 2 to 6 words (a question is best), with the topic noun biggest and in the strongest colour. Repeating the title is wanted. Cover the picture: the words alone must say exactly what the video is about. A teaser that hides the topic ("3 PM TO MIDNIGHT", "NOPE", a bare number) is a FAIL.
-- THE PICTURE SAYS THE SAME THING: ONE big character doing the topic's action (yawning, panicking, staring at it) beside the topic's own object, drawn large (at least a third of the frame). Cover the words: a stranger should still guess the topic. No second idea, no clutter.
-- ONE strong, readable emotion on that character, exaggerated.
-- Add the hook on top of the topic, never instead of it: phrase the words as the question the viewer wants answered, or add a short stake word ("...AT NIGHT?", "...WITHOUT KNOWING?"), but only a promise this video pays off honestly (no lies, no fake numbers).
-- Flat high-contrast palette colours, a clean background, nothing important in the bottom-right corner (the duration badge) or in the bottom 15%.
-- The two ideas differ in the picture and the hook angle, each on a DIFFERENT trigger from: {', '.join(TRIGGERS)}; both name the topic in their words. One leans on fear or loss the video honestly delivers on, the other on curiosity.
+Then write THREE different thumbnail ideas, each built on a different click trigger from: {', '.join(TRIGGERS)}. At least one leans on fear or loss the video honestly delivers on, and at least one on curiosity. Be unbiased and strict: rank them, best first.
 
-Be unbiased and strict: rank them by how likely a stranger is to click AND feel the video delivered, best first.
-
-Write a JSON array of exactly 2 objects to {out} and nothing else on disk (no other file changes). Each object:
-{{"name": "3 to 6 word label", "trigger": one of the triggers, "words": "the on-image text: the title's key words naming the topic, 2 to 6 words", "concept": "the whole picture in two sentences: what is drawn, where, doing what", "subject": "the one big object", "face": "which bean, what expression", "why": "one sentence: what makes a stranger click and why the video pays it off", "risk": "one sentence: how this could mislead or fail, and how it is avoided"}}
-Do not use any other tool than reading files and writing that one file. When done, print the same JSON array as your final message."""
+Write a JSON array of exactly 3 objects to {out} and nothing else on disk (no other file changes). Each object:
+{{"name": "3 to 6 word label", "trigger": one of the triggers, "words": "the on-image words, as the skill says", "concept": "the whole picture in two sentences: what is drawn, where, doing what", "subject": "the one big object", "face": "which bean, what expression", "why": "one sentence: what makes a stranger click and why the video pays it off", "risk": "one sentence: how this could mislead or fail, and how it is avoided"}}
+Then print the array.
+"""
         j = start_agent(label_of(name), prompt, model(wide), "plain")
         return jsonify(job=j["id"], project=name)
 
@@ -111,7 +106,7 @@ Do not use any other tool than reading files and writing that one file. When don
         finished = sorted((x for x in JOBS.values() if x["label"] == label_of(name) and x.get("done")), key=lambda x: x.get("started", 0), reverse=True)
         saved_at = ideas_file(p).stat().st_mtime if ideas_file(p).exists() else 0
         if request.args.get("job") or new_file(p).exists() or (finished and finished[0].get("started", 0) > saved_at):
-            got = harvest(p, finished)                                           # a batch just finished (or finished unseen): it replaces the saved five
+            got = harvest(p, finished)                                           # a batch just finished (or finished unseen): it replaces the saved three
             if got: return jsonify(status="done", ideas=got)
             if request.args.get("job"): return jsonify(status="failed", ideas=sanitise(load(ideas_file(p))))
         saved = sanitise(load(ideas_file(p)))
@@ -127,26 +122,25 @@ Do not use any other tool than reading files and writing that one file. When don
         title = title_of(p)
         words = words_of(i.get("words"))
         wide = (p / "project.json").exists() and "wide" in (p / "project.json").read_text(encoding="utf-8", errors="replace")
+        size = "1280x720 (16:9, web/thumb.js, one still shot)" if wide else "1080x1920 (9:16 cover, web/thumb.js, gridSafe)"
+        THUMB_SKILL = "~/.claude/skills/line-boil-thumbnail-long/SKILL.md" if wide else "~/.claude/skills/line-boil-thumbnail-short/SKILL.md"
         py, eng = cfg()["python"], cfg()["engine"]
-        prompt = f"""Redraw the thumbnail for the video {name} in {p}, to this idea picked by the user. Nothing else changes: do not touch the video, script, chapters, other projects, and upload nothing.
+        prompt = f"""
+You are drawing a better thumbnail for the video {name} in {p}. The user picked this idea from the three:
+- name: {clean(i.get('name'), 60)}   trigger: {clean(i.get('trigger'), 30)}
+- words on the picture: {clean(i.get('words'), 60) or '(as the skill says)'}
+- concept: {clean(i.get('concept'))}
+- the one big subject: {clean(i.get('subject'), 120)}   the face: {clean(i.get('face'), 120)}
+- why it clicks: {clean(i.get('why'))}   risk: {clean(i.get('risk'))}
 
-THE IDEA ({clean(i.get('trigger'), 30)}): {clean(i.get('name'), 60)}
-- Picture: {concept}
-- The one big subject: {clean(i.get('subject'), 120)}
-- Face: {clean(i.get('face'), 120)}
-- Words on the image (the topic named outright, 2 to 6 words, big; repeating the title "{title}" is fine and wanted): {words or '(the title shortened to its key words, as a question)'}
-- Why it should work: {clean(i.get('why'))}
-- Watch out for: {clean(i.get('risk'))}
-
-How:
-1. Read {ENGINE_SKILL}/SKILL.md step 9 and {ENGINE_SKILL}/references/api.md, {p / 'web' / 'cast.js'} and the current {p / 'web' / 'thumb.js'}. If {p / (name + '-thumbnail.png')} exists, first copy it to {p / (name + '-thumbnail-prev.png')} (keep the old one); if web/thumb.js does not exist yet, create it.
-2. Rewrite {p / 'web' / 'thumb.js'} (CAP.on = false, one still shot, flat high-contrast palette colours, {'1280x720: the words in the upper left or left third, faces in the middle and right, nothing important in the bottom 15% of the right 20% (duration badge)' if wide else '1080x1920: headline, subject and faces inside gridSafe'}). Draw the big subject large (at least a third of the frame, recognisable by silhouette); add props to cast.js if the subject does not exist yet.
-3. Run: {py} {eng} thumb {name} and look at stills/thumb-crops.png (full, small feed size, and the badge corner). Judge the SMALL copy only:
-   - Subject test: cover the words. Can a stranger name the topic from the picture alone (one big character doing the topic's action beside the topic's own object)?
-   - Topic test: cover the picture. Do the words alone say exactly what the video is about (the topic noun is in them)? Compare with a TED-Ed style "HOW DOES CAFFEINE KEEP US AWAKE?".
-   - Click test: is there one strong emotion, one unresolved thing, nothing cluttered, nothing in the badge corner?
-   Fix and re-render until all three pass (at most 5 rounds). Be strict.
-4. In {p / (name + '-youtube.txt')} update the THUMBNAIL section (File:, Text:, Still:, Brief:) to match what you drew (replace a "Not made yet" line); the title linter's "thumbnail repeats the title" flag is intentionally ignored. Change nothing else in that file.
-5. Finish by printing the final text, what is drawn, and the result of each of the three tests, honestly (say so if one still fails)."""
+Read {THUMB_SKILL} first and follow it. The picture is {size}. Then:
+1. Read {p / 'script.json'}, {p / 'web' / 'cast.js'} and {p / (name + '-youtube.txt')}.
+2. If {p / (name + '-thumbnail.png')} exists, copy it to {p / (name + '-thumbnail-prev.png')} first (keep the old one).
+3. Write {p / 'web' / 'thumb.js'} for this idea only.
+4. Run: {py} {eng} thumb {name}, then look at the small copy at feed size and the crops.
+5. Judge the small copy with the skill's tests, and redraw until they all pass (at most 5 rounds).
+6. Update the YouTube sheet's THUMBNAIL section (File:, Text:, Still:, Brief:) to match what you drew, and change nothing else in that file.
+7. Finish by printing the final text, what is drawn, and the result of each test, honestly (say so if one still fails). Then upload nothing.
+"""
         j = start_agent(f"thumb · {name}", prompt, model(wide), "feed")
         return jsonify(job=j["id"], project=name)

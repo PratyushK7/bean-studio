@@ -45,12 +45,12 @@ DEFAULTS = {
         # tech, productivity and learning
         "ColdFusion", "Fireship", "Computerphile", "TwoMinutePapers", "Mrwhosetheboss", "Techquickie", "MKBHD", "ThomasFrank", "CleoAbram", "Nerdwriter1", "TomScottGo", "LegalEagle", "dhruvrathee", "DailyDoseOfInternet",
     ],
-    "options_model": "sonnet",          # model that adapts outliers into 5 ideas
-    "thumbnail_model": "sonnet",          # a long video's thumbnail is the biggest lever on clicks: ideas and drawing both use Opus
-    "thumbnail_model_short": "sonnet",  # a Short's better thumbnail (ideas and drawing) uses Sonnet only
-    "video_model": "",                  # one model for every video; empty = use the per-format defaults below
-    "video_model_short": "opus",        # Opus for every video: the user saw a visible quality gap with Sonnet
-    "video_model_long": "opus",         # Opus for every video (long ones also have 100+ sentences and 70+ shots with sourced facts)
+    "options_model": "",                  # model that adapts outliers into 5 ideas (empty = the session default)
+    "thumbnail_model": "",                # empty = the session default
+    "thumbnail_model_short": "",          # empty = the session default
+    "video_model": "",                  # one model for every video; empty = the session default
+    "video_model_short": "",          # empty = the session default
+    "video_model_long": "",           # empty = the session default
     "agent_window": False,              # True: every video the agent makes opens in its own visible Claude window
 }
 SLUG = re.compile(r"^[a-z0-9][a-z0-9-]{0,60}$")
@@ -394,7 +394,7 @@ analytics.register(app, ROOT, cfg, start_job)
 refresh_youtube = ytstate.register(app, ROOT, cfg)      # live posted / scheduled / private state for every tab
 topics.register(app, ROOT, cfg, start_job, JOBS, start_agent)
 import thumbs
-thumbs.register(app, ROOT, cfg, start_agent, proj_dir, JOBS)   # five thumbnail ideas, then the picked one drawn (Opus)   # topic selector + the "make this video" job
+thumbs.register(app, ROOT, cfg, start_agent, proj_dir, JOBS)   # five thumbnail ideas, then the picked one drawn   # topic selector + the "make this video" job
 
 
 # ---------- settings and housekeeping ----------

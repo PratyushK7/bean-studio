@@ -337,7 +337,7 @@ async function openProject(name) {
           <button class="act sec" onclick="run({action:'check',project:'${name}'})">2 · Check</button>
           <button class="act" onclick="run({action:'video',project:'${name}'})">3 · Build video</button>
           <button class="act sec" onclick="run({action:'thumb',project:'${name}'})">4 · Thumbnail</button>
-          <button class="act red" title="Two thumbnail ideas built on different click triggers; pick one and it is drawn (Sonnet)" onclick="thumbIdeas('${name}')">🖼 Better thumbnail</button>
+          <button class="act red" title="Three thumbnail ideas built on different click triggers; pick one and it is drawn" onclick="thumbIdeas('${name}')">🖼 Better thumbnail</button>
           <button class="act sec" onclick="run({action:'sheet',project:'${name}'})">Contact sheet</button>${long && p.steps.video ? `<button class="act blue" title="yt-shorts: which moments survive alone, with new scored first lines" onclick="run({action:'spinoffs',project:'${name}'})">✂ Spin-off Shorts</button>` : ''}${long ? `<button class="act sec" onclick="run({action:'chapters',project:'${name}'})">Chapters</button>` : ''}
           <button class="act blue" onclick="agentFor('${name}')">Ask agent…</button>
         </div>
@@ -536,9 +536,9 @@ function openWizard(src, i) {
     ${long ? `<div class="row" style="margin-top:12px"><label style="margin:0"><input type="checkbox" id="w_caps"> Burned-in captions <span class="muted">(not the long-form standard: YouTube's own captions come from the uploaded .srt)</span></label></div>` : ''}
     <div class="row" style="margin-top:12px"><label style="margin:0"><input type="checkbox" id="w_music" checked> Background music <span class="muted">(follows the script's mood)</span></label><label style="margin:0"><input type="checkbox" id="w_outro" checked> Channel outro (3.5 s)</label></div>
     <label>Quality <span class="muted">(the video itself renders on your computer for free; this is the AI that writes and draws it)</span></label>
-    <select id="w_model"><option value="">The studio default (Sonnet for Shorts, Opus for long videos)</option><option value="sonnet">Balanced · Sonnet: lighter on your usage, good for most Shorts</option><option value="opus">Best · Opus: strongest writing and staging, uses more</option></select>
+    <select id="w_model"><option value="">The session default</option><option value="sonnet">Balanced · Sonnet: lighter on your usage, good for most Shorts</option><option value="opus">Best · Opus: strongest writing and staging, uses more</option></select>
     <div class="row" style="margin-top:10px"><label style="margin:0"><input type="checkbox" id="w_window"> 🪟 Open in its own Claude window so I can watch every step (it may ask for permissions)</label></div>
-    ${long ? `<p class="muted" style="margin:12px 0 0">🖼 The thumbnail is made afterwards, from the <b>Better thumbnail</b> button on the finished video: two ideas, you pick one.</p><input type="hidden" id="w_thumb" value="">` : `<label>Thumbnail text <span class="muted">(optional, up to 3 words; blank = the agent chooses)</span></label><input type="text" id="w_thumb" maxlength="24" placeholder="e.g. TOO TALL?">`}
+    ${long ? `<label style="margin-top:12px">Thumbnail <span class="muted">(a long video: pick when it is drawn)</span></label><select id="w_thumbmode"><option value="later">Later: from the Better thumbnail button (three ideas, you pick one)</option><option value="now">Now: drawn after the video, with the long-thumbnail skill</option></select><input type="hidden" id="w_thumb" value="">` : `<label>Thumbnail text <span class="muted">(optional, up to 3 words; blank = the agent chooses)</span></label><input type="text" id="w_thumb" maxlength="24" placeholder="e.g. TOO TALL?">`}
     <label>Anything else? <span class="muted">(optional)</span></label><textarea id="w_notes" rows="3" placeholder="e.g. keep it gentle, include the 1982 lawn chair story, avoid mentioning X"></textarea>
     <div class="row" style="margin-top:16px; justify-content:flex-end"><button class="act sec" onclick="closeWizard()">Cancel</button><button class="act red" id="wizgo" onclick="makeVideo('${src}', ${i})">${long ? '🎬 Make the long video' : '🎬 Make the video'}</button></div>`;
   $('#wiz').classList.add('on');
@@ -548,7 +548,7 @@ async function makeVideo(src, i) {
   const long = TKIND === 'long';
   const o = Object.assign({}, (src === 'pick' ? TPICK : TOPT)[TKIND][i], {title: $('#w_title').value.trim()});
   const answers = {voice: $('#w_voice').value, speed: +$('#w_speed').value, tone: $('#w_tone').value, cast: $('#w_cast').value, ending: $('#w_end').value,
-    music: $('#w_music').checked, outro: $('#w_outro').checked, thumb_text: $('#w_thumb').value.trim(), notes: $('#w_notes').value.trim(),
+    music: $('#w_music').checked, outro: $('#w_outro').checked, thumb_text: $('#w_thumb').value.trim(), thumb_now: long && $('#w_thumbmode').value === 'now', notes: $('#w_notes').value.trim(),
     model: $('#w_model').value, window: $('#w_window').checked, captions: long && $('#w_caps').checked,
     ...(long ? {minutes: +$('#w_min').value, structure: $('#w_struct').value} : {duration: +$('#w_dur').value})};
   const btn = $('#wizgo'), label = btn.textContent; btn.disabled = true; btn.textContent = 'Starting…';          // a second click would start a second video
@@ -556,7 +556,7 @@ async function makeVideo(src, i) {
   finally { btn.disabled = false; btn.textContent = label; }
 }
 
-// ---------- a better thumbnail: two ideas, pick one, it is drawn (Sonnet) ----------
+// ---------- a better thumbnail: three ideas, pick one, it is drawn ----------
 let THPOLL;
 function drawThumbIdeas(name, ideas) {
   window.THIDEAS = ideas;
@@ -565,7 +565,7 @@ function drawThumbIdeas(name, ideas) {
       ${o.words ? `<div style="font-size:22px;font-weight:800;margin:6px 0">“${esc(o.words)}”</div>` : ''}
       <div>${esc(o.concept)}</div><div class="muted" style="margin-top:4px"><b>Why it clicks:</b> ${esc(o.why)}</div>${o.risk ? `<div class="muted"><b>Watch out:</b> ${esc(o.risk)}</div>` : ''}
       <div class="row" style="justify-content:flex-end;margin-top:8px"><button class="act red" onclick="thumbMake('${name}', ${k})">Draw this one</button></div></div>`).join('') +
-    `<div class="row" style="justify-content:flex-end"><button class="act sec" onclick="closeThumb()">Close</button><button class="act sec" title="Throw these away and analyse again for two new ideas" onclick="thumbIdeas('${name}', true)">↻ Reroll</button></div>`;
+    `<div class="row" style="justify-content:flex-end"><button class="act sec" onclick="closeThumb()">Close</button><button class="act sec" title="Throw these away and analyse again for three new ideas" onclick="thumbIdeas('${name}', true)">↻ Reroll</button></div>`;
 }
 async function thumbIdeas(name, reroll = false) {
   const box = $('#wizbox'); $('#wiz').classList.add('on');
@@ -574,7 +574,7 @@ async function thumbIdeas(name, reroll = false) {
     const saved = await api(`/api/thumbnail/ideas/${name}`, {silent: true}).catch(() => null);
     if (saved && saved.ideas && saved.ideas.length) { drawThumbIdeas(name, saved.ideas); return; }
   }
-  box.innerHTML = `<h2 style="margin:0 0 4px">A better thumbnail</h2><p class="muted" id="thstatus"><span class="spin">⟳</span> The agent is studying the script and the current thumbnail, then writing two ideas built on different click triggers… (usually 1–2 minutes)</p><div class="row" style="justify-content:flex-end"><button class="act sec" onclick="closeThumb()">Cancel</button></div>`;
+  box.innerHTML = `<h2 style="margin:0 0 4px">A better thumbnail</h2><p class="muted" id="thstatus"><span class="spin">⟳</span> The agent is studying the script and the current thumbnail, then writing three ideas built on different click triggers… (usually 1–2 minutes)</p><div class="row" style="justify-content:flex-end"><button class="act sec" onclick="closeThumb()">Cancel</button></div>`;
   let r; try { r = await api('/api/thumbnail/ideas', {method: 'POST', body: {project: name}}); } catch (e) { closeWizard(); return; }
   clearInterval(THPOLL);
   THPOLL = setInterval(async () => {
