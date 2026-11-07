@@ -1,0 +1,2 @@
+const WORDS = [{"w": "Like,", "s": 0.0, "e": 0.4, "line": 0}, {"w": "share,", "s": 0.4, "e": 0.8, "line": 0}, {"w": "and", "s": 0.8, "e": 0.96, "line": 0}, {"w": "subscribe", "s": 0.96, "e": 1.6, "line": 0}, {"w": "for", "s": 1.6, "e": 1.76, "line": 0}, {"w": "more", "s": 1.76, "e": 1.92, "line": 0}, {"w": "bad", "s": 1.92, "e": 2.24, "line": 0}, {"w": "ideas.", "s": 2.24, "e": 3.09, "line": 0}];
+const VO_DUR = 3.09;
