@@ -39,8 +39,16 @@ WORDS_PER_SECOND = 3.1                                                       # t
 KINDS = ("short", "long")
 
 
+SHORT_AUTO = ("LENGTH: you decide, from what THIS topic needs to teach. The count is the VOICEOVER ONLY: the channel outro (about 6 seconds) is added on top and is never part of it. "
+              "First list what a viewer must leave knowing (the answer, why it is true, the one surprising detail, the common belief it corrects, one number or example they can repeat), "
+              "then write only the sentences that carry those: no padding, and never cut a needed fact just to hit a number. Stay between 35 and 60 seconds of voiceover "
+              f"(about {round(35 * WORDS_PER_SECOND)} to {round(60 * WORDS_PER_SECOND)} words at {WORDS_PER_SECOND} words a second). Once the script is written, state your chosen length, run build.py voice <project> --target <that many seconds>, "
+              "and rewrite until it prints TARGET <seconds>s: OK (within 4 seconds). It is a Short, so it renders as 9:16 with the line-boil skill.")
+
+
 def length_instructions(seconds):
-    """what to tell the line-boil skill when the user picked a duration"""
+    """what to tell the line-boil skill when the user picked a duration (None: a Short whose length the agent decides)"""
+    if not seconds: return SHORT_AUTO
     seconds = int(seconds)
     words = round(seconds * WORDS_PER_SECOND)
     head = f"TARGET LENGTH: {seconds} seconds of voiceover, about {words} words ({WORDS_PER_SECOND} words a second)."
@@ -71,7 +79,7 @@ def kind_of(v):
     return v if v in KINDS else "short"
 
 
-def register(app, ROOT, cfg, start_job, JOBS, start_agent=None):
+def register(app, ROOT, cfg, start_job, JOBS, start_agent=None, start_staged=None):
     DATA = ROOT / "data"
 
     def run_agent(label, prompt, model=None, mode="plain"):
@@ -297,7 +305,7 @@ Do not use any other tool than reading that file and writing that file. When don
         if not title: abort(400, "no topic")
         voice = a.get("voice") if a.get("voice") in VOICE_IDS else "af_heart"
         speed = round(number(a.get("speed"), 1.0, 0.9, 1.15), 2)
-        dur = int(number(a.get("minutes"), 7, 4, 15) * 60) if kind == "long" else int(number(a.get("duration"), 40, 25, 60))
+        dur = int(number(a.get("minutes"), 7, 4, 15) * 60) if kind == "long" else (int(number(a.get("duration"), 40, 25, 60)) if a.get("duration") else None)      # a Short with no duration: the agent decides
         slug = slug_for(title)
         (Path(c["projects_dir"]) / slug).mkdir(parents=True, exist_ok=True)     # reserve the name: a second click can't pick it too
         src = t.get("inspired_by") or {}
@@ -305,15 +313,18 @@ Do not use any other tool than reading that file and writing that file. When don
         if t.get("brief"):                                                       # a researched pick: the agent must follow its brief
             bp = (ROOT / str(t["brief"])).resolve()
             if ROOT.resolve() in bp.parents and bp.is_file(): brief = str(bp)
+        desc = clean(a.get('thumb_desc'), 1200)
+        user_desc = (' THE USER DESCRIBED THE THUMBNAIL THEY WANT, in their own words. Draw exactly this (it wins over the skill style rules; the skill tests still apply and you report honestly if one fails): "' + desc + '"') if desc else ''
+        thumb_now = kind == 'long' and bool(a.get('thumb_now') or desc)      # a described thumbnail is drawn now
         if kind == 'short':
-            thumb_line = 'make it at make time, like every Short: follow ~/.claude/skills/line-boil-thumbnail-short/SKILL.md (step 9)'
-        elif a.get('thumb_now'):
-            thumb_line = 'the user chose to draw it NOW, after the video: follow ~/.claude/skills/line-boil-thumbnail-long/SKILL.md (step 6 below)'
+            thumb_line = 'make it at make time, like every Short: follow ~/.claude/skills/line-boil-thumbnail-short/SKILL.md (step 9).' + user_desc
+        elif thumb_now:
+            thumb_line = 'the user chose to draw it NOW, after the video: follow ~/.claude/skills/line-boil-thumbnail-long/SKILL.md (step 6 below).' + user_desc
         else:
             thumb_line = 'do NOT make one at make time: a long video gets its own from the Better thumbnail button (three ideas, the user picks one)'
         old6_text = f'6. NO thumbnail: do not write web/thumb.js, do not run build.py thumb, do not create a thumbnail file. Write {slug}-youtube.txt for a long video (references/youtube.md, but its THUMBNAIL section is the single line "Not made yet: use the Better thumbnail button in Bean Studio", and lint the title with title.py without --thumb: no #shorts, chapters from {slug}-chapters.txt, 6 to 8 sources, tags, a pinned comment, no list of spin-off Shorts: the user has a separate button for that).'
         step6 = (f"6. Thumbnail: draw it now, following ~/.claude/skills/line-boil-thumbnail-long/SKILL.md (line-boil-wide step 10): web/thumb.js, build.py thumb {slug}, check stills/thumb-crops.png, and the YouTube sheet's THUMBNAIL section with the real File, Text, Still and Brief. Then {slug}-youtube.txt (references/youtube.md, no #shorts, chapters from {slug}-chapters.txt, 6 to 8 sources, tags, and lint the title with title.py --thumb \"<the thumbnail words>\")."
-                 if a.get('thumb_now') and kind == 'long' else old6_text)
+                 if thumb_now else old6_text)
         common = f"""TOPIC: {title}
 Video type: {clean(t.get('type'), 40)}
 What it shows: {clean(t.get('promise'), 300)}
@@ -325,7 +336,7 @@ PROJECT NAME: {slug}   (create it with build.py new {slug}; it lands in {c['proj
 
 THE USER'S ANSWERS (follow them):
 - {length_instructions(dur)}
-- Voice: {voice}   Speed: {speed}  (build.py voice {slug} --voice {voice} --speed {speed} --target {dur})
+- Voice: {voice}   Speed: {speed}  (build.py voice {slug} --voice {voice} --speed {speed} --target {dur or "<the seconds you chose>"})
 - Tone: {clean(a.get('tone') or 'dry and deadpan, the channel default', 80)}
 - Cast: {'reuse the red host bean (BEAN in the bean-avatar project) as the hero, with other beans for the other ideas' if a.get('cast') == 'host' else 'a new cast of different beans designed for this topic: one bean per idea or role, abstract ideas as costume beans (see "A cast of beans" in references/style.md)'}
 - Ending: {clean(a.get('ending') or 'a punchy callback line', 80)}
@@ -358,5 +369,27 @@ Do not upload anything and do not touch other projects. Finish by printing the p
         save_json(DATA / "make" / f"{slug}.json", {"kind": kind, "topic": t, "answers": a, "when": dt.datetime.now().isoformat(timespec="seconds")})
         mode = "window" if (a.get("window") or c.get("agent_window")) else "feed"      # watch it live, or in its own Claude window
         model = a.get("model") if a.get("model") in ("opus", "sonnet", "haiku") else None
-        j = run_agent(f"make · {slug}", prompt, model, mode)
-        return jsonify(job=j["id"], project=slug, title=title, kind=kind, mode=mode)
+        proj = Path(c["projects_dir"]) / slug
+        staged = bool(start_staged) and bool(c.get("staged_make", True)) and mode != "window" and not a.get("model")      # a model picked in the form means one run on that model
+        if staged:
+            long = kind == "long"
+            unit = "chapter" if long else "shot"
+            plan_note = f"""
+
+STAGE 1 OF 2: THE PLAN. You are the writer and director. A second, separate run (a cheaper model) will code the shots from your files, so every creative decision must be made and written down by you, now.
+Do these and then STOP: build.py new, the hook, the script, the fact-check, {'chapters.json, ' if long else ''}the cast concept, build.py voice (rewrite and re-run until it hits the length), and the sheet's text decisions (title with alternates, thumbnail words and brief, description, tags, sources) written to {slug}-youtube.txt.
+Then write {slug}-shotplan.md: ONE ROW PER SHOT, detailed enough that someone who has never seen the script can code it without making a single creative choice. For each shot give: the sentence numbers and the exact words to anchor on with at('...'), the set, place and colours, which beans are on screen and their expressions, the action beat by beat, the props, the camera move, the visual joke and where it lands, the sound cue and the music mood. Put a cast table at the top: each bean's shape, colour, hat, size and what it stands for, and the list of props to build{' (and the per-chapter ' + unit + ' groups)' if long else ''}.{'' if long else ' Also write the THUMBNAIL BRIEF at the top (the Build run draws it exactly, following ~/.claude/skills/line-boil-thumbnail-short/SKILL.md): the 2 to 4 words, the one big topic object and why a stranger would know the topic from it at feed size (an abstract topic needs a symbol such as a giant clock for time zones), the bean and its expression, the video shot it matches, and the one-sentence accuracy check. If the user described the thumbnail (see the Thumbnail line above), the brief is their description, word for word.'}
+Do NOT write web/cast.js or the shots files, and do NOT run build.py check, stills, video, sheet or thumb: ignore every later step in the list above. Finish by printing the plan's path and a two-line summary."""
+            build_note = f"""
+
+STAGE 2 OF 2: THE BUILD. The plan was done by a separate run; do not redo it. Already written for you: script.json, the voice and word timings (audio/), {slug}-hooks.txt, {slug}-sources.md, {slug}-youtube.txt and {slug}-shotplan.md, which holds every creative decision.
+Read those files ONCE. Do not rewrite or reorder the script, do not run build.py voice, do not redo the fact-check or the hook. If something in the plan cannot be done in the engine, take the closest option and note it at the end instead of redesigning it.
+Now do the remaining steps in the list above: write web/cast.js and the shots exactly as the shot plan says{', one chapter at a time' if long else ''}, build.py check, stills (at most two rounds, fixing only real overlaps and clipped text), build.py video, build.py sheet{'' if long else ', the thumbnail exactly as the THUMBNAIL BRIEF in the plan says, with the thumbnail skill accuracy test'}, and finish {slug}-youtube.txt (the Video line with the real length and the thumbnail section with the real file). Do not upload anything and do not touch other projects."""
+            j = start_staged(f"make · {slug}", [
+                {"name": "Plan: script, hook and shot plan", "model": c.get("plan_model") or None, "prompt": prompt + plan_note,
+                 "expect": [str(proj / "script.json"), str(proj / f"{slug}-shotplan.md")]},
+                {"name": "Build: code, render and sheet", "model": c.get("build_model") or None, "prompt": prompt + build_note, "expect": []},
+            ])
+        else:
+            j = run_agent(f"make · {slug}", prompt, model, mode)
+        return jsonify(job=j["id"], project=slug, title=title, kind=kind, mode=mode, staged=staged)

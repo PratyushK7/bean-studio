@@ -3,7 +3,7 @@
                                            thumbnail ideas, each built on a different click trigger; GET /api/thumbnail/ideas/<project> reads them.
   2. POST /api/thumbnail/make {project, idea}   the picked idea is drawn (web/thumb.js), rendered, checked at feed size, fixed, and saved
                                            (the old one is kept as <project>-thumbnail-prev.png). Nothing is uploaded."""
-import json, re, time
+import json, re, shutil, time
 from pathlib import Path
 from flask import abort, jsonify, request
 
@@ -36,6 +36,13 @@ def register(app, ROOT, cfg, start_agent, proj_dir, JOBS):
 
     def ideas_file(p): return p / f"{p.name}-thumb-ideas.json"          # the saved three (what the button shows)
     def new_file(p): return p / f"{p.name}-thumb-ideas-new.json"        # a reroll in progress: replaces the saved five only when it is done
+
+    def keep_old(p, name):
+        """the old thumbnail and thumb.js are kept by the studio itself, so the agent needs no copy command (it may not be allowed to run one)"""
+        for src, dst in ((p / f"{name}-thumbnail.png", p / f"{name}-thumbnail-prev.png"), (p / "web" / "thumb.js", p / "web" / "thumb-prev.js")):
+            try:
+                if src.exists(): shutil.copy2(src, dst)
+            except OSError: pass
 
     def label_of(name): return f"thumb ideas · {name}"
 
@@ -89,7 +96,7 @@ Read {THUMB_SKILL} first and follow its rules for the words, the picture and the
 Then write THREE different thumbnail ideas, each built on a different click trigger from: {', '.join(TRIGGERS)}. At least one leans on fear or loss the video honestly delivers on, and at least one on curiosity. Be unbiased and strict: rank them, best first.
 
 Write a JSON array of exactly 3 objects to {out} and nothing else on disk (no other file changes). Each object:
-{{"name": "3 to 6 word label", "trigger": one of the triggers, "words": "the on-image words, as the skill says", "concept": "the whole picture in two sentences: what is drawn, where, doing what", "subject": "the one big object", "face": "which bean, what expression", "why": "one sentence: what makes a stranger click and why the video pays it off", "risk": "one sentence: how this could mislead or fail, and how it is avoided"}}
+{{"name": "3 to 6 word label", "trigger": one of the triggers, "words": "the on-image words, as the skill says", "concept": "the whole picture in two sentences: what is drawn, where, doing what", "subject": "the one big object", "face": "which bean and what expression, or \"none\" if no character helps this topic", "why": "one sentence: what makes a stranger click and why the video pays it off", "risk": "one sentence: how this could mislead or fail, and how it is avoided"}}
 Then print the array.
 """
         j = start_agent(label_of(name), prompt, model(wide), "plain")
@@ -117,27 +124,34 @@ Then print the array.
         b = request.get_json(silent=True) or {}
         p = proj_dir(b.get("project", "")); name = p.name
         i = b.get("idea") or {}
-        concept = clean(i.get("concept"))
+        custom = bool(b.get("custom"))                                        # the user described it themselves: no ideas step
+        concept = clean(i.get("concept"), 1200 if custom else 300)
         if not concept: abort(400, "no idea picked")
         title = title_of(p)
-        words = words_of(i.get("words"))
+        words = clean(i.get("words"), 60) if custom else words_of(i.get("words"))
         wide = (p / "project.json").exists() and "wide" in (p / "project.json").read_text(encoding="utf-8", errors="replace")
         size = "1280x720 (16:9, web/thumb.js, one still shot)" if wide else "1080x1920 (9:16 cover, web/thumb.js, gridSafe)"
         THUMB_SKILL = "~/.claude/skills/line-boil-thumbnail-long/SKILL.md" if wide else "~/.claude/skills/line-boil-thumbnail-short/SKILL.md"
-        py, eng = cfg()["python"], cfg()["engine"]
+        build = "python " + str(cfg()["engine"]).replace("\\", "/")        # the form the studio's permission rules allow: a command that starts with `python `
+        keep_old(p, name)
+        if custom:
+            idea_block = ("The user described the thumbnail they want, in their own words. Draw exactly this: their description wins over the skill's style rules where they conflict "
+                          "(the skill's tests still apply: if a test fails, tell them honestly, never silently change what they asked for):\n"
+                          f'''"{concept}"\n- words on the picture (from the user): {words or "(your choice, as the skill says)"}''')
+        else:
+            idea_block = (f"The user picked this idea from the three:\n- name: {clean(i.get('name'), 60)}   trigger: {clean(i.get('trigger'), 30)}\n- words on the picture: {words or '(as the skill says)'}\n"
+                          f"- concept: {concept}\n- the one big subject: {clean(i.get('subject'), 120)}   the face: {clean(i.get('face'), 120)}\n- why it clicks: {clean(i.get('why'))}   risk: {clean(i.get('risk'))}")
         prompt = f"""
-You are drawing a better thumbnail for the video {name} in {p}. The user picked this idea from the three:
-- name: {clean(i.get('name'), 60)}   trigger: {clean(i.get('trigger'), 30)}
-- words on the picture: {clean(i.get('words'), 60) or '(as the skill says)'}
-- concept: {clean(i.get('concept'))}
-- the one big subject: {clean(i.get('subject'), 120)}   the face: {clean(i.get('face'), 120)}
-- why it clicks: {clean(i.get('why'))}   risk: {clean(i.get('risk'))}
+You are drawing a better thumbnail for the video {name} in {p}. {idea_block}
+
+This run is non-interactive: only Read, Edit/Write inside the youtube folder, and Bash commands that START with `python ` are allowed, so look at files with Read or Glob (not ls, cat, head or cd), never chain commands, and do not use PowerShell. A command that needs approval cannot run, so the render must use the exact command in step 4.
 
 Read {THUMB_SKILL} first and follow it. The picture is {size}. Then:
 1. Read {p / 'script.json'}, {p / 'web' / 'cast.js'} and {p / (name + '-youtube.txt')}.
-2. If {p / (name + '-thumbnail.png')} exists, copy it to {p / (name + '-thumbnail-prev.png')} first (keep the old one).
-3. Write {p / 'web' / 'thumb.js'} for this idea only.
-4. Run: {py} {eng} thumb {name}, then look at the small copy at feed size and the crops.
+2. The studio already saved the old picture as {p / (name + '-thumbnail-prev.png')} and the old web/thumb.js as web/thumb-prev.js. Do not copy or back up anything yourself.
+3. Write {p / 'web' / 'thumb.js'} for this one thumbnail only.
+4. Render with exactly this one Bash command, alone on its line (no cd, no &&, no ;, no PowerShell, no full path to python): {build} thumb {name}
+   Then Read {p / (name + '-thumbnail.png')} and {p / 'stills' / 'thumb-crops.png'} to judge it at feed size.
 5. Judge the small copy with the skill's tests, and redraw until they all pass (at most 5 rounds).
 6. Update the YouTube sheet's THUMBNAIL section (File:, Text:, Still:, Brief:) to match what you drew, and change nothing else in that file.
 7. Finish by printing the final text, what is drawn, and the result of each test, honestly (say so if one still fails). Then upload nothing.

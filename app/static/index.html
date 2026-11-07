@@ -338,6 +338,7 @@ async function openProject(name) {
           <button class="act" onclick="run({action:'video',project:'${name}'})">3 · Build video</button>
           <button class="act sec" onclick="run({action:'thumb',project:'${name}'})">4 · Thumbnail</button>
           <button class="act red" title="Three thumbnail ideas built on different click triggers; pick one and it is drawn" onclick="thumbIdeas('${name}')">🖼 Better thumbnail</button>
+          <button class="act sec" title="Describe the thumbnail you want in your own words; the agent draws exactly that (no ideas step)" onclick="thumbDescribe('${name}')">✏ Describe thumbnail</button>
           <button class="act sec" onclick="run({action:'sheet',project:'${name}'})">Contact sheet</button>${long && p.steps.video ? `<button class="act blue" title="yt-shorts: which moments survive alone, with new scored first lines" onclick="run({action:'spinoffs',project:'${name}'})">✂ Spin-off Shorts</button>` : ''}${long ? `<button class="act sec" onclick="run({action:'chapters',project:'${name}'})">Chapters</button>` : ''}
           <button class="act blue" onclick="agentFor('${name}')">Ask agent…</button>
         </div>
@@ -515,7 +516,7 @@ async function getIdeas() {
     if (k === TKIND) drawOptions();
   }, 2000);
 }
-const LENGTH_LABEL = {30: 'About 30 seconds (~93 words) · fastest, punchy', 40: "About 40 seconds (~124 words) · the channel's usual", 50: 'About 50 seconds (~155 words)', 60: 'About 60 seconds (~186 words) · the Shorts maximum'};
+const LENGTH_LABEL = {0: 'Let the agent decide (recommended): as long as this topic needs, 35 to 60 seconds of voiceover', 30: 'Fixed: 30 seconds of voiceover (~93 words) · fastest, punchy', 40: 'Fixed: 40 seconds of voiceover (~124 words)', 50: 'Fixed: 50 seconds of voiceover (~155 words)', 60: 'Fixed: 60 seconds of voiceover (~186 words) · Shorts maximum'};
 const MIN_LABEL = {5: '5 minutes (~930 words)', 7: '7 minutes (~1,300 words) · the sweet spot for this style', 9: '9 minutes (~1,670 words)', 12: '12 minutes (~2,230 words)'};
 function openWizard(src, i) {
   const long = TKIND === 'long', o = (src === 'pick' ? TPICK : TOPT)[TKIND][i];
@@ -526,7 +527,7 @@ function openWizard(src, i) {
     <label>Title</label><input type="text" id="w_title" value="${esc(o.title)}">
     <label>Length</label>${long
       ? `<select id="w_min">${META.lengths.long.map(x => x / 60).map(m => `<option value="${m}" ${m === near ? 'selected' : ''}>${MIN_LABEL[m] || m + ' minutes'}</option>`).join('')}</select>`
-      : `<select id="w_dur">${META.lengths.short.map(x => `<option value="${x}" ${x === near ? 'selected' : ''}>${LENGTH_LABEL[x] || x + ' seconds'}</option>`).join('')}</select>`}
+      : `<select id="w_dur">${[0, ...META.lengths.short].map(x => `<option value="${x}" ${x === 0 ? 'selected' : ''}>${LENGTH_LABEL[x] || x + ' seconds'}</option>`).join('')}</select>`}
     ${long ? `<label>Structure</label><select id="w_struct"><option ${o.type === 'Ranking' ? 'selected' : ''}>a ranked countdown, from least to most effective</option><option>one story told in chapters</option><option>a myth-busting tour: claim, test, verdict</option><option ${o.type !== 'Ranking' ? 'selected' : ''}>as in the research brief or the topic's chapters</option></select>` : ''}
     <label>Voice</label><select id="w_voice">${VOICES.map(([v, l]) => `<option value="${v}">${l}</option>`).join('')}</select>
     <label>Speaking pace <span class="muted" id="w_spv">1.0×</span></label><input type="range" id="w_speed" min="0.9" max="1.15" step="0.05" value="1" style="width:100%" oninput="$('#w_spv').textContent = this.value + '×'">
@@ -538,7 +539,7 @@ function openWizard(src, i) {
     <label>Quality <span class="muted">(the video itself renders on your computer for free; this is the AI that writes and draws it)</span></label>
     <select id="w_model"><option value="">The session default</option><option value="sonnet">Balanced · Sonnet: lighter on your usage, good for most Shorts</option><option value="opus">Best · Opus: strongest writing and staging, uses more</option></select>
     <div class="row" style="margin-top:10px"><label style="margin:0"><input type="checkbox" id="w_window"> 🪟 Open in its own Claude window so I can watch every step (it may ask for permissions)</label></div>
-    ${long ? `<label style="margin-top:12px">Thumbnail <span class="muted">(a long video: pick when it is drawn)</span></label><select id="w_thumbmode"><option value="later">Later: from the Better thumbnail button (three ideas, you pick one)</option><option value="now">Now: drawn after the video, with the long-thumbnail skill</option></select><input type="hidden" id="w_thumb" value="">` : `<label>Thumbnail text <span class="muted">(optional, up to 3 words; blank = the agent chooses)</span></label><input type="text" id="w_thumb" maxlength="24" placeholder="e.g. TOO TALL?">`}
+    ${long ? `<label style="margin-top:12px">Thumbnail <span class="muted">(a long video: pick when it is drawn)</span></label><select id="w_thumbmode"><option value="later">Later: from the Better thumbnail button (three ideas, you pick one)</option><option value="now">Now: drawn after the video, with the long-thumbnail skill</option></select><input type="hidden" id="w_thumb" value="">` : `<label>Thumbnail text <span class="muted">(optional, up to 3 words; blank = the agent chooses)</span></label><input type="text" id="w_thumb" maxlength="24" placeholder="e.g. TOO TALL?">`}<label style="margin-top:12px">Describe the thumbnail yourself <span class="muted">(optional: the agent draws exactly this${long ? "; a long video is then drawn now" : ""})</span></label><textarea id="w_thumbdesc" rows="3" placeholder="e.g. a huge coffee mug with a worried bean peeking over the rim, big words WHY CAN'T I SLEEP?"></textarea>
     <label>Anything else? <span class="muted">(optional)</span></label><textarea id="w_notes" rows="3" placeholder="e.g. keep it gentle, include the 1982 lawn chair story, avoid mentioning X"></textarea>
     <div class="row" style="margin-top:16px; justify-content:flex-end"><button class="act sec" onclick="closeWizard()">Cancel</button><button class="act red" id="wizgo" onclick="makeVideo('${src}', ${i})">${long ? '🎬 Make the long video' : '🎬 Make the video'}</button></div>`;
   $('#wiz').classList.add('on');
@@ -548,7 +549,7 @@ async function makeVideo(src, i) {
   const long = TKIND === 'long';
   const o = Object.assign({}, (src === 'pick' ? TPICK : TOPT)[TKIND][i], {title: $('#w_title').value.trim()});
   const answers = {voice: $('#w_voice').value, speed: +$('#w_speed').value, tone: $('#w_tone').value, cast: $('#w_cast').value, ending: $('#w_end').value,
-    music: $('#w_music').checked, outro: $('#w_outro').checked, thumb_text: $('#w_thumb').value.trim(), thumb_now: long && $('#w_thumbmode').value === 'now', notes: $('#w_notes').value.trim(),
+    music: $('#w_music').checked, outro: $('#w_outro').checked, thumb_text: $('#w_thumb').value.trim(), thumb_desc: $('#w_thumbdesc').value.trim(), thumb_now: long && $('#w_thumbmode').value === 'now', notes: $('#w_notes').value.trim(),
     model: $('#w_model').value, window: $('#w_window').checked, captions: long && $('#w_caps').checked,
     ...(long ? {minutes: +$('#w_min').value, structure: $('#w_struct').value} : {duration: +$('#w_dur').value})};
   const btn = $('#wizgo'), label = btn.textContent; btn.disabled = true; btn.textContent = 'Starting…';          // a second click would start a second video
@@ -565,7 +566,7 @@ function drawThumbIdeas(name, ideas) {
       ${o.words ? `<div style="font-size:22px;font-weight:800;margin:6px 0">“${esc(o.words)}”</div>` : ''}
       <div>${esc(o.concept)}</div><div class="muted" style="margin-top:4px"><b>Why it clicks:</b> ${esc(o.why)}</div>${o.risk ? `<div class="muted"><b>Watch out:</b> ${esc(o.risk)}</div>` : ''}
       <div class="row" style="justify-content:flex-end;margin-top:8px"><button class="act red" onclick="thumbMake('${name}', ${k})">Draw this one</button></div></div>`).join('') +
-    `<div class="row" style="justify-content:flex-end"><button class="act sec" onclick="closeThumb()">Close</button><button class="act sec" title="Throw these away and analyse again for three new ideas" onclick="thumbIdeas('${name}', true)">↻ Reroll</button></div>`;
+    `<div class="row" style="justify-content:flex-end"><button class="act sec" onclick="closeThumb()">Close</button><button class="act sec" title="Skip the ideas: describe the thumbnail yourself" onclick="thumbDescribe('${name}')">✏ Describe my own</button><button class="act sec" title="Throw these away and analyse again for three new ideas" onclick="thumbIdeas('${name}', true)">↻ Reroll</button></div>`;
 }
 async function thumbIdeas(name, reroll = false) {
   const box = $('#wizbox'); $('#wiz').classList.add('on');
@@ -586,6 +587,19 @@ async function thumbIdeas(name, reroll = false) {
   }, 2500);
 }
 function closeThumb() { clearInterval(THPOLL); closeWizard(); }
+function thumbDescribe(name) {
+  clearInterval(THPOLL); $('#wiz').classList.add('on');
+  $('#wizbox').innerHTML = `<h2 style="margin:0 0 4px">Describe your thumbnail</h2><p class="muted" style="margin:0 0 10px">Say what you want to see: who, doing what, with which object, which words. The agent draws exactly that, checks it at feed size, and keeps the old thumbnail as <code>${name}-thumbnail-prev.png</code>. Nothing is uploaded.</p>
+    <label>What it should look like</label><textarea id="thdesc" rows="5" placeholder="e.g. a worried bean peeking over the rim of a giant coffee mug, a clock showing midnight behind it, bright yellow background"></textarea>
+    <label style="margin-top:10px">Words on the picture <span class="muted">(optional; blank = the agent chooses)</span></label><input type="text" id="thwords" maxlength="60" placeholder="e.g. WHY CAN'T I SLEEP?">
+    <div class="row" style="justify-content:flex-end;margin-top:12px"><button class="act sec" onclick="closeThumb()">Close</button><button class="act red" onclick="thumbDrawMine('${name}')">Draw my description</button></div>`;
+}
+async function thumbDrawMine(name) {
+  const concept = $('#thdesc').value.trim();
+  if (concept.length < 10) { toast('Describe it in a sentence or two first.'); return; }
+  const j = await api('/api/thumbnail/make', {method: 'POST', body: {project: name, custom: true, idea: {name: 'Your description', concept, words: $('#thwords').value.trim()}}});
+  closeWizard(); show('jobs'); watch(j.id);
+}
 async function thumbMake(name, k) {
   const j = await api('/api/thumbnail/make', {method: 'POST', body: {project: name, idea: window.THIDEAS[k]}});
   closeWizard(); show('jobs'); watch(j.id);

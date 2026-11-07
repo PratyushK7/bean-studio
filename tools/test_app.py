@@ -231,6 +231,49 @@ def test_long_topics():
     ok("topics (long): separate pool, picks with brief, sanitised ideas, package prompt, safe brief path, long project view")
 
 
+def test_staged_make():
+    import topics
+    root = TMP / "sroot"; (root / "data").mkdir(parents=True); (root / "proj").mkdir()
+    cfgd = dict(server.cfg()); cfgd["projects_dir"] = str(root / "proj")
+    JOBS, single, staged = {}, [], []
+    def fake(label, cmd, cwd, unique=False):
+        j = {"id": f"j{len(JOBS)}", "label": label, "log": [], "done": False, "code": None, "started": time.time()}; JOBS[j["id"]] = j; single.append(cmd); return j
+    def fake_staged(label, stages):
+        j = {"id": f"s{len(JOBS)}", "label": label, "log": [], "done": False, "code": None, "started": time.time()}; JOBS[j["id"]] = j; staged.append((label, stages)); return j
+    def agent(label, prompt, model=None, mode="plain"):
+        return fake(label, [model, prompt], None)
+    app5 = server.Flask("t5"); topics.register(app5, root, lambda: cfgd, fake, JOBS, agent, fake_staged); c5 = app5.test_client()
+    for kind, ans in (("short", {}), ("long", {"minutes": 7})):
+        r = c5.post("/api/topics/make", json={"kind": kind, "topic": {"title": f"A {kind} idea"}, "answers": ans}).json
+        label, stages = staged[-1]
+        assert r["staged"] and label == f"make · {r['project']}" and len(stages) == 2
+        plan, build = stages
+        assert plan["model"] == "opus" and build["model"] == "sonnet", "Opus for the decisions, Sonnet for the coding"
+        assert "STAGE 1 OF 2: THE PLAN" in plan["prompt"] and f"{r['project']}-shotplan.md" in plan["prompt"] and "Do NOT write web/cast.js" in plan["prompt"]
+        assert "STAGE 2 OF 2: THE BUILD" in build["prompt"] and "do not run build.py voice" in build["prompt"]
+        if kind == "short":
+            assert "LENGTH: you decide" in plan["prompt"] and "VOICEOVER ONLY" in plan["prompt"] and "between 35 and 60 seconds" in plan["prompt"] and "TARGET LENGTH" not in plan["prompt"], "a Short's length is the agent's call, outro excluded"
+            assert "--target <the seconds you chose>" in plan["prompt"]
+        else:
+            assert "TARGET LENGTH: 420 seconds" in plan["prompt"]
+        assert any(x.endswith("-shotplan.md") for x in plan["expect"]) and any(x.endswith("script.json") for x in plan["expect"]), "the build only starts if the plan left its files"
+    c5.post("/api/topics/make", json={"kind": "short", "topic": {"title": "Fixed length"}, "answers": {"duration": 50}})
+    assert "TARGET LENGTH: 50 seconds" in staged[-1][1][0]["prompt"] and "LENGTH: you decide" not in staged[-1][1][0]["prompt"], "a length picked in the form is still honoured"
+    c5.post("/api/topics/make", json={"kind": "short", "topic": {"title": "Described"}, "answers": {"thumb_desc": "a giant clock with a tiny bean"}})
+    pl = staged[-1][1][0]["prompt"]
+    assert "THE USER DESCRIBED THE THUMBNAIL THEY WANT" in pl and "a giant clock with a tiny bean" in pl and "their description, word for word" in pl
+    c5.post("/api/topics/make", json={"kind": "long", "topic": {"title": "Described long"}, "answers": {"minutes": 7, "thumb_desc": "a giant mug, worried bean"}})
+    pl = staged[-1][1][0]["prompt"]
+    assert "draw it NOW" in pl and "a giant mug, worried bean" in pl and "6. Thumbnail: draw it now" in pl, "a described long-video thumbnail is drawn now"
+    n = len(staged)
+    r = c5.post("/api/topics/make", json={"kind": "short", "topic": {"title": "Picked model"}, "answers": {"duration": 40, "model": "sonnet"}}).json
+    assert not r["staged"] and len(staged) == n and single[-1][0] == "sonnet", "a model picked in the form runs once on that model"
+    cfgd["staged_make"] = False
+    r = c5.post("/api/topics/make", json={"kind": "short", "topic": {"title": "Staged off"}, "answers": {"duration": 40}}).json
+    assert not r["staged"] and len(staged) == n
+    ok("staged make: Opus plans (script, shot plan), Sonnet builds; one model picked or staging off = one run")
+
+
 def test_thumbnail_flow():
     import thumbs
     root = TMP / "throot"; proj = root / "proj" / "demo"; (proj / "web").mkdir(parents=True)
@@ -273,8 +316,16 @@ def test_thumbnail_flow():
     c4.post("/api/thumbnail/make", json={"project": "demo", "idea": d["ideas"][0]})
     label, prompt, model, mode = calls[-1]
     assert label == "thumb · demo" and model is None and mode == "feed" and "From the log" in prompt and "thumbnail-prev.png" in prompt and "upload nothing" in prompt and "line-boil-thumbnail-long/SKILL.md" in prompt
+    assert "build.py thumb demo" in prompt and "alone on its line" in prompt and "non-interactive" in prompt and "copy or back up anything yourself" in prompt, "the draw agent gets a render command its permission rules allow, and no copy step"
+    assert (proj / "demo-thumbnail-prev.png").exists() or not (proj / "demo-thumbnail.png").exists(), "the studio keeps the old picture itself"
     assert c4.post("/api/thumbnail/make", json={"project": "demo", "idea": {}}).status_code == 400
-    ok("thumbnail: three ideas, sanitised, then the picked one drawn with a backup of the old one")
+    n_before = len(calls)
+    c4.post("/api/thumbnail/make", json={"project": "demo", "custom": True, "idea": {"name": "Your description", "concept": "A worried bean peeking over a giant coffee mug, midnight clock behind it", "words": "WHY CAN'T I SLEEP?"}})
+    label, prompt, model, mode = calls[-1]
+    assert len(calls) == n_before + 1 and label == "thumb · demo" and "described the thumbnail they want" in prompt and "giant coffee mug" in prompt and "WHY CAN'T I SLEEP?" in prompt and "wins over the skill" in prompt, "a described thumbnail goes straight to the drawing agent"
+    assert "The user picked this idea" not in prompt
+    assert c4.post("/api/thumbnail/make", json={"project": "demo", "custom": True, "idea": {"name": "x", "concept": ""}}).status_code == 400, "an empty description is refused"
+    ok("thumbnail: three ideas, or your own description, sanitised, then drawn with a backup of the old one")
 
 
 def test_live_feed_and_progress():

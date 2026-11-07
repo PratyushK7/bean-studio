@@ -52,6 +52,9 @@ DEFAULTS = {
     "video_model_short": "",          # empty = the session default
     "video_model_long": "",           # empty = the session default
     "agent_window": False,              # True: every video the agent makes opens in its own visible Claude window
+    "staged_make": True,                # a video is made in two runs: a PLAN (script, hook, shot plan) then a BUILD (code, render); a model picked in the form overrides this
+    "plan_model": "opus",               # the plan stage: the polished decisions (hook, script, jokes, staging)
+    "build_model": "sonnet",            # the build stage: coding the shots, stills, render, sheet
 }
 SLUG = re.compile(r"^[a-z0-9][a-z0-9-]{0,60}$")
 HHMM = re.compile(r"^([01]\d|2[0-3]):[0-5]\d$")
@@ -82,7 +85,7 @@ def validate_config(new):
     if not isinstance(new, dict): return ["settings must be a JSON object { ... }"]
     kinds = {"port": int, "open_browser": bool, "projects_dir": str, "planner": str, "python": str, "engine": str, "uploader": str,
              "agent_command": list, "agent_cwd": str, "slots": dict, "channel": str, "hide_projects": list,
-             "analytics_sync_hours": (int, float), "topic_category": str, "topic_channels": list, "options_model": str, "video_model": str, "video_model_short": str, "video_model_long": str, "thumbnail_model": str}
+             "analytics_sync_hours": (int, float), "topic_category": str, "topic_channels": list, "options_model": str, "video_model": str, "video_model_short": str, "video_model_long": str, "thumbnail_model": str, "staged_make": bool, "plan_model": str, "build_model": str}
     errs = [f'"{k}" has the wrong type' for k, t in kinds.items() if k in new and (not isinstance(new[k], t) or (t is not bool and isinstance(new[k], bool)))]
     if errs: return errs
     if "agent_command" in new and (not new["agent_command"] or not all(isinstance(x, str) for x in new["agent_command"])):
@@ -187,6 +190,14 @@ def start_agent(label, prompt, model=None, mode="plain"):
     cmd = list(c["agent_command"]) + (["--model", model] if model else [])
     if mode == "feed": cmd += ["--output-format", "stream-json", "--verbose"]
     return start_job(label, cmd + [prompt], c["agent_cwd"], parser=agentlog.parse if mode == "feed" else None)
+
+def start_staged(label, stages):
+    """stages: [{"name", "model", "prompt", "expect"}] run one after the other as ONE job (see staged_agent.py)"""
+    c = cfg()
+    spec = ROOT / "data" / "make" / (re.sub(r"[^\w.-]+", "_", label) + ".stages.json")
+    spec.parent.mkdir(parents=True, exist_ok=True)
+    spec.write_text(json.dumps({"command": c["agent_command"], "cwd": c["agent_cwd"], "stages": stages}), encoding="utf-8")
+    return start_job(label, [sys.executable, str(APP / "staged_agent.py"), str(spec)], c["agent_cwd"], parser=agentlog.parse)
 
 def job_view(j):
     v = {k: j[k] for k in ("id", "label", "done", "code", "started")}
@@ -392,7 +403,7 @@ def open_planner():
 import analytics, ytstate, topics   # noqa: E402
 analytics.register(app, ROOT, cfg, start_job)
 refresh_youtube = ytstate.register(app, ROOT, cfg)      # live posted / scheduled / private state for every tab
-topics.register(app, ROOT, cfg, start_job, JOBS, start_agent)
+topics.register(app, ROOT, cfg, start_job, JOBS, start_agent, start_staged)
 import thumbs
 thumbs.register(app, ROOT, cfg, start_agent, proj_dir, JOBS)   # five thumbnail ideas, then the picked one drawn   # topic selector + the "make this video" job
 
