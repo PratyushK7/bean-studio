@@ -252,7 +252,7 @@ def test_staged_make():
         assert "STAGE 1 OF 2: THE PLAN" in plan["prompt"] and f"{r['project']}-shotplan.md" in plan["prompt"] and "Do NOT write web/cast.js" in plan["prompt"]
         assert "STAGE 2 OF 2: THE BUILD" in build["prompt"] and "do not run build.py voice" in build["prompt"]
         if kind == "short":
-            assert "LENGTH: you decide" in plan["prompt"] and "VOICEOVER ONLY" in plan["prompt"] and "between 30 and 50 seconds" in plan["prompt"] and "has no outro" in plan["prompt"] and "closing hook" in plan["prompt"] and "re-hook" in plan["prompt"] and "TARGET LENGTH" not in plan["prompt"], "a Short's length is the agent's call, outro excluded"
+            assert "LENGTH: you decide" in plan["prompt"] and "VOICEOVER ONLY" in plan["prompt"] and "between 30 and 50 seconds" in plan["prompt"] and "has no outro" in plan["prompt"] and "payback" in plan["prompt"] and "re-hook" in plan["prompt"] and "TARGET LENGTH" not in plan["prompt"], "a Short's length is the agent's call, outro excluded"
             assert "--target <the seconds you chose>" in plan["prompt"]
         else:
             assert "TARGET LENGTH: 420 seconds" in plan["prompt"]

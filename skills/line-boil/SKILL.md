@@ -54,10 +54,12 @@ this look hand-animated and not just "drawn in code", are in `references/style.m
    a hook in the first sentence (a question, a surprise or a "you've seen this"), then the mechanism in 2 or 3 escalating beats with a
    **re-hook about halfway** (a catch, a scale jump or a strange consequence that the first beat creates: "Here's the catch.", "Which
    should kill you. It doesn't."), then a payoff that answers the hook, ideally calling back to the opening image, then a **closing
-   hook**: one line that leaves a question open or teases the next idea (a Short: the last thing heard, then the iris closes; a line that
-   leads back into the first sentence, or teases the next idea, is ideal), or two or three (a long video: the open question,
-   "that's a ... for another day", and a comment prompt). Never stop dead on the callback. The script never asks for likes, shares or
-   subscribes (a long video's voiced outro does that; a Short has none, see **Captions, ending and outro**).
+   hook**. In a **Short** the closing hook is a **payback**: the last line, usually a joke, flips or answers the opening line (the
+   hook said "time flies when you're having fun" and the last line says "Want a longer weekend? Stare at the clock. It works great, and
+   ruins everything."). Do not tack on an extra open question or a teaser for another video: it dilutes the ending and viewers feel
+   it is filler. In a **long video** the closing hook is two or three sentences (the open question, "that's a ... for another day",
+   and a comment prompt). Never stop dead on a flat callback. The script never asks for likes, shares or subscribes (a long
+   video's voiced outro does that; a Short has none, see **Captions, ending and outro**).
    **Sentence 2 is where Shorts lose people.** The channel's biggest drops sit at 4 to 8 s, on a "common belief" or textbook line
    ("A big swarm sounds like it could do it.", "Sweat is almost pure water…") or on a line that gives the answer away ("But your gut
    doesn't work like that."). Sentence 2 raises the stakes or deepens the question: it never explains, never sets up and never answers.
@@ -72,6 +74,15 @@ this look hand-animated and not just "drawn in code", are in `references/style.m
    deadline): do not avoid them, and do not flatten them into something merely concrete. Turn the idea into a *metaphor you can draw*
    and give it a bean to play it (see **Cast**). Hard-to-draw words (numbers, names, jargon) get a prop, a label shape or a bean
    standing in for them. The viewer should be able to repeat the point to a friend afterwards.
+   **Write it like a script people repeat.** A strong Short has: (1) a hook that names the belief everyone holds and breaks it, or
+   states a paradox the viewer has lived, in under 12 words, with a concrete image (a Monday meeting that lasts a year) and no
+   throat-clearing; (2) sentence 2 that deepens it ("Same clock. So who's stealing your weekend?"); (3) a mechanism told through ONE
+   drawable image per sentence, each sentence under 15 words, plain words, no jargon or hedged mush; (4) the re-hook; (5) the payoff
+   in the viewer's own words ("you just stop counting"); (6) the payback joke. Read it aloud: if a line could be cut without losing a
+   fact or a laugh, cut it. **Stay honest in the hook:** a contrarian hook must not contradict the evidence (do not say a popular
+   saying is false if the research supports it; say "that's not quite it" and give the real reason), and anything uncertain is hedged
+   ("scientists think"). hookscore.py rates most explainer hooks WEAK because it is tuned to creator advice, so use it to compare the
+   five candidates and spot a formula, then choose by judgment (a Contrarian Flip, The Mistake or a paradox usually wins).
    **Funny.** The channel is dry-funny in every genre. Put a joke roughly every 8 to 10 seconds in a Short (10 to 15 in a long video), mostly in a bean's reaction, a
    literal-minded image, or the last line, never in shouting. A running gag that comes back at the end is worth more than five
    one-offs. Funny never replaces correct: facts stay checked and honest.

@@ -38,8 +38,7 @@ acting, timing and staging.
 
 **A Short has no outro, so its ending is tighter:** 0.6 s of breath, 0.8 s of iris close and 0.2 s of black (1.6 s, not 2.3 s), so it
 closes on the hero's face without sitting on a dead screen. It never ends on the last word, and it never ends on the callback: the last
-line is a **closing hook** (an open question, a teaser for the next idea, or a line that leads back into the first sentence so the
-loop feels natural). The rest of this section describes the long video's longer tail; the same rules apply to a Short at the shorter timings.
+line is the **payback**: a joke or flip that answers the opening line, never an extra open question or a teaser tacked on. The rest of this section describes the long video's longer tail; the same rules apply to a Short at the shorter timings.
 
 A long video never ends on the last word. The engine adds 2.3 s after the voice ends:
 - **1.0 s of breath:** the final pose holds on screen, still boiling and blinking.
@@ -54,8 +53,8 @@ Your job is to make that breath feel intentional:
 - **Close the iris on the character's face** (`iris: [x, y]` on the last shot) so the last thing the viewer sees
   is the expression.
 - The last shot must use `tr: 'iris'`. A `cut` or `smear` there would jump straight into the outro.
-- **The last shot is the closing hook, not the callback.** The callback lands on a `cut` or `smear`; then the closing hook (an open
-  question or the next idea, and in a long video a comment prompt) plays, and its shot carries the iris. Ending on the callback with
+- **The last shot is the closing line, and it carries the iris.** In a Short it is the payback joke (a flip of the opening line); in a
+  long video the callback lands on a `cut` or `smear` and the closing hook (an open question or the next idea, and a comment prompt) follows. Ending on the callback with
   nothing after it feels like the video cut out (a Short too: its closing hook is the last shot). In a long video the channel outro
   then thanks the viewer and asks for the like, share and subscribe.
 
