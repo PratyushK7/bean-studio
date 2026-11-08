@@ -66,7 +66,7 @@ DEFAULTS = {
                   "note": "Topics turn on once this channel has a video skill (its explainer style). Until then use the Agent tab.",
                   "slots": {"A": "12:00", "B": "18:30", "Long": "20:30"},
                   "topic_category": "Hindi business case studies for Indian viewers: the economics of owning an everyday business, how a famous Indian company rose, split or fell, and the rivalry, revenge or rise of a businessman everyone knows",
-                  "topic_channels": ["HinExpofficial", "ABFinDoc"],
+                  "topic_channels": ["HinExpofficial", "ABFinDoc", "PaisaDecodeHQ"],
                   "voice_file": "~/.claude/youtube/voice-hindi.md"},
     },
 }

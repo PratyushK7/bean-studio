@@ -156,6 +156,18 @@ Everyday spoken Hindi, not Sanskritised. Business words stay English (EMI, क�
 voice (HinExp) talks to the viewer as "आप" with the friendly imperative ("समझो", "सोचो", "सुनो", "भाई"); the documentary
 voice (ABFinDoc) narrates in the third person and adds "जी" to elders' names. Sentences are short: one picture each.
 
+## A third reference channel: PaisaDecodeHQ (added 9 Nov 2026, titles only, not yet read line by line)
+
+@PaisaDecodeHQ, 60 videos, 10 to 22 min, all format A on small businesses a young viewer could start. Its top five: a
+₹1,200/hour turf (1.0M), a ₹100/hour PS5 gaming café (684K), "5 boring businesses that quietly make people rich" (423K),
+a sleeper-bus trip (199K), Blinkit's dark store (128K). Its weakest are around 10K (a highway dhaba thali).
+
+Its packaging is worth borrowing: **the price the customer pays leads the title, then the contradiction, then the
+question about the owner's cut**, in Hinglish: "₹1,200/Hour Turf Business: Weekend Full, Phir Bhi Profit Kahan Gaya?",
+"₹100/Hour PS5 Gaming Café: Owner Ke Paas Asli Mein Kitna Bachta Hai?". Its biggest hits are newer, smaller,
+youth businesses (turf, gaming café) rather than the classic bus and petrol pump, a sign that format A works best on
+a business the 18 to 30 viewer actually walks into.
+
 ## What not to copy
 
 These channels get some things wrong. This channel should be the version a careful viewer trusts.

@@ -65,7 +65,8 @@ other side is given. For format A, a made-up model business with a made-up owner
 ## 3. Packaging first
 
 Write three titles (English, like both reference channels, at most 70 characters, the known thing in the first three
-words: "The Economics of Owning a Jewellery Shop", "How Hero Honda Split") and two to four thumbnail words in Hindi or
+words: "The Economics of Owning a Jewellery Shop", "How Hero Honda Split"; for format A also try PaisaDecodeHQ's Hinglish shape,
+the customer's price first: "₹1,200/Hour Turf Business: Weekend Full, Phir Bhi Profit Kahan Gaya?") and two to four thumbnail words in Hindi or
 Hinglish that add the stakes ("असली कमाई?", "भाई vs भाई"). The hook has to confirm whichever title wins. Lint them with
 **yt-package** if time allows.
 
