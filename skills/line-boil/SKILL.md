@@ -51,11 +51,18 @@ this look hand-animated and not just "drawn in code", are in `references/style.m
 
 1. **Script.** Its length is decided by what this topic needs to teach, not by a fixed number (see **Length** below). Write one idea per sentence and make every sentence
    something you can *show*. Captions repeat the words, but the picture still has to carry the meaning on its own. The shape:
-   a hook in the first sentence (a question, a surprise or a "you've seen this"), the common belief, a turn ("But..."),
-   the mechanism in 2 or 3 escalating beats, then a payoff that answers the hook, ideally calling back to the
-   opening image, then a **closing hook**: one line that leaves a question open or teases the next idea (a Short), or two or three
-   (a long video: the open question, "that's a ... for another day", and a comment prompt). Never stop dead on the callback. The script
-   never asks for likes, shares or subscribes: the voiced channel outro does that on every video (see **Channel outro**).
+   a hook in the first sentence (a question, a surprise or a "you've seen this"), then the mechanism in 2 or 3 escalating beats with a
+   **re-hook about halfway** (a catch, a scale jump or a strange consequence that the first beat creates: "Here's the catch.", "Which
+   should kill you. It doesn't."), then a payoff that answers the hook, ideally calling back to the opening image, then a **closing
+   hook**: one line that leaves a question open or teases the next idea (a Short: it is the last thing heard and the Short loops
+   straight back to frame 1, so a line that leads back into the hook is ideal), or two or three (a long video: the open question,
+   "that's a ... for another day", and a comment prompt). Never stop dead on the callback. The script never asks for likes, shares or
+   subscribes (a long video's voiced outro does that; a Short has none, see **Captions, ending and outro**).
+   **Sentence 2 is where Shorts lose people.** The channel's biggest drops sit at 4 to 8 s, on a "common belief" or textbook line
+   ("A big swarm sounds like it could do it.", "Sweat is almost pure water…") or on a line that gives the answer away ("But your gut
+   doesn't work like that."). Sentence 2 raises the stakes or deepens the question: it never explains, never sets up and never answers.
+   A common belief worth correcting goes inside the hook ("Everyone says swallowed gum stays in you for seven years.") and is broken by
+   the re-hook, not at second 5. Do not state the answer before about the halfway point.
    **Hook, with yt-script:** write five candidate first sentences (the 21 formulas are in `~/.claude/skills/yt-script/hooks.json`), put
    them one per line in `<project>-hooks.txt` in the project folder, score them with
    `PYTHONUTF8=1 python ~/.claude/skills/yt-script/hookscore.py <project>-hooks.txt`, append the scored panel and a line naming the winner
@@ -65,10 +72,10 @@ this look hand-animated and not just "drawn in code", are in `references/style.m
    deadline): do not avoid them, and do not flatten them into something merely concrete. Turn the idea into a *metaphor you can draw*
    and give it a bean to play it (see **Cast**). Hard-to-draw words (numbers, names, jargon) get a prop, a label shape or a bean
    standing in for them. The viewer should be able to repeat the point to a friend afterwards.
-   **Funny.** The channel is dry-funny in every genre. Put a joke roughly every 10 to 15 seconds, mostly in a bean's reaction, a
+   **Funny.** The channel is dry-funny in every genre. Put a joke roughly every 8 to 10 seconds in a Short (10 to 15 in a long video), mostly in a bean's reaction, a
    literal-minded image, or the last line, never in shouting. A running gag that comes back at the end is worth more than five
    one-offs. Funny never replaces correct: facts stay checked and honest.
-   **Length.** A Short's length is variable: you decide it from the topic. The target counts the **voiceover only**; the channel outro (about 6 s, appended by `build.py video`) comes on top and is never part of the count. Before writing, list what a viewer must leave knowing (the answer, why it is true, the one surprising detail, the common belief it corrects, one number or example they can repeat), then write only the sentences that carry those: no padding, and never cut a needed fact just to hit a number. That usually lands at 35 to 60 s of voiceover (about 110 to 185 words); stay inside that range. If the user names a duration (the Bean Studio Agent tab and Topics wizard pass it as "TARGET LENGTH: N seconds"), follow it instead. Kokoro reads about 3.1 words per second, so N seconds is about N x 3.1 words. Run `build.py voice <project> --target N` (N = the seconds you chose, or the user's) after writing; it prints `TARGET N s: OK`, or how many words to cut or add, and you repeat the read until it is within 4 s of the target. More than 60 s of voiceover is a long video (16:9, chapters): use the **line-boil-wide** skill instead, which runs on this same engine (`build.py new <project> --wide`).
+   **Length.** A Short's length is variable: you decide it from the topic. The target counts the voiceover; a Short has no outro and ends 0.4 s after the last word, so the voiceover is the whole video. Before writing, list the three things a viewer must leave knowing (the answer, why it is true, one surprising detail or number they can repeat), then write only the sentences that carry those: ONE core mechanism, no padding, and never cut a needed fact just to hit a number. That usually lands at 30 to 50 s of voiceover (about 95 to 155 words). Go up to 60 s only when every extra beat escalates (a bigger scale, a new consequence, as "What if you grew 1 cm every second?" did), never for more explanation. If the user names a duration (the Bean Studio Agent tab and Topics wizard pass it as "TARGET LENGTH: N seconds"), follow it instead. Kokoro reads about 3.1 words per second, so N seconds is about N x 3.1 words. Run `build.py voice <project> --target N` (N = the seconds you chose, or the user's) after writing; it prints `TARGET N s: OK`, or how many words to cut or add, and you repeat the read until it is within 4 s of the target. More than 60 s of voiceover is a long video (16:9, chapters): use the **line-boil-wide** skill instead, which runs on this same engine (`build.py new <project> --wide`).
 2. **Facts.** Check every claim. If you can search, use reputable sources. Hedge contested ideas ("scientists think").
    Keep the simplification honest: simpler is fine, wrong is not. Verify every number in a primary source (the paper, the review, the
    agency page), never invent one, and drop what you cannot verify. Write `<project>-sources.md`: a table of claim, link, and how far you
@@ -88,8 +95,9 @@ this look hand-animated and not just "drawn in code", are in `references/style.m
    sentence. Wait for an OK unless they asked you to go straight through.
 5. **Project and voice.** Run `build.py new <project>` (just the slug; it lands in `C:\Users\praty\youtube\line-boil\<project>`), write `script.json`, then run `build.py voice <project>`.
    It prints every word with its start time, grouped by sentence. Those times are your timeline.
-6. **Shots.** Write `web/cast.js` and `web/shots.js`. Use about one shot per sentence (8 to 12 in all), with an
-   explainer beat allowed to run longer. Time every action to the word that motivates it with `at()`. If a word
+6. **Shots.** Write `web/cast.js` and `web/shots.js`. No shot runs longer than about 4 s, so plan about one shot per 3 to 4 s of
+   voice (10 to 14 for a 40 s Short): split a long explainer sentence into two shots (a wide set-up, then a close-up on the prop or the
+   reaction), and inside a shot change something on screen with `at()` about every 2 s. Time every action to the word that motivates it with `at()`. If a word
    occurs more than once, pass `nth` or use a longer phrase. `check` warns you when you didn't. Start the first
    shot mid-action on frame 1. Keep faces and key props between y 110 and 750 (world units) so the platforms' UI
    doesn't cover them.
@@ -112,7 +120,7 @@ this look hand-animated and not just "drawn in code", are in `references/style.m
    score, the sheet's title, thumbnail text and first two description lines, and anything you could not verify. End with: ship it, or
    change it?
 
-## Channel outro
+## Captions, ending and outro
 
 **Captions and subtitles.** Every video gets burned-in captions in the channel lettering, with the spoken word
 lit yellow. They sit in the centre band (y 500, about 52% down), where the eye naturally rests and well clear of
@@ -122,25 +130,23 @@ needs that space, move that shot's captions with `cap: 690` (below the subject),
 uploading to YouTube as closed captions (Subtitles → Upload file → With timing). Check one still per shot for
 captions touching anything important. Details are in "Captions" in `references/style.md`.
 
-**End smoothly, never instantly.** After the last word the engine holds the final pose for 1.0 s, closes the iris
-over 1.0 s and sits on black for 0.3 s, all built into `VO_END()`. The last shot must be `tr: 'iris'`, centred
-on the hero's face, with its payoff action landed before the last word ends and a held loop (a wave or a bob)
-running to `VO_END()`. When checking, render a still about 0.5 s after the last word: the pose should be settled
-and alive, not mid-move. See "The ending breathes" in `references/style.md`.
+**A Short loops, it never closes.** It ends 0.4 s after the last word (`VO_END()`), with no iris, no black and no outro, so it
+runs straight back into the first shot: a dead tail is where Shorts viewers swipe (the nails Short's biggest drop sat exactly where
+its old iris closed), and a replay counts. Land the closing line's action before the last word ends and keep the final pose alive (a
+held loop to `VO_END()`). The engine ignores `tr: 'iris'` on a Short. Long videos still breathe and close the iris: see
+"The ending breathes" in `references/style.md`.
 
-`build.py video` appends the channel outro to every video, voiced in af_heart, and adds the outro's words to the `.srt`:
-- **Shorts:** `engine/outro/outro.mp4` (about 5.4 s). "Like, share, and subscribe for more bad ideas." LIKE and SHARE pop in on
-  their words, SUBSCRIBE drops and the bell rings, the host bean cheers and waves, and the iris closes on its face.
+`build.py video` appends the channel outro to **long videos only**, voiced in af_heart, and adds the outro's words to the `.srt`
+(`engine/outro/outro.mp4`, the old Shorts outro, is kept but no longer appended):
 - **Long videos:** `engine/outro-wide/outro-wide.mp4` (about 14.8 s). "Thanks for watching. If you learned something, give it a like
   and share it with a friend. And subscribe, so the next bad idea finds you. Your next video is right over here." LIKE, SHARE and
   SUBSCRIBE arrive on their words, then the frame turns into an end-screen layout (a drawn video frame on the right, SUBSCRIBE under the
   host) and holds about 6 s so YouTube's end-screen elements can sit on it (see `references/youtube.md`).
 
-The outro is the channel's one ask, so the script itself never says like, share or subscribe. Videos end on the closing hook's `iris`,
-so the outro's opening iris follows on cleanly. Pass `--no-outro` to leave it off. To change an outro, edit
-`engine/outro-wide/script.json` and `web/shots.js` (or `engine/outro/...`), then voice and render it:
-`python build.py voice "$ENGINE/outro-wide" --voice af_heart --hold 3` and `python build.py video "$ENGINE/outro-wide" --no-outro`
-(the Shorts outro: the same with `"$ENGINE/outro"` and no `--hold`).
+The script itself never says like, share or subscribe. Long videos end on the closing hook's `iris`, so the outro's opening iris
+follows on cleanly. Pass `--no-outro` to leave it off a long video. To change the outro, edit `engine/outro-wide/script.json` and
+`web/shots.js`, then voice and render it: `python build.py voice "$ENGINE/outro-wide" --voice af_heart --hold 3` and
+`python build.py video "$ENGINE/outro-wide" --no-outro`.
 
 ## When something goes wrong
 

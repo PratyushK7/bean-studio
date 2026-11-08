@@ -21,15 +21,15 @@ and `shots.js`, so everything below is a global.
   or `at('blue', 3)`.
 - `D` is one drawing (1/12 s). Use it for frame-exact keys: `t0 + 2 * D`.
 - `NOW` is the current time, which draw functions also receive as `t`. `VO_END()` is the end of the video:
-  the voice end + 1.0 s breath + 1.0 s iris close + 0.3 s on black. `IRIS_START()` is when the closing iris
-  begins. Run held loops on the last shot to `VO_END()`.
+  in a Short the voice end + 0.4 s (no iris: it loops); in a long video the voice end + 1.0 s breath + 1.0 s iris close
+  + 0.3 s on black. `IRIS_START()` is when a long video's closing iris begins. Run held loops on the last shot to `VO_END()`.
 
 ## 2. Shots and camera
 ```js
 shot(start, {
   draw(lt, t) { ... },                         // lt = seconds into the shot, t = voiceover seconds
   cam: [{ t: 0, x: 270, y: 480, z: 1 }, { t: 3, z: 1.08 }],   // shot-local keys; also r (radians), shake (px)
-  tr: 'cut' | 'smear' | 'iris',                // how this shot ends; iris only on the last shot
+  tr: 'cut' | 'smear' | 'iris',                // how this shot ends; iris only on the last shot of a long video (a Short ignores it)
   cap: 690 | 'top' | false,                   // optional: move this shot's captions (default centre band, y 500; 'top' = y 150; never below 720) or hide them
   iris: [x, y],                                // where the iris closes
 });

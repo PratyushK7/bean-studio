@@ -334,7 +334,7 @@ def write_wav(path, x):
     sf.write(str(path), x.astype(np.float32), SR)
 
 
-def mix(project, total_seconds, music_gain=0.11, sfx_gain=0.38):
+def mix(project, total_seconds, music_gain=0.11, sfx_gain=0.38, fade_out=2.0):
     p = Path(project)
     vo = load(p / 'audio' / 'vo.wav')
     n = int(total_seconds * SR)
@@ -373,7 +373,7 @@ def mix(project, total_seconds, music_gain=0.11, sfx_gain=0.38):
         env = full[(k - 1) // 2:(k - 1) // 2 + len(env)]
         duck = 1 - 0.6 * np.clip(env / 0.05, 0, 1)
         fade = np.ones(n)
-        nf = int(min(2.0, total_seconds / 3) * SR)   # ease out across the breath and the iris
+        nf = int(min(fade_out, total_seconds / 3) * SR)   # ease out across the breath and the iris (a Short: its 0.4 s tail)
         fade[:int(0.3 * SR)] = np.linspace(0, 1, int(0.3 * SR))
         fade[-nf:] = np.linspace(1, 0, nf)
         out += m[:n] * duck * fade * music_gain / 0.3

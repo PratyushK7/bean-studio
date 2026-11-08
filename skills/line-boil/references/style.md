@@ -36,7 +36,11 @@ acting, timing and staging.
 
 ## The ending breathes
 
-Never end on the last word. The engine adds 2.3 s after the voice ends:
+**A Short loops instead.** It stops 0.4 s after the last word: no iris, no black, no outro, straight back into the first shot (a dead
+tail is where Shorts viewers swipe). Land the payoff action before the last word ends, keep the final pose alive for that 0.4 s, and
+when you can, make the last line lead back into the hook. Everything below is for **long videos**.
+
+A long video never ends on the last word. The engine adds 2.3 s after the voice ends:
 - **1.0 s of breath:** the final pose holds on screen, still boiling and blinking.
 - **1.0 s of iris close:** the ink iris closes from fully open to black, eased at both ends.
 - **0.3 s on black:** then the channel outro opens out of that black.
@@ -51,7 +55,8 @@ Your job is to make that breath feel intentional:
 - The last shot must use `tr: 'iris'`. A `cut` or `smear` there would jump straight into the outro.
 - **The last shot is the closing hook, not the callback.** The callback lands on a `cut` or `smear`; then the closing hook (an open
   question or the next idea, and in a long video a comment prompt) plays, and its shot carries the iris. Ending on the callback with
-  nothing after it feels like the video cut out. The channel outro then thanks the viewer and asks for the like, share and subscribe.
+  nothing after it feels like the video cut out (a Short too: its closing hook is the last shot). In a long video the channel outro
+  then thanks the viewer and asks for the like, share and subscribe.
 
 ## A cast of beans
 

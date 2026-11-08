@@ -439,7 +439,7 @@ const QUICK = [
   ['New Short', 'Make a new Short with the line-boil skill about TOPIC. Write the script, fact-check it, build the video, render the thumbnail and write the upload sheet. Go straight through without waiting for my OK.'],
   ['Upload sheet', 'Write the YouTube upload sheet for the line-boil project SLUG, following the skill\'s references/youtube.md.'],
   ['Thumbnail', 'Write web/thumb.js and render the thumbnail for the line-boil project SLUG, following SKILL.md step 9.'],
-  ['Rebuild old Short', 'Rebuild the line-boil project SLUG with the current engine so it has captions, the .srt and the outro. Check caption placement on a still per shot.'],
+  ['Rebuild old Short', 'Rebuild the line-boil project SLUG with the current engine so it has captions and the .srt (and no outro: Shorts loop). Check caption placement on a still per shot.'],
   ['Idea batch', 'Suggest 10 new Short ideas for The Bean With Bad Ideas across different video types (see the Types tab in bean-planner.xlsx), avoiding topics already in the planner.'],
 ];
 $('#quick').innerHTML = QUICK.map(([l, t], i) => `<button class="act sec" onclick="$('#prompt').value=QUICK[${i}][1]">${l}</button>`).join('') +
@@ -516,7 +516,7 @@ async function getIdeas() {
     if (k === TKIND) drawOptions();
   }, 2000);
 }
-const LENGTH_LABEL = {0: 'Let the agent decide (recommended): as long as this topic needs, 35 to 60 seconds of voiceover', 30: 'Fixed: 30 seconds of voiceover (~93 words) · fastest, punchy', 40: 'Fixed: 40 seconds of voiceover (~124 words)', 50: 'Fixed: 50 seconds of voiceover (~155 words)', 60: 'Fixed: 60 seconds of voiceover (~186 words) · Shorts maximum'};
+const LENGTH_LABEL = {0: 'Let the agent decide (recommended): as long as this topic needs, usually 30 to 50 seconds (no outro, it loops)', 30: 'Fixed: 30 seconds of voiceover (~93 words) · fastest, punchy', 40: 'Fixed: 40 seconds of voiceover (~124 words)', 50: 'Fixed: 50 seconds of voiceover (~155 words)', 60: 'Fixed: 60 seconds of voiceover (~186 words) · Shorts maximum'};
 const MIN_LABEL = {5: '5 minutes (~930 words)', 7: '7 minutes (~1,300 words) · the sweet spot for this style', 9: '9 minutes (~1,670 words)', 12: '12 minutes (~2,230 words)'};
 function openWizard(src, i) {
   const long = TKIND === 'long', o = (src === 'pick' ? TPICK : TOPT)[TKIND][i];
@@ -535,7 +535,7 @@ function openWizard(src, i) {
     <label>Characters</label><select id="w_cast"><option value="new">A new cast of different beans for this topic</option><option value="host">Our red host bean as the hero, plus other beans</option></select>
     <label>Ending</label><select id="w_end"><option>a punchy callback line</option><option>a question to the viewer for the comments</option><option>a teaser for the next bad idea</option></select>
     ${long ? `<div class="row" style="margin-top:12px"><label style="margin:0"><input type="checkbox" id="w_caps"> Burned-in captions <span class="muted">(not the long-form standard: YouTube's own captions come from the uploaded .srt)</span></label></div>` : ''}
-    <div class="row" style="margin-top:12px"><label style="margin:0"><input type="checkbox" id="w_music" checked> Background music <span class="muted">(follows the script's mood)</span></label><label style="margin:0"><input type="checkbox" id="w_outro" checked> Channel outro (3.5 s)</label></div>
+    <div class="row" style="margin-top:12px"><label style="margin:0"><input type="checkbox" id="w_music" checked> Background music <span class="muted">(follows the script's mood)</span></label>${long ? `<label style="margin:0"><input type="checkbox" id="w_outro" checked> Channel outro (14.8 s)</label>` : ''}</div>
     <label>Quality <span class="muted">(the video itself renders on your computer for free; this is the AI that writes and draws it)</span></label>
     <select id="w_model"><option value="">The session default</option><option value="sonnet">Balanced · Sonnet: lighter on your usage, good for most Shorts</option><option value="opus">Best · Opus: strongest writing and staging, uses more</option></select>
     <div class="row" style="margin-top:10px"><label style="margin:0"><input type="checkbox" id="w_window"> 🪟 Open in its own Claude window so I can watch every step (it may ask for permissions)</label></div>
@@ -549,7 +549,7 @@ async function makeVideo(src, i) {
   const long = TKIND === 'long';
   const o = Object.assign({}, (src === 'pick' ? TPICK : TOPT)[TKIND][i], {title: $('#w_title').value.trim()});
   const answers = {voice: $('#w_voice').value, speed: +$('#w_speed').value, tone: $('#w_tone').value, cast: $('#w_cast').value, ending: $('#w_end').value,
-    music: $('#w_music').checked, outro: $('#w_outro').checked, thumb_text: $('#w_thumb').value.trim(), thumb_desc: $('#w_thumbdesc').value.trim(), thumb_now: long && $('#w_thumbmode').value === 'now', notes: $('#w_notes').value.trim(),
+    music: $('#w_music').checked, outro: long ? $('#w_outro').checked : false, thumb_text: $('#w_thumb').value.trim(), thumb_desc: $('#w_thumbdesc').value.trim(), thumb_now: long && $('#w_thumbmode').value === 'now', notes: $('#w_notes').value.trim(),
     model: $('#w_model').value, window: $('#w_window').checked, captions: long && $('#w_caps').checked,
     ...(long ? {minutes: +$('#w_min').value, structure: $('#w_struct').value} : {duration: +$('#w_dur').value})};
   const btn = $('#wizgo'), label = btn.textContent; btn.disabled = true; btn.textContent = 'Starting…';          // a second click would start a second video

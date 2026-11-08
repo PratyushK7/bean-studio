@@ -284,7 +284,8 @@ def cmd_voice(a):
         count += 1
     dur = float(subprocess.run(['ffprobe', '-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0',
                                 str(proj / 'audio' / 'vo.wav')], capture_output=True, text=True, check=True).stdout)
-    end = round(dur + a.hold + 2.3, 2)   # main.js: 1.0 s breath + 1.0 s iris close + 0.3 s on black (after any --hold)
+    # main.js TAIL: a long video adds 1.0 s breath + 1.0 s iris close + 0.3 s on black (after any --hold); a Short stops 0.4 s after the last word
+    end = round(dur + a.hold + (2.3 if fmt_name(proj) == 'wide' else 0.4), 2)
     (proj / 'audio' / 'words.json').write_text(json.dumps(ws, indent=0), encoding='utf-8')
     sync_engine(proj)
     # --hold N: the last pose holds N more seconds before the iris (the channel outro uses it so YouTube's end-screen elements have time)
@@ -442,7 +443,7 @@ def cmd_video(a):
     node(kit, proj, 'cues', proj / 'cues.json', check=True)
     sys.path.insert(0, str(ENGINE / 'tools'))
     import sound
-    n = sound.mix(proj, total / FPS, music_gain=0 if a.no_music else 0.11)
+    n = sound.mix(proj, total / FPS, music_gain=0 if a.no_music else 0.11, fade_out=2.0 if fmt_name(proj) == 'wide' else 0.4)
     print(f'   {n} sound cues')
     name = proj.name
     final = proj / f'{name}.mp4'
@@ -450,10 +451,11 @@ def cmd_video(a):
                     '-c:v', 'copy', '-af', 'loudnorm=I=-14:TP=-1.5:LRA=9', '-c:a', 'aac', '-b:a', '192k', '-ar', '48000',
                     '-shortest', '-movflags', '+faststart', str(final)], check=True)
     shutil.rmtree(seg, ignore_errors=True)
-    # the channel outro (engine/outro/outro.mp4) goes on the end of every video
+    # the channel outro (engine/outro-wide/outro-wide.mp4) goes on the end of every long video. Shorts have none: they end on the
+    # closing line and loop (engine/outro/outro.mp4 is kept but no longer appended)
     wide = fmt_name(proj) == 'wide'
-    outro = ENGINE / ('outro-wide' if wide else 'outro') / ('outro-wide.mp4' if wide else 'outro.mp4')
-    if not a.no_outro and outro.exists() and proj not in ((ENGINE / 'outro').resolve(), (ENGINE / 'outro-wide').resolve()):
+    outro = ENGINE / 'outro-wide' / 'outro-wide.mp4'
+    if wide and not a.no_outro and outro.exists() and proj != (ENGINE / 'outro-wide').resolve():
         main_part = proj / f'{name}.main.mp4'
         final.replace(main_part)
         main_dur = float(subprocess.run(['ffprobe', '-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', str(main_part)],
@@ -566,7 +568,7 @@ def main():
     p = sub.add_parser('check'); p.add_argument('project'); p.set_defaults(f=cmd_check)
     p = sub.add_parser('stills'); p.add_argument('project'); p.add_argument('times'); p.add_argument('--scale', default='0.5'); p.set_defaults(f=cmd_stills)
     p = sub.add_parser('video'); p.add_argument('project'); p.add_argument('--workers', type=int, default=max(2, min(6, (os.cpu_count() or 4) // 2)))
-    p.add_argument('--no-music', action='store_true'); p.add_argument('--no-outro', action='store_true'); p.set_defaults(f=cmd_video)
+    p.add_argument('--no-music', action='store_true'); p.add_argument('--no-outro', action='store_true', help='a long video without the channel outro (Shorts never get one)'); p.set_defaults(f=cmd_video)
     p = sub.add_parser('thumb'); p.add_argument('project'); p.set_defaults(f=cmd_thumb)
     p = sub.add_parser('sheet'); p.add_argument('project'); p.add_argument('--n', type=int, default=12); p.set_defaults(f=cmd_sheet)
     a = ap.parse_args()
