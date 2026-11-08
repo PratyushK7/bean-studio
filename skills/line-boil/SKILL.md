@@ -10,15 +10,15 @@ the whole frame boil. A worked example, "Why is the sky blue?", ships in `engine
 the best reference for how a reel is put together, so read it before writing your first shots.
 
 ```
-ENGINE="<base directory of this skill>/engine"
-python "$ENGINE/build.py" new    <project>               # make a project folder
-python "$ENGINE/build.py" voice  <project>               # Kokoro voiceover + word times -> web/words.js
-python "$ENGINE/build.py" check  <project>               # load the page, list shots, show errors and warnings
-python "$ENGINE/build.py" stills <project> 1.2,4.5,9     # half-size stills to look at
-python "$ENGINE/build.py" video  <project>               # render + sound + mux -> <project>/<project>.mp4
-python "$ENGINE/build.py" sheet  <project>               # contact sheet of the finished video
-python "$ENGINE/build.py" thumb  <project>               # web/thumb.js -> <project>/<project>-thumbnail.png
+python ~/.claude/skills/line-boil/engine/build.py new    <project>               # make a project folder
+python ~/.claude/skills/line-boil/engine/build.py voice  <project>               # Kokoro voiceover + word times -> web/words.js
+python ~/.claude/skills/line-boil/engine/build.py check  <project>               # load the page, list shots, show errors and warnings
+python ~/.claude/skills/line-boil/engine/build.py stills <project> 1.2,4.5,9     # half-size stills to look at
+python ~/.claude/skills/line-boil/engine/build.py video  <project>               # render + sound + mux -> <project>/<project>.mp4
+python ~/.claude/skills/line-boil/engine/build.py sheet  <project>               # contact sheet of the finished video
+python ~/.claude/skills/line-boil/engine/build.py thumb  <project>               # web/thumb.js -> <project>/<project>-thumbnail.png
 ```
+**Running commands.** Start every command with `python` and nothing before it: no `ENGINE=...` line or `&&`, no `cd`, no pipe, no `;`, no PowerShell, no `$ENGINE`. A command that starts any other way needs the user's approval, and an unattended run (Bean Studio) stops dead there. Pass the project as a bare name and run each command alone, e.g. `python ~/.claude/skills/line-boil/engine/build.py voice <project>`.
 `build.py` finds the animation-skills kit for Playwright, the Kokoro voice and Parakeet word timing, and re-runs
 itself under the kit's Python. If it reports the kit missing, tell the user to install the
 `claude-animation-skills` plugin and run its `kit/setup.sh --voice` once. A full 40 s render takes well under a minute.
@@ -145,8 +145,8 @@ held loop to `VO_END()`). The engine ignores `tr: 'iris'` on a Short. Long video
 
 The script itself never says like, share or subscribe. Long videos end on the closing hook's `iris`, so the outro's opening iris
 follows on cleanly. Pass `--no-outro` to leave it off a long video. To change the outro, edit `engine/outro-wide/script.json` and
-`web/shots.js`, then voice and render it: `python build.py voice "$ENGINE/outro-wide" --voice af_heart --hold 3` and
-`python build.py video "$ENGINE/outro-wide" --no-outro`.
+`web/shots.js`, then voice and render it: `python ~/.claude/skills/line-boil/engine/build.py voice ~/.claude/skills/line-boil/engine/outro-wide --voice af_heart --hold 3` and
+`python ~/.claude/skills/line-boil/engine/build.py video ~/.claude/skills/line-boil/engine/outro-wide --no-outro`.
 
 ## When something goes wrong
 

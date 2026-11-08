@@ -18,17 +18,17 @@ The worked example is `engine/example-wide` (three chapters, ten shots, a chapte
 `web/shots/ch01.js` before writing your first shots.
 
 ```
-ENGINE="$HOME/.claude/skills/line-boil/engine"          # the same engine; a project is "wide" when it has project.json
-python "$ENGINE/build.py" new      <project> --wide        # project folder with web/shots/ and chapters.json
-python "$ENGINE/build.py" voice    <project> --target 420  # Kokoro voiceover (any length), word times, and whether the length hits the target
-python "$ENGINE/build.py" voice    <project> --append      # voice only sentences added at the end; every earlier word time is kept
-python "$ENGINE/build.py" chapters <project>               # YouTube chapters from chapters.json + the real word times -> <project>-chapters.txt
-python "$ENGINE/build.py" check    <project>               # shot list; fails if there are no shots; warns about shots over 20 s
-python "$ENGINE/build.py" stills   <project> 5,40,95,...   # stills + ONE contact sheet (stills/sheet.jpg)
-python "$ENGINE/build.py" video    <project>               # render + sound + mux + wide outro -> <project>.mp4, <project>.srt
-python "$ENGINE/build.py" thumb    <project>               # web/thumb.js -> <project>-thumbnail.png (1280x720) + stills/thumb-crops.png
-python "$ENGINE/build.py" sheet    <project>               # contact sheet of the finished video
+python ~/.claude/skills/line-boil/engine/build.py new      <project> --wide        # project folder with web/shots/ and chapters.json
+python ~/.claude/skills/line-boil/engine/build.py voice    <project> --target 420  # Kokoro voiceover (any length), word times, and whether the length hits the target
+python ~/.claude/skills/line-boil/engine/build.py voice    <project> --append      # voice only sentences added at the end; every earlier word time is kept
+python ~/.claude/skills/line-boil/engine/build.py chapters <project>               # YouTube chapters from chapters.json + the real word times -> <project>-chapters.txt
+python ~/.claude/skills/line-boil/engine/build.py check    <project>               # shot list; fails if there are no shots; warns about shots over 20 s
+python ~/.claude/skills/line-boil/engine/build.py stills   <project> 5,40,95,...   # stills + ONE contact sheet (stills/sheet.jpg)
+python ~/.claude/skills/line-boil/engine/build.py video    <project>               # render + sound + mux + wide outro -> <project>.mp4, <project>.srt
+python ~/.claude/skills/line-boil/engine/build.py thumb    <project>               # web/thumb.js -> <project>-thumbnail.png (1280x720) + stills/thumb-crops.png
+python ~/.claude/skills/line-boil/engine/build.py sheet    <project>               # contact sheet of the finished video
 ```
+**Running commands.** Start every command with `python` and nothing before it: no `ENGINE=...` line or `&&`, no `cd`, no pipe, no `;`, no PowerShell, no `$ENGINE`. A command that starts any other way needs the user's approval, and an unattended run (Bean Studio) stops dead there. Pass the project as a bare name and run each command alone, e.g. `python ~/.claude/skills/line-boil/engine/build.py voice <project>`.
 A 7-minute video renders in about 2.5 minutes on the user's computer (it is free; only you, the agent, use Claude). Projects live in
 `C:\Users\praty\youtube\line-boil\<project>` like Shorts.
 

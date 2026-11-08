@@ -54,7 +54,7 @@ thumbnail?"** If not, fix the concept, not the polish.
    - **Headline:** `bigWord(text, cx, y, size, fill, seed)` in one or two lines between **y 150 and 320** (two lines: about y 175
      and 290), size 100 to 120 (down to about 84 for a long word), PAPER, YEL or RED fill against the background.
    - **Hero object and optional face:** in the band **y 330 to 760**, the object at least a third of the frame.
-4. **Render:** `python "$ENGINE/build.py" thumb <project>`. It writes `<project>/<project>-thumbnail.png` (1080x1920) and
+4. **Render:** `python ~/.claude/skills/line-boil/engine/build.py thumb <project>`. It writes `<project>/<project>-thumbnail.png` (1080x1920) and
    `stills/thumb-crops.png`: the 9:16 feed, the 3:4 grid and the square side by side, each panel about feed size (270 px wide).
 
 ## Check: read `stills/thumb-crops.png` once
