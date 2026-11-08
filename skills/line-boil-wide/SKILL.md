@@ -63,7 +63,13 @@ A 7-minute video renders in about 2.5 minutes on the user's computer (it is free
    link, and how far you checked (full text / abstract only / secondary report).
 4. **Script and chapters.** `script.json`, one sentence per entry (this is also how the voice is cut, so keep each sentence to about 25
    words or fewer), written chapter by chapter in the channel voice: dry and calm, funny in the pictures and the last line of each
-   chapter, never hype. Then `chapters.json`: `[{"title": "...", "line": N}, ...]`, N = the index of the sentence that opens the
+   chapter, never hype. **Write it like a script people repeat:** a hook that names the belief everyone holds and breaks it (honestly:
+   never say a popular idea is false when the evidence supports it, say "not quite" and give the real reason, and hedge anything
+   uncertain), the second sentence deepening it rather than explaining, one drawable image per sentence, plain words, no padding (cut
+   any line that carries no fact and no laugh). **Re-hook inside every chapter and at the middle of the video:** a catch, a scale jump
+   or a strange consequence ("Here's the catch.") before the chapter's takeaway, so no stretch of more than about a minute is pure
+   explanation. A joke or sight gag at least every 15 s. Long videos still end on the payback callback plus the closing hook below.
+   Then `chapters.json`: `[{"title": "...", "line": N}, ...]`, N = the index of the sentence that opens the
    chapter (the first is 0). Titles follow yt-chapters: **3 to 5 words that promise what the section gives** ("Why the sky is blue"), not
    topic words; a section you cannot name in five words is two sections or filler. At least 3 chapters, each at least 10 seconds long.
 5. **Project and voice.** `build.py new <project> --wide`, write `script.json` and `chapters.json`, then
