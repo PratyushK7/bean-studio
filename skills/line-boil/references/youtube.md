@@ -22,7 +22,8 @@ in a session (`~/.claude/skills/yt-package`, `~/.claude/skills/yt-seo`).
   subject in the first 40, a number where the script has an honest one. The channel's titles are the hook
   question ("How Many Balloons Would It Take to Lift You Into the Sky?"), so keep that shape when it lints well.
   List the runner-up two with their scores as alternates.
-- **Thumbnail.** It's paired with the title. Use at most 3 words, none repeated from the title. Give it a brief:
+- **Thumbnail.** It's paired with the title. Use at most 3 words, none repeated from the title (for a Short, the words rule in
+  `line-boil-thumbnail-short` wins: 2 to 4 words with the topic noun, the title's noun allowed). Give it a brief:
   the character and expression (pick a real still from the video, give its time), the framing, and how the
   background keeps contrast at feed size (flat colour, so bold ink and one yellow word read).
   The picture must pass the **subject test** (cover the text: is the topic obvious from the object alone?) and the words the
@@ -58,7 +59,7 @@ Alternates:
 
 == THUMBNAIL ==
 File: <project>-thumbnail.png
-Text: <1 to 3 words>
+Text: <1 to 3 words; a Short: 2 to 4>
 Still: <time> s, <what's in frame, the expression>
 Brief: <framing, background, contrast>
 

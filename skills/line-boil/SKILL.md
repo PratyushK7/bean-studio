@@ -110,7 +110,7 @@ this look hand-animated and not just "drawn in code", are in `references/style.m
    - a prop that hasn't appeared yet
    Fix what you see, then render stills again for anything you changed.
 8. **Build.** Run `build.py video <project>`, then `build.py sheet <project>` and look at the sheet once.
-9. **Thumbnail.** Every Short gets one, at make time, rendered straight into the project folder. Follow `~/.claude/skills/line-boil-thumbnail-short/SKILL.md` (the original style: 2 to 4 words that name the topic, one big topic object, one face, flat high-contrast background, and an accuracy test). It lands as `<project>/<project>-thumbnail.png`.
+9. **Thumbnail.** Every Short gets one, at make time, rendered straight into the project folder. Follow `~/.claude/skills/line-boil-thumbnail-short/SKILL.md` (the original style: 2 to 4 words that name the topic, one big topic object, a face only when it helps, flat high-contrast background, and an accuracy test). It lands as `<project>/<project>-thumbnail.png`.
 10. **YouTube sheet.** Write `<project>-youtube.txt` next to the MP4: the title (linted with `yt-package`'s
    `title.py`, with two alternates), the thumbnail text and brief, the description, tags, target search queries,
    a pinned comment and an upload-settings checklist, all in the channel voice from `~/.claude/youtube/voice.md`.
