@@ -1,0 +1,48 @@
+YOUTUBE UPLOAD SHEET: instagram-knows-you
+Video: instagram-knows-you.mp4 (about 38 s, 9:16 Short)    Captions: instagram-knows-you.srt    Thumbnail: instagram-knows-you-thumbnail.png
+
+== TITLE ==
+How Does Instagram Know What You Want?
+
+Alternates:
+- How Instagram Decides What You See  (score 94)
+- How Instagram Predicts What You Want  (score 94)
+(Your own wording, "How Instagram Knows Exactly What You Want", scores 80: it is cut off on mobile before "Want".)
+
+== THUMBNAIL ==
+File: instagram-knows-you-thumbnail.png
+Text: SO MANY SHOES?
+Still: 1.2 s, the viewer bean in a red beanie, wide-eyed with take lines, beside a giant phone showing three sneakers
+Brief: Flat yellow background with a sunburst, a phone big enough to fill a third of the frame, the shocked bean at its foot, white and yellow lettering inside the 3:4 grid-safe area. Checked against the 9:16, 3:4 and square crops.
+
+== DESCRIPTION ==
+How does Instagram know what you want? It isn't listening through your microphone, Instagram says. It's keeping score.
+
+Instagram says it has no single algorithm. Feed, Reels and Explore weigh what you like, save, share and comment on, how likely you are to linger on a post, and what lots of people are loving right now. Ads can also use shopping on other sites, if those sites share it with Meta. So it isn't a mind reader, just a very patient note-taker. 🫘
+
+Sources:
+- https://about.instagram.com/blog/announcements/instagram-ranking-explained
+- https://about.instagram.com/blog/announcements/shedding-more-light-on-how-instagram-works
+- https://hothardware.com/news/is-instagram-eavesdropping-ceo-speaks-out
+
+#shorts #instagram #algorithm
+
+== TAGS ==
+how does instagram know what i want, instagram algorithm, is instagram listening to me, instagram ads, instagram feed, instagram reels algorithm, instagram explore, how instagram ranks posts, social media algorithm, instagram microphone, why instagram shows me ads, instagram explained, adam mosseri
+
+== TARGET SEARCH QUERIES ==
+1. how does instagram know what i want
+2. is instagram listening to me
+3. how does the instagram algorithm work
+
+== PINNED COMMENT ==
+What has your thumb been telling Instagram lately? Be honest, it already knows. 🫘
+
+== SETTINGS ==
+Audience: Not made for kids (the user's call; this is the usual choice for a general explainer Short)
+Category: Education
+Language / caption language: English
+Subtitles: upload instagram-knows-you.srt (Subtitles > Upload file > With timing)
+Altered or synthetic content: No (an animated cartoon; the voice is TTS narration, not a real person)
+Education fields (Studio only, the upload API can't set them): Type = Concept overview; Level = None; Exam, course or standard = None; Problems = empty
+Visibility: user's call

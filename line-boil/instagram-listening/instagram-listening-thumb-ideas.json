@@ -1,0 +1,32 @@
+[
+ {
+  "name": "Said sneakers, saw sneakers",
+  "trigger": "Curiosity",
+  "words": "INSTAGRAM HEARD ME?",
+  "concept": "A giant phone fills the middle band on a flat yellow sunburst, its screen showing one huge red sneaker (the video's shoe-feed shot), while a big speech bubble with the same red sneaker sketched inside it floats from the blue bean's mouth toward it on a dotted line. The blue bean in the red beanie st",
+  "subject": "A giant phone with a red sneaker on its screen, matched by a sneaker in a speech bubble",
+  "face": "The blue bean in the red beanie, wide eyes, hand clapped over its mouth, take lines",
+  "why": "Nearly everyone has said a thing and then seen it in their feed, so the sneaker-in-the-bubble matching the sneaker-on-the-phone opens the exact itch, and the video opens on that scene and then explains how it happens.",
+  "risk": "The picture could read as confirming that the app heard you; the question mark, the first-person 'ME?' and no microphone drawn keep it a question, and the video's answer (Instagram says no, it is guessing from taps and ads) is not shown."
+ },
+ {
+  "name": "Your thumb is the snitch",
+  "trigger": "Fear",
+  "words": "INSTAGRAM READS THUMBS",
+  "concept": "A giant blue-sleeved thumb-shaped bean-finger presses a big red heart on a huge phone screen in the middle band on a flat red-orange background with a sunburst, while the yellow pear with glasses peeks out from behind the phone scribbling in a notebook. A small row of tally marks and a sneaker doodl",
+  "subject": "A giant thumb pressing a heart on a huge phone, with a note-taking pear peeking from behind",
+  "face": "The yellow pear with glasses, calm watchful smile, writing; the blue bean wincing at the corner",
+  "why": "The loss of privacy is felt at once, because your own taps are quietly being recorded and read, and the video delivers it honestly: every like, save, share, comment and pause becomes a note, ending on 'what your thumb has been saying all day'.",
+  "risk": "It could suggest spying beyond what the video claims; the picture shows only a thumb, a heart and a notebook (no mic, no eyes on the user), and the words say the app reads thumbs, which is what the video says it learns from."
+ },
+ {
+  "name": "Sneaker avalanche from phone",
+  "trigger": "Absurd",
+  "words": "SAID SNEAKERS ONCE",
+  "concept": "A giant phone tilted in the middle band on a flat blue background with a sunburst vomits an avalanche of red, yellow and blue sneakers out of its screen, burying the blue bean in the red beanie up to its eyes at the foot. Sneakers are drawn big, with a few tumbling toward the viewer.",
+  "subject": "A giant phone spewing a pile of sneakers",
+  "face": "The blue bean in the red beanie, half buried, eyes wide and flat, deadpan resignation",
+  "why": "The exaggeration turns the shared 'one word and my whole feed is X' experience into an instantly funny picture, and the video opens on that line and then explains why it happens.",
+  "risk": "It is the weakest at naming Instagram and could feel like a pure gag, and 'SAID' hints at the mic theory; the sneaker feed matches the video's own opening shot and nothing in the picture claims the app heard anything."
+ }
+]

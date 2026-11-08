@@ -1,0 +1,15 @@
+You say the word sneakers out loud, and ten minutes later your whole feed is sneakers.
+Your phone is not listening to you, and the truth is weirder.
+Instagram says it never listens, so how did it know about your sneakers?
+Everyone thinks Instagram hears them, but that is not how it works.
+You said sneakers once, and now every post is sneakers.
+
+--- hookscore panel (specificity/address/stakes/curiosity/brevity -> verdict) ---
+45 WEAK  The Question: "Instagram says it never listens, so how did it know about your sneakers?"
+42 WEAK  Unclassified: "You say the word sneakers out loud, and ten minutes later your whole feed is sneakers."
+42 WEAK  Unclassified: "Your phone is not listening to you, and the truth is weirder."
+40 WEAK  Unclassified: "You said sneakers once, and now every post is sneakers."
+38 WEAK  Contrarian Flip: "Everyone thinks Instagram hears them, but that is not how it works."
+
+Chosen: "You say the word sneakers out loud..." (42, unclassified, the "you've seen this" scene). Highest score was the Question (45), the runner-up.
+Why: the scores are close; the chosen line shows the exact moment the viewer recognises, and the question follows in the very next sentence ("So, is Instagram listening to you?"), so the Question formula is still in the first 6 seconds.

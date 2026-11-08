@@ -1,0 +1,19 @@
+Why does the weekend fly by faster than any other two days?
+Two days off, and Sunday night still shows up before you've done anything.
+Friday afternoon takes a year, so why does Saturday take ten minutes?
+Your weekend is 48 hours long, so why does it feel like 10 minutes?
+Everyone says time flies when you're having fun, but your brain has no clock at all.
+
+SCORES (hookscore.py)
+1. 55 WORKABLE  The Question  - "Your weekend is 48 hours long, so why does it feel like 10 minutes?"
+2. 49 WEAK      The Warning
+3. 44 WEAK      Contrarian Flip
+4. 38 WEAK      The Question (plain)
+5. 38 WEAK      The Question (Friday/Saturday)
+CHOICE: #1 (55, The Question), concrete numbers. Runner-up: #2 (49, The Warning).
+
+SECOND PASS (rewrite). hookscore.py only gave WEAK (34 to 47) to every candidate, including the shipped ones, because it is tuned to creator topics, so the choice below is by judgment:
+- "Everyone says time flies when you're having fun. That's not quite it."  (Contrarian Flip: names the belief, breaks it, promises the real reason; the ending pays it back)
+- "You check the clock all week, and that mistake is why your Monday feels like a year." (44)
+- "Your brain has no clock, and that is exactly why your weekend vanishes." (43, Contrarian Flip)
+CHOICE: the first. Re-hook at 19.6 s ("Here's the catch."). Payback: the winged clock of shot 1 is grounded in shot 11 and the last line flips the opening.

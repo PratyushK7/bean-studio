@@ -1,0 +1,48 @@
+YOUTUBE UPLOAD SHEET: instagram-listening
+Video: instagram-listening.mp4 (about 70 s: 62 s voiceover plus the channel outro, 9:16 Short)    Captions: instagram-listening.srt    Thumbnail: instagram-listening-thumbnail.png
+
+== TITLE ==
+Does Instagram Actually Listen to You?
+
+Alternates:
+- Is Instagram Really Listening to You?  (score 98)
+- How Instagram Knows What You Said  (score 94)
+
+== THUMBNAIL ==
+File: instagram-listening-thumbnail.png (1080x1920, drawn with web/thumb.js; the previous version is kept as instagram-listening-thumbnail-prev.png)
+Text: INSTAGRAM HEARD ME?   ("HEARD ME?" biggest, in red)
+Still: the video's setup: the bean says a product out loud, then its phone shows that product
+Brief: a giant phone showing a red sneaker, a thought bubble above the worried bean holding the same sneaker, over a yellow sunburst. It asks the question and does not answer it.
+Accuracy check: "A worried bean thinks of a sneaker and its phone is already showing the same sneaker, asking whether Instagram heard it."
+
+== DESCRIPTION ==
+Does Instagram actually listen to you through your microphone? Instagram says no, and here is what it does instead.
+
+Instagram's boss, Adam Mosseri, said in 2025 that secretly recording everyone would drain your battery and light up your microphone indicator. The app doesn't need to: it learns from your likes, saves, shares and comments, guesses whether you'll stop and stare at a post, and tests what lots of people are loving right now. Advertisers can also share which of their websites you visited, and we forget the ads we scrolled past but remember the one that matched our chat. So it isn't a mind reader, just a very patient note-taker. 🫘
+
+Sources:
+- https://about.instagram.com/blog/announcements/instagram-ranking-explained
+- https://hothardware.com/news/is-instagram-eavesdropping-ceo-speaks-out
+- https://storyboard18.com/digital/instagram-ceo-adam-mosseri-denies-using-phone-microphones-to-eavesdrop-on-users-81974.htm
+
+#shorts #instagram #privacy
+
+== TAGS ==
+does instagram listen to you, is instagram listening to me, instagram microphone, does instagram listen through your phone, instagram ads, why do i see ads for things i said, instagram algorithm, instagram explore, adam mosseri, is my phone listening to me, instagram privacy, how instagram knows what you want, social media algorithm
+
+== TARGET SEARCH QUERIES ==
+1. does instagram listen to you
+2. is instagram listening to my conversations
+3. why do i see ads for things i talked about
+
+== PINNED COMMENT ==
+What did you say out loud that your feed answered a day later? Be honest, your thumb already told it. 🫘
+
+== SETTINGS ==
+Audience: Not made for kids (the user's call; this is the usual choice for a general explainer Short)
+Category: Education
+Language / caption language: English
+Subtitles: upload instagram-listening.srt (Subtitles > Upload file > With timing)
+Altered or synthetic content: No (an animated cartoon; the voice is TTS narration, not a real person)
+Education fields (Studio only, the upload API can't set them): Type = Concept overview; Level = None; Exam, course or standard = None; Problems = empty
+Visibility: user's call

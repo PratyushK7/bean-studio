@@ -1,0 +1,50 @@
+YOUTUBE UPLOAD SHEET: weekend-flies-fast
+Video: weekend-flies-fast.mp4 (38.8 s, 9:16 Short)    Captions: weekend-flies-fast.srt    Thumbnail: weekend-flies-fast-thumbnail.png
+
+== TITLE ==
+Why Does the Weekend Feel Like 10 Minutes?
+
+Alternates:
+- Why Does a 48-Hour Weekend Feel So Short?  (score 84)
+- Why Does the Weekend Fly By So Fast?  (score 80)
+
+(The linter flags "weekend" repeated in the thumbnail. For a Short that is on purpose: the thumbnail rule is 2 to 4 words that name the topic noun.)
+
+== THUMBNAIL ==
+File: weekend-flies-fast-thumbnail.png
+Text: WEEKEND GONE?
+Still: 3.5 s, the blue bean in the beanie wide-eyed and sweating beside a giant clock with a startled face and whirling hands
+Brief: Flat blue background with a lighter sunburst, headline in the top third (yellow WEEKEND, paper-white GONE?), the giant clock filling the middle, the bean big in the lower left. All key marks sit inside the 3:4 and square crops.
+
+== DESCRIPTION ==
+Why does the weekend feel like it lasts 10 minutes, when Monday drags on forever? Scientists think it comes down to how often you check the clock.
+Your brain has no clock you can read, so it guesses time by how much attention you give to it. Here is why the weekend flies by.
+
+A weekend is 48 hours, and a Monday meeting is made of the exact same minutes. Scientists think your brain estimates time partly by how much attention you pay to time itself. At your desk you keep checking the clock, so time feels long. On a Saturday you are busy, you forget to look, and time feels shorter. The real clock never changes speed.
+
+Sources:
+- https://www.montana.edu/rblock/documents/papers/ZakayBlock1995.pdf
+- https://www.frontiersin.org/articles/10.3389/fpsyg.2014.00917/full
+- https://core.ac.uk/download/217156896.pdf
+
+#shorts #timeperception #weekend 🫘
+
+== TAGS ==
+why does the weekend go so fast, weekend feels short, why do weekends fly by, time flies when you're having fun, time perception, why does time go faster on weekends, why does monday feel so long, how the brain tracks time, attention and time, psychology of time, weekend psychology, why time feels slow at work, time perception explained
+
+== TARGET SEARCH QUERIES ==
+1. why does the weekend go by so fast
+2. why does time feel faster on weekends
+3. why does time go slow at work
+
+== PINNED COMMENT ==
+What is the one thing that makes your Sunday disappear fastest? 🫘
+
+== SETTINGS ==
+Audience: Not made for kids (the user's call; this is the usual choice for a general science Short)
+Category: Education
+Language / caption language: English
+Subtitles: upload weekend-flies-fast.srt (Subtitles > Upload file > With timing)
+Altered or synthetic content: No (an animated cartoon; the voice is TTS narration, not a real person)
+Education fields (Studio only, the upload API can't set them): Type = Concept overview; Level = None; Exam, course or standard = None; Problems = empty
+Visibility: user's call

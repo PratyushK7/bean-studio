@@ -1,0 +1,49 @@
+YOUTUBE UPLOAD SHEET: worst-planets-lost
+Video: worst-planets-lost.mp4 (68.4 s with the channel outro, 9:16 Short)    Captions: worst-planets-lost.srt    Thumbnail: worst-planets-lost-thumbnail.png
+
+== TITLE ==
+Ranking the Worst Planets to Get Lost On
+
+Alternates:
+- Would You Survive Getting Lost on Venus?  (score 98)
+- Worst Planets to Be Stranded On, Ranked  (score 94)
+
+== THUMBNAIL ==
+File: worst-planets-lost-thumbnail.png
+Text: MELTS LEAD!
+Still: 0 s, a huge red Venus with a shocked face, a lead ingot sagging into a puddle, Lost the yellow bean sweating with wide eyes
+Brief: Flat blue sunburst background so the red planet and the yellow bean pop at feed size. Headline in the top third (MELTS in paper-white, LEAD! in yellow), the planet is the one big object, the face and headline sit inside the 3:4 grid-safe zone.
+
+== DESCRIPTION ==
+Which planet is the worst one to get lost on? We rank Mercury, Jupiter, Neptune and Venus, from bad to worst.
+A stranded bean, four planets, and the numbers NASA actually publishes: roughly 800 F days, no ground, 1,200 mph winds, and a surface hot enough to melt lead.
+
+The short answer: Venus is the worst. Its ground is about 872 F (467 C), the air presses about 93 times harder than on Earth (like being roughly 3,000 feet underwater), and the clouds are sulfuric acid. Mercury swings from about 800 F by day to about -290 F at night. Jupiter has no surface at all. Neptune has no surface either, and the solar system's fastest winds, over 1,200 mph. The ranking itself is a joke; the numbers are not.
+
+Sources:
+- https://science.nasa.gov/venus/venus-facts/
+- https://science.nasa.gov/mercury/facts/
+- https://science.nasa.gov/jupiter/facts/
+- https://science.nasa.gov/neptune/facts/
+
+#shorts #planets #space
+
+== TAGS ==
+worst planet to get lost on, worst planet to be stranded on, ranking planets, Venus surface temperature, how hot is Venus, Venus melts lead, Mercury temperature day and night, Neptune wind speed, Jupiter has no surface, can you land on Jupiter, planets ranked, solar system facts, space facts, the bean with bad ideas, shorts
+
+== TARGET SEARCH QUERIES ==
+1. worst planet to get lost on
+2. which planet is the most dangerous to land on
+3. how hot is the surface of Venus
+
+== PINNED COMMENT ==
+Venus wins, but which planet did I go easy on? Tell me where you would rather get lost.
+
+== SETTINGS ==
+Audience: Not made for kids (the user's call; this is the usual choice for a general science Short)
+Category: Education
+Language / caption language: English
+Subtitles: upload worst-planets-lost.srt (Subtitles > Upload file > With timing)
+Altered or synthetic content: No (an animated cartoon; the voice is TTS narration, not a real person)
+Education fields (Studio only, the upload API can't set them): Type = Concept overview; Level = None; Exam, course or standard = None; Problems = empty
+Visibility: user's call

@@ -1,1 +1,110 @@
-[{"when": "2026-11-04 19:55", "label": "agent \u00c2\u00b7 feed test", "secs": 7, "turns": 2, "cost": 0.0044, "output_tokens": 282, "code": 0}]
+[
+ {
+  "when": "2026-11-04 19:55",
+  "label": "agent Â· feed test",
+  "secs": 7,
+  "turns": 2,
+  "cost": 0.0044,
+  "output_tokens": 282,
+  "code": 0
+ },
+ {
+  "when": "2026-11-05 14:30",
+  "label": "thumb · caffeine-steal-sleep",
+  "secs": 536,
+  "turns": 63,
+  "cost": 2.9932,
+  "output_tokens": 51111,
+  "code": 0
+ },
+ {
+  "when": "2026-11-05 23:22",
+  "label": "make · prices-end-99-2",
+  "secs": 788,
+  "turns": 78,
+  "cost": 1.2323,
+  "output_tokens": 37472,
+  "code": 0
+ },
+ {
+  "when": "2026-11-05 23:37",
+  "label": "thumb · caffeine-steal-sleep",
+  "secs": 787,
+  "turns": 84,
+  "cost": 4.5324,
+  "output_tokens": 71770,
+  "code": 0
+ },
+ {
+  "when": "2026-11-06 19:32",
+  "label": "make · which-country-has-most",
+  "secs": 1962,
+  "turns": 101,
+  "cost": 8.424,
+  "output_tokens": 170263,
+  "code": 0
+ },
+ {
+  "when": "2026-11-07 19:47",
+  "label": "agent · Make a new Short with the line-boil skill about \"R",
+  "secs": 967,
+  "turns": 73,
+  "cost": 1.1545,
+  "output_tokens": 31344,
+  "code": 0
+ },
+ {
+  "when": "2026-11-07 20:03",
+  "label": "agent · Make a new Short with the line-boil skill about \"R",
+  "secs": 36,
+  "turns": 10,
+  "cost": 0.1698,
+  "output_tokens": 1974,
+  "code": 0
+ },
+ {
+  "when": "2026-11-07 20:12",
+  "label": "agent · Make a new Short with the line-boil skill about \"H",
+  "secs": 298,
+  "turns": 61,
+  "cost": 0.8232,
+  "output_tokens": 20772,
+  "code": 0
+ },
+ {
+  "when": "2026-11-07 20:43",
+  "label": "agent · Make a new Short with the line-boil skill about \"D",
+  "secs": 446,
+  "turns": 58,
+  "cost": 0.8047,
+  "output_tokens": 23292,
+  "code": 0
+ },
+ {
+  "when": "2026-11-07 21:00",
+  "label": "thumb · instagram-listening",
+  "secs": 62,
+  "turns": 16,
+  "cost": 0.227,
+  "output_tokens": 5176,
+  "code": 0
+ },
+ {
+  "when": "2026-11-08 14:23",
+  "label": "agent · Make a new Short with the line-boil skill about \"W",
+  "secs": 425,
+  "turns": 61,
+  "cost": 1.0117,
+  "output_tokens": 25217,
+  "code": 0
+ },
+ {
+  "when": "2026-11-08 15:09",
+  "label": "agent · Reply with the single word OK. Do nothing else.",
+  "secs": 14,
+  "turns": 1,
+  "cost": 0.0882,
+  "output_tokens": 4,
+  "code": 0
+ }
+]

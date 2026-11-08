@@ -1,0 +1,15 @@
+Your spaceship just left without you, and you're lost on a planet.
+Which planet is the worst place to get stranded? Four contenders.
+Four planets will kill you, and one does it the slowest way.
+Never get lost on Venus, and here is the ranking that proves it.
+You have about one minute to pick which planet to be stranded on.
+
+--- hookscore panel (hookscore.py) ---
+Your spaceship just left without you, and you're lost on a planet.  46 WEAK (winner)
+You have about one minute to pick which planet to be stranded on.  42 WEAK (formula: unclassified)
+Never get lost on Venus, and here is the ranking that proves it.  41 WEAK (The Reveal)
+Four planets will kill you, and one does it the slowest way.  40 WEAK
+Which planet is the worst place to get stranded? Four contenders.  36 WEAK (The Superlative)
+
+Winner: "Your spaceship just left without you..." (46). Runner-up: "You have about one minute..." (42).
+All are WEAK on the scorer; the winner is the only one that drops the viewer into the scene (address + stakes), and the countdown reveal ("worst last") plus the Venus payoff carry the curiosity.

@@ -1,0 +1,52 @@
+[
+  {
+    "name": "Lift-off under giant bunch",
+    "trigger": "Curiosity",
+    "words": "HOW MANY BALLOONS TO LIFT YOU?",
+    "concept": "Inside gridSafe, a huge sunflower-spiral bunch of red, blue and paper-white balloons fills the upper middle of the frame, and its strings run down to Ollie, who is drawn large in the middle band with his toes just leaving a thin grass line. The words sit across the top third with BALLOONS biggest in YEL on a flat sky-blue background, there is a paper sunburst behind Ollie so the blue bean pops, and the bottom 15% and bottom-right are empty sky.",
+    "subject": "a giant bunch of party balloons lifting a bean off the ground",
+    "face": "Ollie (blue pear, glasses): wide-eyed 'whoa' take, eyebrows shot up, mouth a big open O, half thrilled and half alarmed",
+    "why": "It asks the exact question the title asks and invites a guess, and the video answers it with real maths: about 10 g per balloon against a 70 kg person, so roughly 7,000.",
+    "risk": "It's the safest idea and could look like any balloon cartoon, so the bunch must be clearly enormous and the feet clearly off the ground. Nothing here over-promises."
+  },
+  {
+    "name": "Number versus one balloon",
+    "trigger": "Shock",
+    "words": "7,000 BALLOONS TO LIFT YOU?!",
+    "concept": "Ollie stands feet-planted on a grass line in the middle band, gripping the taut string of ONE huge red balloon (a third of the frame) that tugs straight up and moves him not at all. He stares up at it in disbelief. The words run across the top third, with BALLOONS biggest in YEL and 7,000 in PAPER, on a flat yellow sunburst with a paper blob behind the balloon so the red reads.",
+    "subject": "one big red party balloon on a taut string, failing to lift the bean",
+    "face": "Ollie: jaw-dropped disbelief, eyes huge, glasses knocked askew, one sweat drop, staring up at the single balloon",
+    "why": "The number is shockingly big next to one useless balloon, so a stranger clicks to check the maths, and the video's whole first half shows exactly where 7,000 comes from (10 g each, like two coins).",
+    "risk": "Showing the number gives the answer away and the video says 'roughly' 7,000, so the curiosity has to come from 'really? why?' rather than 'how many?'. The '?!' keeps it a question, and 7,000 stays smaller than BALLOONS so it doesn't read as a bare-number teaser."
+  },
+  {
+    "name": "Balloon bursts mid-sky",
+    "trigger": "Fear",
+    "words": "BALLOONS LIFT YOU... THEN POP?",
+    "concept": "Ollie dangles in the middle band, high in a flat blue sky with paper clouds drifting below his feet, holding the strings of a swollen bunch. The biggest balloon right above his head is mid-pop, with a fat yellow burst star and flying red rubber shreds. The words sit in the top third with BALLOONS biggest in YEL, and nothing but cloud goes near the bottom-right or the bottom 15%.",
+    "subject": "a swollen bunch of balloons high in the sky, the top one bursting",
+    "face": "Ollie: full-on terrified scream, eyes huge and white, mouth wide, sweat drops flying, looking up at the burst",
+    "why": "Dangling in the sky as your balloons start bursting is a real gut-drop, and the video honestly delivers it: as you rise the air thins, the balloons swell until they pop, and the 1982 pilot had to pop his to come down.",
+    "risk": "It could suggest a deadly fall the video never shows. To avoid that, draw just the one pop with no falling or injury, so the promise matches what the video actually says: they swell and pop, and popping is how you get down."
+  },
+  {
+    "name": "Real lawn chair flight",
+    "trigger": "Absurd",
+    "words": "LAWN CHAIR LIFTED BY BALLOONS?!",
+    "concept": "The red box pilot in his yellow cap sits gripping the arms of the red-and-blue striped lawn chair, drawn large in the middle band and floating among paper cloud wisps on a flat blue sky. A tight cluster of about forty big paper-white weather balloons with bold ink outlines sits above him and runs into the words. The words fill the top third with BALLOONS biggest in YEL, and the chair legs end well above the bottom 15%.",
+    "subject": "a lawn chair hanging under a cluster of big white weather balloons",
+    "face": "the pilot (red box, yellow cap, big nose): bulging eyes and clenched, chattering teeth, cold and scared",
+    "why": "A real man really flew a lawn chair on balloons in 1982, and that is too absurd not to click. The video tells the true story: about forty weather balloons, nearly five kilometres up, and down by popping them one by one.",
+    "risk": "The story is only the last third of a short video, so someone who clicks just for it may feel short-changed. It also needs the big white balloons to read as balloons on the blue sky (thick ink outlines, shine marks) and the chair drawn big enough to read at 246 px."
+  },
+  {
+    "name": "Floating, then looking down",
+    "trigger": "Stakes",
+    "words": "CAN BALLOONS LIFT YOU? YES, BUT...",
+    "concept": "Ollie floats in the middle band under a big bunch whose bottom edge meets the words, his legs dangling as he peers down between his feet. Far below, a tiny strip of ground with a fence and hills sits low as pure background. The flat sky is blue with a paper blob behind Ollie, the words are in the top third with BALLOONS biggest in YEL, and YES, BUT... is in PAPER.",
+    "subject": "a big bunch of balloons holding a bean high above a tiny ground",
+    "face": "Ollie: queasy dread, eyes huge and looking straight down, wobbly frozen mouth, sweat drops",
+    "why": "It answers the title (yes) and hangs a real stake on it, the 'but', which the video pays off word for word in its last line: getting down is the hard part.",
+    "risk": "'BUT...' is the vaguest hook here, and the picture is close to the fear idea. It works only if the long drop below Ollie is obvious at feed size, so keep the ground tiny and empty and the face big."
+  }
+]
