@@ -54,8 +54,8 @@ this look hand-animated and not just "drawn in code", are in `references/style.m
    a hook in the first sentence (a question, a surprise or a "you've seen this"), then the mechanism in 2 or 3 escalating beats with a
    **re-hook about halfway** (a catch, a scale jump or a strange consequence that the first beat creates: "Here's the catch.", "Which
    should kill you. It doesn't."), then a payoff that answers the hook, ideally calling back to the opening image, then a **closing
-   hook**: one line that leaves a question open or teases the next idea (a Short: it is the last thing heard and the Short loops
-   straight back to frame 1, so a line that leads back into the hook is ideal), or two or three (a long video: the open question,
+   hook**: one line that leaves a question open or teases the next idea (a Short: the last thing heard, then the iris closes; a line that
+   leads back into the first sentence, or teases the next idea, is ideal), or two or three (a long video: the open question,
    "that's a ... for another day", and a comment prompt). Never stop dead on the callback. The script never asks for likes, shares or
    subscribes (a long video's voiced outro does that; a Short has none, see **Captions, ending and outro**).
    **Sentence 2 is where Shorts lose people.** The channel's biggest drops sit at 4 to 8 s, on a "common belief" or textbook line
@@ -75,7 +75,7 @@ this look hand-animated and not just "drawn in code", are in `references/style.m
    **Funny.** The channel is dry-funny in every genre. Put a joke roughly every 8 to 10 seconds in a Short (10 to 15 in a long video), mostly in a bean's reaction, a
    literal-minded image, or the last line, never in shouting. A running gag that comes back at the end is worth more than five
    one-offs. Funny never replaces correct: facts stay checked and honest.
-   **Length.** A Short's length is variable: you decide it from the topic. The target counts the voiceover; a Short has no outro and ends 0.4 s after the last word, so the voiceover is the whole video. Before writing, list the three things a viewer must leave knowing (the answer, why it is true, one surprising detail or number they can repeat), then write only the sentences that carry those: ONE core mechanism, no padding, and never cut a needed fact just to hit a number. That usually lands at 30 to 50 s of voiceover (about 95 to 155 words). Go up to 60 s only when every extra beat escalates (a bigger scale, a new consequence, as "What if you grew 1 cm every second?" did), never for more explanation. If the user names a duration (the Bean Studio Agent tab and Topics wizard pass it as "TARGET LENGTH: N seconds"), follow it instead. Kokoro reads about 3.1 words per second, so N seconds is about N x 3.1 words. Run `build.py voice <project> --target N` (N = the seconds you chose, or the user's) after writing; it prints `TARGET N s: OK`, or how many words to cut or add, and you repeat the read until it is within 4 s of the target. More than 60 s of voiceover is a long video (16:9, chapters): use the **line-boil-wide** skill instead, which runs on this same engine (`build.py new <project> --wide`).
+   **Length.** A Short's length is variable: you decide it from the topic. The target counts the voiceover; a Short has no outro and ends 1.6 s after the last word (breath, iris close, black), so the voiceover is almost the whole video. Before writing, list the three things a viewer must leave knowing (the answer, why it is true, one surprising detail or number they can repeat), then write only the sentences that carry those: ONE core mechanism, no padding, and never cut a needed fact just to hit a number. That usually lands at 30 to 50 s of voiceover (about 95 to 155 words). Go up to 60 s only when every extra beat escalates (a bigger scale, a new consequence, as "What if you grew 1 cm every second?" did), never for more explanation. If the user names a duration (the Bean Studio Agent tab and Topics wizard pass it as "TARGET LENGTH: N seconds"), follow it instead. Kokoro reads about 3.1 words per second, so N seconds is about N x 3.1 words. Run `build.py voice <project> --target N` (N = the seconds you chose, or the user's) after writing; it prints `TARGET N s: OK`, or how many words to cut or add, and you repeat the read until it is within 4 s of the target. More than 60 s of voiceover is a long video (16:9, chapters): use the **line-boil-wide** skill instead, which runs on this same engine (`build.py new <project> --wide`).
 2. **Facts.** Check every claim. If you can search, use reputable sources. Hedge contested ideas ("scientists think").
    Keep the simplification honest: simpler is fine, wrong is not. Verify every number in a primary source (the paper, the review, the
    agency page), never invent one, and drop what you cannot verify. Write `<project>-sources.md`: a table of claim, link, and how far you
@@ -130,11 +130,11 @@ needs that space, move that shot's captions with `cap: 690` (below the subject),
 uploading to YouTube as closed captions (Subtitles → Upload file → With timing). Check one still per shot for
 captions touching anything important. Details are in "Captions" in `references/style.md`.
 
-**A Short loops, it never closes.** It ends 0.4 s after the last word (`VO_END()`), with no iris, no black and no outro, so it
-runs straight back into the first shot: a dead tail is where Shorts viewers swipe (the nails Short's biggest drop sat exactly where
-its old iris closed), and a replay counts. Land the closing line's action before the last word ends and keep the final pose alive (a
-held loop to `VO_END()`). The engine ignores `tr: 'iris'` on a Short. Long videos still breathe and close the iris: see
-"The ending breathes" in `references/style.md`.
+**A Short ends smoothly, never instantly.** It has no outro, so after the last word the engine holds the final pose 0.6 s, closes
+the iris over 0.8 s and sits on black 0.2 s (`VO_END()`; a long video uses 1.0 / 1.0 / 0.3). The last shot is the **closing hook** and
+must be `tr: 'iris'`, centred on the hero's face, with its action landed before the last word ends and a held loop (a wave or a bob)
+running to `VO_END()`. When checking, render a still about 0.4 s after the last word: the pose should be settled and alive, not
+mid-move. See "The ending breathes" in `references/style.md`.
 
 `build.py video` appends the channel outro to **long videos only**, voiced in af_heart, and adds the outro's words to the `.srt`
 (`engine/outro/outro.mp4`, the old Shorts outro, is kept but no longer appended):

@@ -284,8 +284,8 @@ def cmd_voice(a):
         count += 1
     dur = float(subprocess.run(['ffprobe', '-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0',
                                 str(proj / 'audio' / 'vo.wav')], capture_output=True, text=True, check=True).stdout)
-    # main.js TAIL: a long video adds 1.0 s breath + 1.0 s iris close + 0.3 s on black (after any --hold); a Short stops 0.4 s after the last word
-    end = round(dur + a.hold + (2.3 if fmt_name(proj) == 'wide' else 0.4), 2)
+    # main.js TAIL: breath + iris close + black after the voice (after any --hold): 1.0 + 1.0 + 0.3 for a long video, 0.6 + 0.8 + 0.2 for a Short
+    end = round(dur + a.hold + (2.3 if fmt_name(proj) == 'wide' else 1.6), 2)
     (proj / 'audio' / 'words.json').write_text(json.dumps(ws, indent=0), encoding='utf-8')
     sync_engine(proj)
     # --hold N: the last pose holds N more seconds before the iris (the channel outro uses it so YouTube's end-screen elements have time)
@@ -443,7 +443,7 @@ def cmd_video(a):
     node(kit, proj, 'cues', proj / 'cues.json', check=True)
     sys.path.insert(0, str(ENGINE / 'tools'))
     import sound
-    n = sound.mix(proj, total / FPS, music_gain=0 if a.no_music else 0.11, fade_out=2.0 if fmt_name(proj) == 'wide' else 0.4)
+    n = sound.mix(proj, total / FPS, music_gain=0 if a.no_music else 0.11, fade_out=2.0 if fmt_name(proj) == 'wide' else 1.4)
     print(f'   {n} sound cues')
     name = proj.name
     final = proj / f'{name}.mp4'

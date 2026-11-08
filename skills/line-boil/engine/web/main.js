@@ -22,11 +22,11 @@ function _find(phrase, nth) {
 }
 function at(phrase, nth) { return WORDS[_find(phrase, nth)[0]].s; }
 function end(phrase, nth) { return WORDS[_find(phrase, nth)[1]].e; }
-// The ending. A long video breathes: after the last word, hold the final pose (BREATH), close the iris slowly (IRIS_CLOSE),
-// then sit on black (IRIS_HOLD) before the channel outro opens. A Short has no outro and no iris: it stops END_HOLD after the
-// last word, so it loops straight back into the first shot (a dead tail is where Shorts viewers swipe). VO_DUR comes from build.py voice.
-const BREATH = 1.0, IRIS_CLOSE = 1.0, IRIS_HOLD = 0.3, END_HOLD = 0.4;
-const TAIL = WIDE ? BREATH + IRIS_CLOSE + IRIS_HOLD : END_HOLD;
+// The ending breathes: after the last word, hold the final pose (BREATH), close the iris (IRIS_CLOSE), then sit on black (IRIS_HOLD).
+// A long video then opens the channel outro out of that black. A Short has no outro, so its tail is tighter (0.6 + 0.8 + 0.2 = 1.6 s,
+// not 2.3 s): it still closes on the hero's face, but does not sit on a dead screen. VO_DUR comes from build.py voice.
+const BREATH = WIDE ? 1.0 : 0.6, IRIS_CLOSE = WIDE ? 1.0 : 0.8, IRIS_HOLD = WIDE ? 0.3 : 0.2;
+const TAIL = BREATH + IRIS_CLOSE + IRIS_HOLD;
 const VO_END = () => (typeof VO_DUR !== 'undefined' ? VO_DUR + TAIL
   : typeof END !== 'undefined' ? END : (WORDS.length ? WORDS[WORDS.length - 1].e + TAIL : 4));
 const IRIS_START = () => VO_END() - IRIS_CLOSE - IRIS_HOLD;
@@ -149,7 +149,7 @@ function prepareShots() {
     if (s.tr === 'smear') cue(s.end - D, 'whoosh', 0.8);
   });
   const last = SHOTS[SHOTS.length - 1];
-  if (WIDE && last && last.tr === 'iris') cue(IRIS_START() + 0.1, 'slide_down', 0.6);
+  if (last && last.tr === 'iris') cue(IRIS_START() + 0.1, 'slide_down', 0.6);
   _sorted = true;
 }
 
@@ -180,7 +180,7 @@ function renderFrame(f) {
     line([[x - 160, y], [x + 160, y + (rnd(n, k + 40) - .5) * 10]], 4 + rnd(n, k + 60) * 5, 970 + k, k % 3 === 0 ? INK : [RED, BLUE, YEL][k % 3], 2);
   }
   drawCaptions(t, s);
-  if (WIDE && s.tr === 'iris' && i === SHOTS.length - 1) {   // Shorts never close: they loop
+  if (s.tr === 'iris' && i === SHOTS.length - 1) {
     // close from fully open (past the farthest corner) down to black, slow at both ends
     const [ix, iy] = s.iris || [W / 2, H / 2];
     const r0 = Math.max(Math.hypot(ix, iy), Math.hypot(W - ix, iy), Math.hypot(ix, H - iy), Math.hypot(W - ix, H - iy)) + 30;

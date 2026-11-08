@@ -36,9 +36,10 @@ acting, timing and staging.
 
 ## The ending breathes
 
-**A Short loops instead.** It stops 0.4 s after the last word: no iris, no black, no outro, straight back into the first shot (a dead
-tail is where Shorts viewers swipe). Land the payoff action before the last word ends, keep the final pose alive for that 0.4 s, and
-when you can, make the last line lead back into the hook. Everything below is for **long videos**.
+**A Short has no outro, so its ending is tighter:** 0.6 s of breath, 0.8 s of iris close and 0.2 s of black (1.6 s, not 2.3 s), so it
+closes on the hero's face without sitting on a dead screen. It never ends on the last word, and it never ends on the callback: the last
+line is a **closing hook** (an open question, a teaser for the next idea, or a line that leads back into the first sentence so the
+loop feels natural). The rest of this section describes the long video's longer tail; the same rules apply to a Short at the shorter timings.
 
 A long video never ends on the last word. The engine adds 2.3 s after the voice ends:
 - **1.0 s of breath:** the final pose holds on screen, still boiling and blinking.

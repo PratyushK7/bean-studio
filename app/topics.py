@@ -39,7 +39,7 @@ WORDS_PER_SECOND = 3.1                                                       # t
 KINDS = ("short", "long")
 
 
-SHORT_AUTO = ("LENGTH: you decide, from what THIS topic needs to teach. The count is the VOICEOVER ONLY, and a Short has no outro (it ends 0.4 seconds after the last word and loops), so the voiceover is the whole video. "
+SHORT_AUTO = ("LENGTH: you decide, from what THIS topic needs to teach. The count is the VOICEOVER ONLY, and a Short has no outro (it ends 1.6 seconds after the last word: breath, iris close, black), so the voiceover is almost the whole video. The LAST sentence is a closing hook (an open question, a teaser for the next idea, or a line that leads back into the first sentence), never just the callback. "
               "First list the three things a viewer must leave knowing (the answer, why it is true, one surprising detail or number they can repeat), "
               "then write only the sentences that carry those: one core mechanism, no padding, and never cut a needed fact just to hit a number. Stay between 30 and 50 seconds of voiceover "
               f"(about {round(30 * WORDS_PER_SECOND)} to {round(50 * WORDS_PER_SECOND)} words at {WORDS_PER_SECOND} words a second); go up to 60 only when every extra beat escalates, never for more explanation. Follow the skill retention rules: sentence 2 raises the stakes and never explains or gives the answer, a re-hook about halfway, a joke every 8 to 10 seconds, no shot over about 4 seconds. Once the script is written, state your chosen length, run build.py voice <project> --target <that many seconds>, "
@@ -341,7 +341,7 @@ THE USER'S ANSWERS (follow them):
 - Cast: {'reuse the red host bean (BEAN in the bean-avatar project) as the hero, with other beans for the other ideas' if a.get('cast') == 'host' else 'a new cast of different beans designed for this topic: one bean per idea or role, abstract ideas as costume beans (see "A cast of beans" in references/style.md)'}
 - Ending: {clean(a.get('ending') or 'a punchy callback line', 80)}
 - Background music: {'on, and it follows the script: musicMood() changes the mood with the feeling (see the skill)' if a.get('music', True) else 'off (pass --no-music to build.py video)'}
-- Channel outro: {('appended' if a.get('outro', True) else 'left off (pass --no-outro to build.py video)') if kind == 'long' else 'none: a Short ends on its closing line and loops (build.py never appends one to a Short)'}
+- Channel outro: {('appended' if a.get('outro', True) else 'left off (pass --no-outro to build.py video)') if kind == 'long' else 'none: a Short ends on its closing-hook line, then the iris closes (build.py never appends an outro to a Short)'}
 - Thumbnail: {thumb_line}.
 - Extra notes: {clean(a.get('notes'), 400) or 'none'}
 """

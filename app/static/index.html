@@ -516,7 +516,7 @@ async function getIdeas() {
     if (k === TKIND) drawOptions();
   }, 2000);
 }
-const LENGTH_LABEL = {0: 'Let the agent decide (recommended): as long as this topic needs, usually 30 to 50 seconds (no outro, it loops)', 30: 'Fixed: 30 seconds of voiceover (~93 words) · fastest, punchy', 40: 'Fixed: 40 seconds of voiceover (~124 words)', 50: 'Fixed: 50 seconds of voiceover (~155 words)', 60: 'Fixed: 60 seconds of voiceover (~186 words) · Shorts maximum'};
+const LENGTH_LABEL = {0: 'Let the agent decide (recommended): as long as this topic needs, usually 30 to 50 seconds (no outro)', 30: 'Fixed: 30 seconds of voiceover (~93 words) · fastest, punchy', 40: 'Fixed: 40 seconds of voiceover (~124 words)', 50: 'Fixed: 50 seconds of voiceover (~155 words)', 60: 'Fixed: 60 seconds of voiceover (~186 words) · Shorts maximum'};
 const MIN_LABEL = {5: '5 minutes (~930 words)', 7: '7 minutes (~1,300 words) · the sweet spot for this style', 9: '9 minutes (~1,670 words)', 12: '12 minutes (~2,230 words)'};
 function openWizard(src, i) {
   const long = TKIND === 'long', o = (src === 'pick' ? TPICK : TOPT)[TKIND][i];
