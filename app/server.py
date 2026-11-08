@@ -61,7 +61,7 @@ DEFAULTS = {
     "channels": {
         "bean": {"name": "The Bean With Bad Ideas", "language": "English", "emoji": "🫘", "color": "#1982c4",
                  "tools": ["projects", "topics", "schedule", "analytics", "agent", "jobs", "settings"]},
-        "hindi": {"name": "Hindi channel (rename it in Settings)", "language": "Hindi", "emoji": "🪔", "color": "#c0262d",
+        "hindi": {"name": "Decoding Vyapaar", "language": "Hindi", "emoji": "🪔", "color": "#c0262d",
                   "tools": ["projects", "schedule", "analytics", "agent", "jobs", "settings"],
                   "note": "Topics turn on once this channel has a video skill (its explainer style). Until then use the Agent tab.",
                   "slots": {"A": "12:00", "B": "18:30", "Long": "20:30"},

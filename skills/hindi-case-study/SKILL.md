@@ -1,14 +1,14 @@
 ---
 name: hindi-case-study
 description: >-
-  Writes the script for a long Hindi business case-study video (14 to 20 minutes) for the Hindi channel, using the hooks,
+  Writes the script for a long Hindi business case-study video (14 to 20 minutes) for the Hindi channel Decoding Vyapaar, using the hooks,
   re-hooks, chapter shapes and closes of the top Hindi business-documentary channels (HinExp, ABFinDoc), studied line by
   line from their ten most-viewed videos. Four formats: the economics of owning a business (bus, petrol pump, jewellery
   shop), a company's rise, split or fall, a person's rivalry/revenge/rise story, and two people making one money decision.
   Output is a researched, sourced script.json (Devanagari narration, sparse Hinglish on-screen text, a visual note per
   beat) checked by casecheck.py, plus the research file and three hook options. Use whenever the user asks for a Hindi
   script, a Hindi case study, a "business case study" or "economics of owning X" video, a Hindi documentary about a
-  company or a businessman, or a script for the Hindi channel, including from the Bean Studio Agent tab.
+  company or a businessman, or a script for Decoding Vyapaar or the Hindi channel, including from the Bean Studio Agent tab.
 ---
 
 # hindi-case-study
