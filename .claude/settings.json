@@ -12,13 +12,15 @@
       "Edit(//c/Users/praty/youtube/**)",
       "Bash(python *)", "Bash(node *)", "Bash(ffmpeg *)", "Bash(ffprobe *)",
       "PowerShell(python *)", "PowerShell(ffmpeg *)", "PowerShell(ffprobe *)",
-      "WebSearch", "WebFetch"
+      "WebSearch", "WebFetch",
+      "Edit(//c/Users/praty/.claude/skills/**)",
+      "Edit(//c/Users/praty/.claude/youtube/**)"
     ],
     "deny": [
-      "Edit(//c/Users/praty/.claude/**)",
       "Read(//c/Users/praty/youtube/tools/.secrets/**)",
-      "Bash(git push *)",
-      "Bash(*yt_upload.py upload*)"
+      "Bash(*yt_upload.py upload*)",
+      "Edit(//c/Users/praty/.claude/*.json)",
+      "Edit(//c/Users/praty/.claude/plugins/**)"
     ]
   }
 }
