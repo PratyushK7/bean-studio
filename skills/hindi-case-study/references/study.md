@@ -168,6 +168,35 @@ question about the owner's cut**, in Hinglish: "₹1,200/Hour Turf Business: Wee
 youth businesses (turf, gaming café) rather than the classic bus and petrol pump, a sign that format A works best on
 a business the 18 to 30 viewer actually walks into.
 
+## The wider roster (added 9 Nov 2026): titles and views only, transcripts pending
+
+All of these are in Bean Studio's topic sources for Decoding Vyapaar. Median = the median views of the channel's videos,
+which says more about a repeatable format than one viral hit does.
+
+| Channel | Videos | Median | Biggest | What it does |
+|---|---|---|---|---|
+| Shivanshu Agrawal (@Shivanshu.Agrawal) | 32 | **3.8M** | Haldiram's 12M, Byju's 10M, Nirma 9.2M | the strongest format in the niche: one brand's rise or fall, 13 to 21 min, plain English titles |
+| HiddenOps India (@HiddenOpsIndia1) | 38 | 336K | sleeper bus 3.6M, D-Mart 3.3M, Patanjali 1.3M | very long 2D animation (22 to 47 min); also crime and spy stories |
+| Think School Hindi (@ThinkSchool_Hindi) | 111 | 190K | Campa Cola 1.8M, JioHotstar 1.7M, IndiGo 1.6M | strategy case studies (how a company beat its rival); also geopolitics |
+| HinExp (@HinExpofficial) | | ~97K | bus 2.0M | the core study above |
+| ABFinDoc (@ABFinDoc) | | ~550K (12 seen) | Ambani 1.4M | the core study above |
+| Ani Explainer Hindi (@AniExplainerHindi-1) | 26 | 22K | Blinkit "expose" 2.6M, Patanjali 1.5M, boAt 874K | "X Is in Trouble: What Went Wrong?" |
+| Money Code (@moneycode_mc) | 87 | 10K | 2.2M, petrol pump 1.0M, mall, gym, tea stall | "The Economics of X", Hindi titles |
+| Truth Finance (@TruthFinance0.1) | 50 | 5.5K | Vijay Mallya 2.0M, DMart 1.9M | hit-driven; "Is in Trouble" and fraud stories, 2D animation |
+| Paisa Decode (@PaisaDecodeHQ) | 60 | 1.9K | turf 1.0M, PS5 café 685K | see above |
+| FinXplain Hindi (@FinXplain07) | 12 | 491 | Birla vs Adani cement war 1.6M | rivalry; one copy of the Blinkit "expose" |
+| Monexa (@Monexa90) | 70 | 351 | wholesale margins 975K, spice packets 253K | the economics of thin-margin trade |
+| Finance In Minutes (@Financeinminutes80) | 4 | 416 | TVS family feud 561K | "Parivaar Ki Jang", 2D animation |
+| HinExplain (@HinExplain) | | tiny | Harshad Mehta, about 120 views | too small to learn from in numbers; kept as the user's pick |
+
+**Title formulas that recur across channels** (each has at least one hit of 500K+): "How a Poor Boy Built X"
+(Shivanshu, four videos at 6.7M to 12M); "The Downfall of X" / "The Shocking Small Mistake That Killed X"; "X Is in
+Trouble: What Went Wrong?" (copied by three channels); "X Expose: The Business Model Fooling Everyone"; "The Economics of
+(Owning) X"; the price-first "₹1,200/Hour X: ... Kitna Bachta Hai?"; and rivalry or family war ("Birla vs Adani", "TVS
+Family Is in Trouble? Parivaar Ki Jang"). Most channels here are hit-driven (a small median under one big hit); the two
+with a high median, Shivanshu Agrawal and HiddenOps, tell **one company's or one person's story from humble start to
+peak or fall**, which is format B and C in this skill.
+
 ## What not to copy
 
 These channels get some things wrong. This channel should be the version a careful viewer trusts.

@@ -66,7 +66,10 @@ DEFAULTS = {
                   "note": "Topics turn on once this channel has a video skill (its explainer style). Until then use the Agent tab.",
                   "slots": {"A": "12:00", "B": "18:30", "Long": "20:30"},
                   "topic_category": "Hindi business case studies for Indian viewers: the economics of owning an everyday business, how a famous Indian company rose, split or fell, and the rivalry, revenge or rise of a businessman everyone knows",
-                  "topic_channels": ["HinExpofficial", "ABFinDoc", "PaisaDecodeHQ"],
+                  "topic_channels": [
+                      # faceless Hindi business documentaries and "economics of owning X" (the channel's model)
+                      "HinExpofficial", "ABFinDoc", "PaisaDecodeHQ", "Monexa90", "Financeinminutes80", "HinExplain", "Shivanshu.Agrawal",
+                      "HiddenOpsIndia1", "AniExplainerHindi-1", "moneycode_mc", "TruthFinance0.1", "FinXplain07", "ThinkSchool_Hindi"],
                   "voice_file": "~/.claude/youtube/voice-hindi.md"},
     },
 }
