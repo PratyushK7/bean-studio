@@ -7,14 +7,14 @@ Google Cloud project (see tools/yt_upload.md).
 import datetime as dt, difflib, re, threading
 from pathlib import Path
 
-import planner, store
+import channels, planner, store
 
 IST = dt.timezone(dt.timedelta(hours=5, minutes=30))
 NEED = {"https://www.googleapis.com/auth/yt-analytics.readonly", "https://www.googleapis.com/auth/youtube.readonly"}
 METRICS = "views,engagedViews,estimatedMinutesWatched,averageViewDuration,averageViewPercentage,likes,comments,shares,subscribersGained"
 DETAIL_LIMIT = 40          # videos whose retention curve and countries are fetched per sync (one query each)
 FRESH_DAYS, RECHECK_DAYS = 14, 3   # a video this young is always refreshed; older ones only every few days
-CHANNEL = {}               # name and subscriber count, filled in whenever the video list is read
+CHANNEL = channels.PerChannel(lambda cid: {})   # per channel: name and subscriber count, filled in whenever the video list is read
 
 
 class NotConnected(Exception):
@@ -24,24 +24,25 @@ class NotConnected(Exception):
 
 
 # ---------- sign-in (one cached credentials object, so threads don't refresh the token on top of each other) ----------
-_cred = {"obj": None, "mtime": None}
+_cred = {}                 # one cached sign-in per channel (keyed by its token file)
 _cred_lock = threading.Lock()
 
 
 def credentials(ROOT):
     from google.oauth2.credentials import Credentials
     from google.auth.transport.requests import Request
-    tp = ROOT / "tools" / ".secrets" / "token.json"
+    tp = channels.token_now(ROOT)
     with _cred_lock:
+        cc = _cred.setdefault(str(tp), {"obj": None, "mtime": None})
         try: mtime = tp.stat().st_mtime
         except OSError: raise NotConnected(sorted(NEED))
-        if _cred["obj"] is None or _cred["mtime"] != mtime:        # a new sign-in replaces the cached one
-            _cred.update(obj=Credentials.from_authorized_user_file(str(tp)), mtime=mtime)   # keeps the scopes it was granted
-        creds = _cred["obj"]
+        if cc["obj"] is None or cc["mtime"] != mtime:        # a new sign-in replaces the cached one
+            cc.update(obj=Credentials.from_authorized_user_file(str(tp)), mtime=mtime)   # keeps the scopes it was granted
+        creds = cc["obj"]
         missing = sorted(NEED - set(creds.scopes or []))
         if missing: raise NotConnected(missing)
         if not creds.valid:
-            creds.refresh(Request()); tp.write_text(creds.to_json()); _cred["mtime"] = tp.stat().st_mtime
+            creds.refresh(Request()); tp.write_text(creds.to_json()); cc["mtime"] = tp.stat().st_mtime
         return creds
 
 

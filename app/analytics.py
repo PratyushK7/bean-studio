@@ -8,7 +8,9 @@ import datetime as dt, json, re, threading, time
 
 from flask import abort, jsonify, request
 
-import store
+from pathlib import Path
+
+import channels, store
 
 FIELDS = ["id", "project", "title", "posted", "duration_s", "slot", "type", "checked", "detail_checked", "views", "engaged_pct", "viewed_pct",
           "avg_pct", "avd_s", "likes", "comments", "shares", "subs", "drop_s", "retention", "drop_note", "geo", "notes"]
@@ -55,24 +57,31 @@ def apply_edits(rows, current):
 
 
 def register(app, ROOT, cfg, start_job):
-    DATA, REPORTS = ROOT / "data", ROOT / "reports"
-    FILE, META = DATA / "analytics.json", DATA / "analytics-meta.json"
-    load = lambda: store.read(FILE, [])
-    state = {"syncing": False, "error": None, "last_sync": None, "info": None, **(store.read(META, {}) or {})}
+    # everything below belongs to the channel the request is about: its own numbers, sync state and reports
+    FILE = lambda: channels.data_for(ROOT) / "analytics.json"
+    META = lambda: channels.data_for(ROOT) / "analytics-meta.json"
+    REPORTS = lambda: channels.data_for(ROOT).parent / "reports"
+    load = lambda: store.read(FILE(), [])
+
+    def blank(cid):
+        with channels.using(cid):
+            return {"syncing": False, "error": None, "last_sync": None, "info": None, **(store.read(META(), {}) or {}),
+                    "lock": threading.Lock()}
+    state = channels.PerChannel(blank)
     state.update(syncing=False, error=None)
-    sync_lock = threading.Lock()
 
     def do_sync():
         """pull everything from YouTube; keeps the slot/type/project/notes you set by hand"""
         import ytdata, ytstate
+        sync_lock = state["lock"]
         if not sync_lock.acquire(blocking=False):
             return state["error"] is None                 # one is already running
         state["syncing"] = True
         try:
             fresh = ytstate.STATE["videos"] if ytstate.STATE["videos"] and time.time() - ytstate.STATE["at"] < 600 else None
             rows, info = ytdata.sync(ROOT, cfg(), load(), videos=fresh)
-            with store.lock_for(FILE):
-                store.write(FILE, apply_edits(rows, load()))
+            with store.lock_for(FILE()):
+                store.write(FILE(), apply_edits(rows, load()))
             state.update(error=None, last_sync=dt.datetime.now().isoformat(timespec="seconds"), info=info)
         except ytdata.NotConnected:
             state["error"] = "not connected"
@@ -80,7 +89,7 @@ def register(app, ROOT, cfg, start_job):
             state["error"] = ytdata.friendly(e)
         finally:
             state["syncing"] = False
-            store.write(META, {"last_sync": state["last_sync"], "info": state["info"]})
+            store.write(META(), {"last_sync": state["last_sync"], "info": state["info"]})
             sync_lock.release()
         return state["error"] is None
 
@@ -88,10 +97,12 @@ def register(app, ROOT, cfg, start_job):
         import ytdata
         time.sleep(15)
         while True:
-            hours = float(cfg().get("analytics_sync_hours", 6))
-            last = dt.datetime.fromisoformat(state["last_sync"]) if state.get("last_sync") else None
-            if hours > 0 and (last is None or (dt.datetime.now() - last).total_seconds() > hours * 3600) and ytdata.connected(ROOT)[0]:
-                do_sync()
+            for cid in channels.ids(channels._raw["fn"]()):
+                with channels.using(cid):
+                    hours = float(cfg().get("analytics_sync_hours", 6))
+                    last = dt.datetime.fromisoformat(state["last_sync"]) if state.get("last_sync") else None
+                    if hours > 0 and (last is None or (dt.datetime.now() - last).total_seconds() > hours * 3600) and ytdata.connected(ROOT)[0]:
+                        do_sync()
             time.sleep(300)
     threading.Thread(target=auto_sync, daemon=True).start()
 
@@ -117,7 +128,7 @@ def register(app, ROOT, cfg, start_job):
         """saves only the fields you can edit, merged into the CURRENT data, so a sync that ran since you opened the tab keeps its numbers"""
         incoming = (request.get_json(silent=True) or {}).get("rows")
         if not isinstance(incoming, list): abort(400, "rows must be a list")
-        with store.lock_for(FILE):
+        with store.lock_for(FILE()):
             rows = load()
             by_id = {r.get("id"): r for r in rows if r.get("id")}
             by_title = {(r.get("title") or "").lower(): r for r in rows}
@@ -129,7 +140,7 @@ def register(app, ROOT, cfg, start_job):
                     if k in inc:
                         v = num(inc[k]) if k == "viewed_pct" else (inc[k] or None)
                         if tgt.get(k) != v: tgt[k] = v; changed += 1
-            if changed: store.write(FILE, rows)
+            if changed: store.write(FILE(), rows)
         return jsonify(ok=True, changed=changed)
 
     @app.post("/api/analytics/analyze")
@@ -137,11 +148,11 @@ def register(app, ROOT, cfg, start_job):
         rows = [r for r in load() if r.get("views") is not None]
         if len(rows) < 2: abort(400, "no numbers yet: connect YouTube and sync first (at least 2 videos needed)")
         question = str((request.get_json(silent=True) or {}).get("question") or "").strip()[:500]
-        REPORTS.mkdir(exist_ok=True)
-        out = REPORTS / f"analysis-{dt.datetime.now():%Y-%m-%d-%H%M}.md"
+        REPORTS().mkdir(exist_ok=True)
+        out = REPORTS() / f"analysis-{dt.datetime.now():%Y-%m-%d-%H%M}.md"
         c = cfg()
-        prompt = f"""You are the analyst for the YouTube channel "{c['channel']}" (funny hand-drawn cartoon explainers in any genre that teaches something useful; 2 Shorts a day plus 1 long-form a week; slot A posts at {c['slots'].get('A')} IST, slot B at {c['slots'].get('B')} IST).
-Analyze the channel's numbers and write a report to {out} (Markdown). Read {FILE} (every row, pulled from YouTube by the server: video type, slot, views, engaged_pct, average % watched, subs, top countries, the retention curve as [second, % still watching] pairs, and drop_s = the second with the biggest loss after the first 10%), {c['planner']} (the Schedule and Types tabs) and, for any video you want to explain, its folder under {c['projects_dir']} (script.json and <name>-youtube.txt). Also read ~/.claude/youtube/voice.md for the channel voice.
+        prompt = f"""You are the analyst for the YouTube channel "{c['channel']}" (language: {c['language']}; funny hand-drawn cartoon explainers in any genre that teaches something useful; 2 Shorts a day plus 1 long-form a week; slot A posts at {c['slots'].get('A')} IST, slot B at {c['slots'].get('B')} IST).
+Analyze the channel's numbers and write a report to {out} (Markdown). Read {FILE()} (every row, pulled from YouTube by the server: video type, slot, views, engaged_pct, average % watched, subs, top countries, the retention curve as [second, % still watching] pairs, and drop_s = the second with the biggest loss after the first 10%), {c['planner']} (the Schedule and Types tabs) and, for any video you want to explain, its folder under {c['projects_dir']} (script.json and <name>-youtube.txt). Also read {c['voice_file']} for the channel voice.
 
 Summary the app computed (a cross-check; recompute anything that looks off):
 {json.dumps(summarize(rows), indent=1)}
@@ -171,12 +182,12 @@ Only write the report. Do not edit the planner, the skills or any video. Finish 
 
     @app.get("/api/reports")
     def reports_list():
-        REPORTS.mkdir(exist_ok=True)
-        return jsonify([{"name": f.name, "modified": f.stat().st_mtime} for f in sorted(REPORTS.glob("*.md"), key=lambda f: -f.stat().st_mtime)])
+        REPORTS().mkdir(exist_ok=True)
+        return jsonify([{"name": f.name, "modified": f.stat().st_mtime} for f in sorted(REPORTS().glob("*.md"), key=lambda f: -f.stat().st_mtime)])
 
     @app.get("/api/reports/<name>")
     def report_get(name):
         if not re.match(r"^[\w.-]+\.md$", name): abort(400)
-        f = REPORTS / name
+        f = REPORTS() / name
         if not f.exists(): abort(404, "not written yet")
         return jsonify(name=name, text=f.read_text(encoding="utf-8"))

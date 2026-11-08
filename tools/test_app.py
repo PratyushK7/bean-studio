@@ -106,6 +106,46 @@ def test_analytics_merge():
     ok("analytics: saving edits never reverts newer numbers; sync keeps your edits")
 
 
+def test_channels():
+    """a second channel has its own videos, numbers, jobs and sign-in; home keeps the original folders"""
+    import channels
+    old_root, old_cfg = server.ROOT, server.CONFIG
+    root = TMP / "chroot"; (root / "data").mkdir(parents=True)
+    server.ROOT = root; server.CONFIG = TMP / "cfg-ch.json"; server.CONFIG.write_text("{}"); server._cfg.update(stamp="unset", val=None)
+    try:
+        r = c.get("/api/channels", headers=H).json
+        assert r["home"] == "bean" and [x["id"] for x in r["channels"]][:2] == ["bean", "hindi"] and r["current"] == "bean"
+        hi = {"X-Channel": "hindi", **H}
+        assert "topics" in next(x for x in r["channels"] if x["id"] == "bean")["tools"] and "topics" not in next(x for x in r["channels"] if x["id"] == "hindi")["tools"]
+        assert c.get("/api/channels", headers=hi).json["current"] == "hindi"
+        assert c.get("/api/channels", headers={"X-Channel": "nope", **H}).json["current"] == "bean", "unknown channel falls back to home"
+        # folders: home keeps data/ and line-boil; the other lives under channels/<id>/
+        assert channels.data_dir(root, server.cfg_raw(), "bean") == root / "data" and channels.data_dir(root, server.cfg_raw(), "hindi") == root / "channels" / "hindi" / "data"
+        with channels.using("hindi"):
+            assert server.cfg()["projects_dir"] == str(root / "channels" / "hindi" / "videos") and server.cfg()["language"] == "Hindi"
+            assert server.cfg()["token_path"].endswith("token-hindi.json") and server.cfg()["slots"]["B"] == "18:30"
+        assert server.cfg()["token_path"].endswith("token.json") and server.cfg()["channel_id"] == "bean"
+        # videos are separate
+        (root / "channels" / "hindi" / "videos" / "hi-one").mkdir(parents=True); store.write(root / "channels" / "hindi" / "videos" / "hi-one" / "script.json", ["ek " * 12])
+        assert c.get("/api/projects", headers=hi).json[0]["name"] == "hi-one" and all(p["name"] != "hi-one" for p in c.get("/api/projects", headers=H).json)
+        assert c.get("/media/hi-one/hi-one.mp4", headers=H).status_code == 404, "another channel's project is not reachable"
+        # state and runs are separate
+        ytstate.STATE["videos"] = [{"id": "home"}]
+        with channels.using("hindi"): assert ytstate.STATE["videos"] == [], "a channel never sees another channel's YouTube list"
+        # a job remembers its channel and Activity shows only its own
+        with channels.using("hindi"): j = server.start_job("probe · x", [sys.executable, "-c", "print(1)"], str(root))
+        assert j["channel"] == "hindi" and not any(x["id"] == j["id"] for x in c.get("/api/jobs", headers=H).json) and any(x["id"] == j["id"] for x in c.get("/api/jobs", headers=hi).json)
+        # settings: raw, and adding a channel
+        assert "channel_id" not in c.get("/api/config", headers=hi).json
+        assert c.post("/api/channels", json={"name": "Bean Tamil", "language": "Tamil"}, headers=H).json["id"] == "bean-tamil"
+        assert (root / "channels" / "bean-tamil" / "data").is_dir() and c.post("/api/channels", json={"name": "Bean Tamil"}, headers=H).status_code == 400
+        assert c.put("/api/config", json={"channels": {}}, headers=H).status_code == 400
+        ytstate.STATE["videos"] = []
+    finally:
+        server.ROOT, server.CONFIG = old_root, old_cfg; server._cfg.update(stamp="unset", val=None)
+    ok("channels: own folders, sign-in, YouTube list, jobs and numbers; unknown falls back to home; add works")
+
+
 def test_store_atomic():
     f = TMP / "s.json"; store.write(f, {"a": 1}); assert store.read(f) == {"a": 1} and not list(TMP.glob("s.json.tmp"))
     f.write_text("{broken"); assert store.read(f, "dflt") == "dflt"

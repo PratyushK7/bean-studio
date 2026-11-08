@@ -16,7 +16,7 @@ import concurrent.futures as cf, datetime as dt, difflib, json, random, re, stat
 from pathlib import Path
 from flask import abort, jsonify, request
 
-import planner, store
+import channels, planner, store
 from ytstate import norm
 
 TYPES = ["What if", "Myth test", "Why", "True story", "Versus", "Ranking", "Levels", "Paradox", "Puzzle",
@@ -80,7 +80,9 @@ def kind_of(v):
 
 
 def register(app, ROOT, cfg, start_job, JOBS, start_agent=None, start_staged=None):
-    DATA = ROOT / "data"
+    class _Data:                      # this channel's data folder, looked up each time it is used
+        def __truediv__(self, name): return channels.data_for(ROOT) / name
+    DATA = _Data()
 
     def run_agent(label, prompt, model=None, mode="plain"):
         """the studio's start_agent (live feed / own window); a plain job when none is given (tests)"""
@@ -88,10 +90,9 @@ def register(app, ROOT, cfg, start_job, JOBS, start_agent=None, start_staged=Non
         cmd = list(cfg()["agent_command"]) + (["--model", model] if model else [])
         return start_job(label, cmd + [prompt], cfg()["agent_cwd"])
 
-    POOL = {"short": DATA / "topic-pool.json", "long": DATA / "topic-pool-long.json"}
-    STATEF, PICKS = DATA / "topic-state.json", DATA / "picks.json"
-    st = {k: {"refreshing": False, "progress": "", "error": None} for k in KINDS}
-    st["batches"] = {}
+    POOL = lambda kind: DATA / ("topic-pool.json" if kind == "short" else "topic-pool-long.json")
+    STATEF, PICKS = lambda: DATA / "topic-state.json", lambda: DATA / "picks.json"
+    st = channels.PerChannel(lambda cid: {**{k: {"refreshing": False, "progress": "", "error": None} for k in KINDS}, "batches": {}})
     lock = threading.Lock()
 
     load_json, save_json = store.read, store.write
@@ -131,7 +132,7 @@ def register(app, ROOT, cfg, start_job, JOBS, start_agent=None, start_staged=Non
                         try: vids += f.result()
                         except Exception: failed.append(futs[f])
                 if not vids: raise RuntimeError("no videos came back; check your internet connection or the channel handles in Settings")
-                save_json(POOL[kind], {"fetched": dt.datetime.now().isoformat(timespec="seconds"), "videos": vids, "failed": failed})
+                save_json(POOL(kind), {"fetched": dt.datetime.now().isoformat(timespec="seconds"), "videos": vids, "failed": failed})
             except Exception as e:
                 s["error"] = str(e)[:300]
             finally:
@@ -209,7 +210,7 @@ def register(app, ROOT, cfg, start_job, JOBS, start_agent=None, start_staged=Non
     @app.get("/api/topics")
     def topics_get():
         kind = kind_of(request.args.get("kind"))
-        pool = load_json(POOL[kind], None)
+        pool = load_json(POOL(kind), None)
         s = st[kind]
         return jsonify(kind=kind, refreshing=s["refreshing"], progress=s["progress"], error=s["error"],
                        fetched=pool and pool["fetched"], videos=pool and len(pool["videos"]), failed=pool and pool.get("failed", []),
@@ -220,7 +221,7 @@ def register(app, ROOT, cfg, start_job, JOBS, start_agent=None, start_staged=Non
     def topics_picks():
         """hand-researched topics (data/picks.json), shown above the generated ideas"""
         kind = kind_of(request.args.get("kind"))
-        picks = (load_json(PICKS, {}) or {}).get(kind, [])
+        picks = (load_json(PICKS(), {}) or {}).get(kind, [])
         last = load_json(DATA / f"topic-last-{kind}.json", {}) or {}
         return jsonify(picks=[dict(p, n=i, pick=True, adapted=True) for i, p in enumerate(picks)], last=last.get("options", []), last_when=last.get("when"))
 
@@ -228,15 +229,15 @@ def register(app, ROOT, cfg, start_job, JOBS, start_agent=None, start_staged=Non
     def topics_refresh():
         kind = kind_of((request.get_json(silent=True) or {}).get("kind"))
         if not any(s["refreshing"] for k, s in st.items() if k in KINDS):
-            threading.Thread(target=refresh_pool, args=(kind,), daemon=True).start()
+            threading.Thread(target=channels.bound(refresh_pool, cfg()["channel_id"]), args=(kind,), daemon=True).start()
         return jsonify(ok=True)
 
     @app.post("/api/topics/options")
     def topics_options():
         kind = kind_of((request.get_json(silent=True) or {}).get("kind"))
-        pool = load_json(POOL[kind], None)
+        pool = load_json(POOL(kind), None)
         if not pool: abort(400, "no source data yet: press 'Refresh sources' first")
-        state = load_json(STATEF, {"seen": []})
+        state = load_json(STATEF(), {"seen": []})
         skey = "seen" if kind == "short" else "seen_long"
         seen = set(state.get(skey, [])); made = already_made()
         cands = pick_candidates(pool["videos"], seen, made)
@@ -273,7 +274,7 @@ Do not use any other tool than reading that file and writing that file. When don
         b = {"id": bid, "kind": kind, "job": j["id"], "out": str(out), "status": "running", "candidates": cands, "options": [], "started": time.time()}
         st["batches"][bid] = b
         state[skey] = list(seen | {x["id"] for x in cands})[-400:]
-        save_json(STATEF, state)
+        save_json(STATEF(), state)
         return jsonify(batch=bid, job=j["id"])
 
     @app.get("/api/topics/batch/<bid>")
@@ -346,13 +347,13 @@ THE USER'S ANSWERS (follow them):
 - Extra notes: {clean(a.get('notes'), 400) or 'none'}
 """
         if kind == "short":
-            prompt = f"""Make a new Short with the line-boil skill. Read ~/.claude/skills/line-boil/SKILL.md and the files it points to (references/api.md, references/style.md, references/youtube.md) first, and ~/.claude/youtube/voice.md for the channel voice.
+            prompt = f"""Make a new Short with the line-boil skill. Read ~/.claude/skills/line-boil/SKILL.md and the files it points to (references/api.md, references/style.md, references/youtube.md) first, and {c['voice_file']} for the channel voice.
 
 {common}
 The user has already approved this topic and these settings, so do NOT stop to ask or to show a plan. Go straight through, and keep it lean (a typical Short is about 30 tool calls): read each reference file once and do not re-read it; score the five candidate first lines in ONE hookscore.py call (the yt-script skill, as the line-boil skill says); at most 6 web searches or fetches in total; write each file with one Write, not many small edits; check the stills in at most two rounds; then script, fact-check (search the web; hedge anything uncertain; keep the sources for the sheet), cast, shots, build.py check, stills of every shot checked for overlaps and caption placement, build.py video, build.py sheet, the thumbnail (SKILL.md step 9) and the YouTube upload sheet (step 10). Do not upload anything and do not touch other projects. Finish by printing the project folder, the title and the thumbnail text."""
         else:
             structure = clean(a.get("structure") or "as in the research brief or the topic's chapters", 80)
-            prompt = f"""Make a LONG video ({dur // 60} minutes, 16:9) for the channel with the line-boil-wide skill. Read ~/.claude/skills/line-boil-wide/SKILL.md and references/wide.md, then the files they point to in ~/.claude/skills/line-boil (SKILL.md, references/api.md, references/style.md, references/youtube.md), and ~/.claude/youtube/voice.md for the channel voice. Use the yt-chapters, yt-seo and yt-package skills' rules for the chapters, description and title.
+            prompt = f"""Make a LONG video ({dur // 60} minutes, 16:9) for the channel with the line-boil-wide skill. Read ~/.claude/skills/line-boil-wide/SKILL.md and references/wide.md, then the files they point to in ~/.claude/skills/line-boil (SKILL.md, references/api.md, references/style.md, references/youtube.md), and {c['voice_file']} for the channel voice. Use the yt-chapters, yt-seo and yt-package skills' rules for the chapters, description and title.
 
 {common}- Structure: {structure}
 

@@ -8,9 +8,14 @@ import difflib, re, threading, time
 from pathlib import Path
 from flask import jsonify, request
 
-import store
+import channels, store
 
-STATE = {"at": 0.0, "videos": [], "connected": False, "error": None, "last": None}
+def _blank(cid):
+    """a channel's state starts from the last copy on disk, so the tabs have something before the first refresh"""
+    root = Path(__file__).resolve().parent.parent
+    cached = store.read(channels.data_dir(root, channels._raw["fn"](), cid) / "youtube-videos.json", {}) or {}
+    return {"at": 0.0, "videos": cached.get("videos", []), "connected": False, "error": None, "last": cached.get("last"), "loaded": True}
+STATE = channels.PerChannel(_blank)       # one per channel: STATE[...] is always the current channel's
 LOCK = threading.Lock()
 
 
@@ -46,12 +51,17 @@ def badge_for(project_dir):
 
 
 def register(app, ROOT, cfg):
-    FILE = ROOT / "data" / "youtube-videos.json"
-    cached = store.read(FILE, {}) or {}
-    STATE.update(videos=cached.get("videos", []), last=cached.get("last"))
+    file = lambda: channels.data_for(ROOT) / "youtube-videos.json"
+
+    def load():
+        """the last copy from disk, once per channel, so the tabs have something before the first refresh"""
+        if not STATE["loaded"]:
+            cached = store.read(file(), {}) or {}
+            STATE.update(videos=cached.get("videos", []), last=cached.get("last"), loaded=True)
 
     def refresh(force=False):
         """force=True always asks YouTube, except when another refresh finished in the last 5 s (a burst of tabs opening)"""
+        load()
         if not force and time.time() - STATE["at"] < 45: return
         import ytdata
         with LOCK:
@@ -59,7 +69,7 @@ def register(app, ROOT, cfg):
             try:
                 vids = ytdata.channel_videos(ROOT)
                 STATE.update(videos=vids, at=time.time(), connected=True, error=None, last=time.strftime("%Y-%m-%dT%H:%M:%S"))
-                store.write(FILE, {"videos": vids, "last": STATE["last"]}, indent=None)
+                store.write(file(), {"videos": vids, "last": STATE["last"]}, indent=None)
             except ytdata.NotConnected:
                 STATE.update(connected=False, error=None)
             except Exception as e:
@@ -68,13 +78,15 @@ def register(app, ROOT, cfg):
     def loop():
         time.sleep(10)
         while True:
-            refresh(force=True)
+            for cid in channels.ids(channels._raw["fn"]()):      # every channel that is signed in
+                with channels.using(cid): refresh(force=True)
             time.sleep(300)
     threading.Thread(target=loop, daemon=True).start()
 
     @app.get("/api/youtube/videos")
     def youtube_videos():
         refresh(force=bool(request.args.get("refresh")))
+        load()
         return jsonify(videos=STATE["videos"], connected=STATE["connected"], error=STATE["error"], last=STATE["last"])
 
     return refresh

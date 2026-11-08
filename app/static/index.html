@@ -80,6 +80,12 @@
   .detail img.thumb.wide, .detail video.wide { aspect-ratio:16/9; }
   .bar { height:12px; border:2px solid var(--ink); border-radius:999px; background:#fff; overflow:hidden; margin:10px 0 6px; }
   .bar i { display:block; height:100%; background:var(--blue); transition:width .6s; }
+  #chbar { display:flex; gap:8px; align-items:flex-end; padding:10px 24px 0; background:var(--soft); border-bottom:3px solid var(--ink); overflow-x:auto; }
+  #chbar button.ch { font:inherit; font-weight:700; font-size:14px; border:2px solid var(--ink); border-bottom:0; border-radius:12px 12px 0 0; background:#fff; color:var(--mute); padding:8px 16px 7px; cursor:pointer; white-space:nowrap; }
+  #chbar button.ch.on { background:var(--paper); color:var(--ink); padding-bottom:10px; margin-bottom:-3px; box-shadow:inset 0 5px 0 var(--chc, var(--blue)); }
+  #chbar button.ch small { font-weight:600; color:var(--mute); font-size:11px; margin-left:6px; }
+  #chbar button.add { margin-left:auto; margin-bottom:6px; }
+  .chnote { background:#fffbe8; border:2px dashed var(--ink); border-radius:10px; padding:8px 12px; margin-bottom:14px; font-size:13px; }
   .now { font-size:12px; color:var(--mute); min-height:34px; line-height:1.35; word-break:break-word; }
 </style>
 </head>
@@ -98,7 +104,9 @@
     <button data-tab="settings">Settings</button>
   </nav>
 </header>
+<div id="chbar"></div>
 <main>
+<div id="chnote" class="chnote" style="display:none"></div>
 
 <section id="projects" class="tab on">
   <div id="list">
@@ -212,10 +220,13 @@
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 let TOAST_T = null;
+let CH = ''; try { CH = localStorage.getItem('bean.channel') || ''; } catch (e) {}     // the channel tab you are on (remembered)
+let CHANNELS = [];
 function toast(msg, ms = 7000) { const el = $('#toast'); el.textContent = msg; el.classList.add('on'); clearTimeout(TOAST_T); TOAST_T = setTimeout(() => el.classList.remove('on'), ms); }
 async function api(url, opt = {}) {      // opt.silent: background polls don't pop up errors
   const silent = opt.silent; delete opt.silent;
   if (opt.body && typeof opt.body !== 'string') { opt.body = JSON.stringify(opt.body); opt.headers = {'Content-Type': 'application/json'}; }
+  opt.headers = Object.assign({}, opt.headers, {'X-Channel': CH});      // every call says which channel it is about
   let r;
   try { r = await fetch(url, opt); } catch (e) { if (!silent) toast('Cannot reach Bean Studio. Is its console window still open?'); throw e; }
   if (!r.ok) {
@@ -294,7 +305,7 @@ async function loadProjects() {
       <div style="margin-top:8px"><a href="#" onclick="show('jobs');watch('${j.id}');return false">watch every step live →</a></div></div>`; }).join('') +
   ps.filter(p => !making.some(j => j.label.slice(7) === p.name)).map(p => `
     <div class="card proj" onclick="openProject('${p.name}')">
-      ${p.steps.thumbnail ? `<img class="${p.kind === 'long' ? 'wide' : ''}" loading="lazy" src="/media/${p.name}/${p.name}-thumbnail.png?${p.modified}">` : `<div class="ph ${p.kind === 'long' ? 'wide' : ''}">${p.kind === 'long' ? 'long video<br>no thumbnail yet' : 'no thumbnail yet'}</div>`}
+      ${p.steps.thumbnail ? `<img class="${p.kind === 'long' ? 'wide' : ''}" loading="lazy" src="/media/${p.name}/${p.name}-thumbnail.png?channel=${CH}&${p.modified}">` : `<div class="ph ${p.kind === 'long' ? 'wide' : ''}">${p.kind === 'long' ? 'long video<br>no thumbnail yet' : 'no thumbnail yet'}</div>`}
       <h3>${esc(p.title || p.name)}</h3>
       <div class="slug">${p.kind === 'long' ? '🎞 long · ' : ''}${p.name} · ${p.words} words</div>
       <div style="margin-top:6px">${p.yt ? ytBadge(p.yt) : p.steps.uploaded ? '<span class="badge up">UPLOADED</span>' : p.ready ? `<span class="badge ok">READY</span>` : '<span class="badge">IN PROGRESS</span>'}
@@ -322,8 +333,8 @@ async function openProject(name) {
     <span class="back" onclick="loadProjects()">← all videos</span>
     <div class="detail">
       <div>
-        ${p.steps.video ? `<video class="${long ? 'wide' : ''}" controls preload="metadata" src="/media/${name}/${name}.mp4?${p.modified}"></video>` : '<div class="card muted">No video yet. Run Voice, then Build video.</div>'}
-        ${p.steps.thumbnail ? `<h4>Thumbnail</h4><img class="thumb ${long ? 'wide' : ''}" src="/media/${name}/${name}-thumbnail.png?${p.modified}">` : ''}
+        ${p.steps.video ? `<video class="${long ? 'wide' : ''}" controls preload="metadata" src="/media/${name}/${name}.mp4?channel=${CH}&${p.modified}"></video>` : '<div class="card muted">No video yet. Run Voice, then Build video.</div>'}
+        ${p.steps.thumbnail ? `<h4>Thumbnail</h4><img class="thumb ${long ? 'wide' : ''}" src="/media/${name}/${name}-thumbnail.png?channel=${CH}&${p.modified}">` : ''}
       </div>
       <div>
         <div class="row" style="justify-content:space-between"><h2 style="margin:0">${esc(p.title || name)}</h2>${p.yt ? ytBadge(p.yt) : ''}
@@ -728,7 +739,40 @@ async function saveCfg() {
   const r = await api('/api/config', {method: 'PUT', body: v}); $('#cfgmsg').textContent = r.note; toast(r.note);
 }
 
-initMeta().then(loadProjects);
+// ---------- channels: one tab per YouTube channel; each has its own videos, numbers, topics, sign-in and tools ----------
+async function initChannels() {
+  const d = await api('/api/channels');
+  CHANNELS = d.channels;
+  if (!CHANNELS.some(c => c.id === CH)) CH = d.home;
+  const me = CHANNELS.find(c => c.id === CH);
+  document.documentElement.style.setProperty('--chc', me.color);
+  document.querySelector('header').style.background = me.color;
+  document.title = me.name + ' · Bean Studio';
+  $('#chbar').innerHTML = CHANNELS.map(c => `<button class="ch ${c.id === CH ? 'on' : ''}" style="--chc:${esc(c.color)}" onclick="switchChannel('${esc(c.id)}')">${esc(c.emoji)} ${esc(c.name)}<small>${esc(c.language)}${c.connected ? '' : ' · not signed in'}</small></button>`).join('') +
+    '<button class="act sec add" onclick="addChannelForm()">+ Add channel</button>';
+  document.querySelectorAll('nav button').forEach(b => b.style.display = me.tools.includes(b.dataset.tab) ? '' : 'none');   // only this channel's tools
+  const note = $('#chnote'); note.style.display = me.note ? '' : 'none'; note.textContent = me.note;
+}
+function switchChannel(id) {
+  try { localStorage.setItem('bean.channel', id); } catch (e) {}
+  location.reload();                  // the simplest way to be sure no other channel's lists are left on the page
+}
+function addChannelForm() {
+  $('#wizbox').innerHTML = `<h2>Add a channel</h2>
+    <p class="muted">It gets its own folders (<code>channels/&lt;name&gt;/</code>), its own planner, numbers and YouTube sign-in. Topics stay off until it has a video skill.</p>
+    <label>Channel name</label><input type="text" id="nc_name" placeholder="e.g. Bean Hindi">
+    <label>Language</label><input type="text" id="nc_lang" value="Hindi">
+    <label>Icon (one emoji)</label><input type="text" id="nc_emoji" value="🪔" maxlength="4">
+    <label>Colour</label><input type="color" id="nc_color" value="#c0262d">
+    <div class="row" style="margin-top:16px; justify-content:flex-end"><button class="act sec" onclick="closeWizard()">Cancel</button><button class="act blue" onclick="addChannel()">Add channel</button></div>`;
+  $('#wiz').classList.add('on');
+}
+async function addChannel() {
+  const body = {name: $('#nc_name').value, language: $('#nc_lang').value, emoji: $('#nc_emoji').value, color: $('#nc_color').value};
+  const r = await api('/api/channels', {method: 'POST', body}); closeWizard(); switchChannel(r.id);
+}
+
+initMeta().then(initChannels).then(loadProjects);
 </script>
 </body>
 </html>

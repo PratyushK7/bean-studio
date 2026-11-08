@@ -26,7 +26,7 @@ from pathlib import Path
 ROOT = Path(os.environ.get("BEAN_PROJECTS_DIR") or Path(__file__).resolve().parent.parent / "line-boil")
 SECRETS = Path(__file__).resolve().parent / ".secrets"
 CLIENT = SECRETS / "client_secret.json"
-TOKEN = SECRETS / "token.json"
+TOKEN = Path(os.environ["BEAN_TOKEN"]) if os.environ.get("BEAN_TOKEN") else SECRETS / "token.json"   # the studio names the channel's own sign-in
 SCOPES = ["https://www.googleapis.com/auth/youtube.upload", "https://www.googleapis.com/auth/youtube.force-ssl",
           "https://www.googleapis.com/auth/youtube.readonly", "https://www.googleapis.com/auth/yt-analytics.readonly"]   # the last two: Bean Studio reads your numbers
 IST = dt.timezone(dt.timedelta(hours=5, minutes=30))

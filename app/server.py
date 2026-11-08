@@ -10,7 +10,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 from flask import Flask, jsonify, request, send_from_directory, abort
 
-import agentlog, planner, store
+import agentlog, channels, planner, store
 
 APP = Path(__file__).resolve().parent
 ROOT = APP.parent                                      # the youtube folder
@@ -55,6 +55,20 @@ DEFAULTS = {
     "staged_make": True,                # a video is made in two runs: a PLAN (script, hook, shot plan) then a BUILD (code, render); a model picked in the form overrides this
     "plan_model": "opus",               # the plan stage: the polished decisions (hook, script, jokes, staging)
     "build_model": "sonnet",            # the build stage: coding the shots, stills, render, sheet
+    "voice_file": "~/.claude/youtube/voice.md",   # the channel voice the agent reads (a channel can name its own)
+    # one entry per YouTube channel. The first is home and keeps the studio's original folders; the others live in channels/<id>/.
+    # Each can override: name, slots, topic_category, topic_channels, projects_dir, planner, voice_file. tools = which tabs it shows.
+    "channels": {
+        "bean": {"name": "The Bean With Bad Ideas", "language": "English", "emoji": "🫘", "color": "#1982c4",
+                 "tools": ["projects", "topics", "schedule", "analytics", "agent", "jobs", "settings"]},
+        "hindi": {"name": "Hindi channel (rename it in Settings)", "language": "Hindi", "emoji": "🪔", "color": "#c0262d",
+                  "tools": ["projects", "schedule", "analytics", "agent", "jobs", "settings"],
+                  "note": "Topics turn on once this channel has a video skill (its explainer style). Until then use the Agent tab.",
+                  "slots": {"A": "12:00", "B": "18:30", "Long": "20:30"},
+                  "topic_category": "Hindi business case studies for Indian viewers: the economics of owning an everyday business, how a famous Indian company rose, split or fell, and the rivalry, revenge or rise of a businessman everyone knows",
+                  "topic_channels": ["HinExpofficial", "ABFinDoc"],
+                  "voice_file": "~/.claude/youtube/voice-hindi.md"},
+    },
 }
 SLUG = re.compile(r"^[a-z0-9][a-z0-9-]{0,60}$")
 HHMM = re.compile(r"^([01]\d|2[0-3]):[0-5]\d$")
@@ -66,7 +80,8 @@ app.json.sort_keys = False        # keep the order we build (the checklist chips
 # ---------- settings: only your changes live in config.json, so new defaults always reach you ----------
 _cfg = {"stamp": "unset", "val": None, "problem": None}
 
-def cfg():
+def cfg_raw():
+    """the settings as saved, with no channel applied (what the Settings tab edits)"""
     try: stamp = CONFIG.stat().st_mtime
     except OSError: stamp = None
     if _cfg["val"] is None or _cfg["stamp"] != stamp:
@@ -81,11 +96,17 @@ def cfg():
         _cfg.update(stamp=stamp, val=c, problem=problem)
     return dict(_cfg["val"])
 
+channels.init(cfg_raw)
+
+def cfg():
+    """the settings for the channel this request (or thread) is about"""
+    return channels.resolve(ROOT, cfg_raw())
+
 def validate_config(new):
     if not isinstance(new, dict): return ["settings must be a JSON object { ... }"]
     kinds = {"port": int, "open_browser": bool, "projects_dir": str, "planner": str, "python": str, "engine": str, "uploader": str,
              "agent_command": list, "agent_cwd": str, "slots": dict, "channel": str, "hide_projects": list,
-             "analytics_sync_hours": (int, float), "topic_category": str, "topic_channels": list, "options_model": str, "video_model": str, "video_model_short": str, "video_model_long": str, "thumbnail_model": str, "staged_make": bool, "plan_model": str, "build_model": str}
+             "analytics_sync_hours": (int, float), "topic_category": str, "topic_channels": list, "options_model": str, "video_model": str, "video_model_short": str, "video_model_long": str, "thumbnail_model": str, "staged_make": bool, "plan_model": str, "build_model": str, "voice_file": str, "channels": dict}
     errs = [f'"{k}" has the wrong type' for k, t in kinds.items() if k in new and (not isinstance(new[k], t) or (t is not bool and isinstance(new[k], bool)))]
     if errs: return errs
     if "agent_command" in new and (not new["agent_command"] or not all(isinstance(x, str) for x in new["agent_command"])):
@@ -94,6 +115,12 @@ def validate_config(new):
         errs.append('"slots" must look like {"A": "12:00"} with 24-hour HH:MM times')
     if "topic_channels" in new and not all(isinstance(x, str) and x.strip() for x in new["topic_channels"]):
         errs.append('"topic_channels" must be a list of channel handles')
+    if "channels" in new:
+        chs = new["channels"]
+        if not chs or not all(channels.ID.match(k) and isinstance(v, dict) for k, v in chs.items()):
+            errs.append('"channels" must be {"id": {...}} with lowercase ids; keep at least one (the first is the home channel)')
+        elif not all(isinstance(v.get("name", ""), str) and isinstance(v.get("tools", []), list) for v in chs.values()):
+            errs.append('each channel needs a text "name" and a "tools" list')
     if "port" in new and not 1024 <= new["port"] <= 65535: errs.append('"port" must be between 1024 and 65535')
     return errs
 
@@ -107,6 +134,10 @@ def guard():
         origin = request.headers.get("Origin")
         if origin and (urlparse(origin).hostname or "") not in ("127.0.0.1", "localhost"):
             abort(403, "cross-site request blocked")
+
+def DATA():
+    """this channel's data folder"""
+    return channels.data_for(ROOT)
 
 def proj_dir(name):
     if not SLUG.match(name or ""): abort(400, "bad project name")
@@ -128,15 +159,17 @@ def start_job(label, cmd, cwd, unique=False, parser=None, window=False):
     """runs cmd in the background. unique=True returns the job already running under the same label instead of starting a second.
     parser(line, job) turns raw output lines into log lines (the agent feed); window=True opens the command in its own console window"""
     if unique:
-        same = next((j for j in JOBS.values() if j["label"] == label and not j["done"]), None)
+        same = next((j for j in JOBS.values() if j["label"] == label and j["channel"] == cfg()["channel_id"] and not j["done"]), None)
         if same: return same
     done = sorted((j for j in JOBS.values() if j["done"]), key=lambda j: j["started"])
     for old in done[:max(0, len(done) - KEEP_JOBS)]: JOBS.pop(old["id"], None)
     jid = uuid.uuid4().hex[:8]
-    job = {"id": jid, "label": label, "cmd": cmd, "log": [], "dropped": 0, "done": False, "code": None, "started": time.time()}
+    cid, token = cfg()["channel_id"], cfg()["token_path"]
+    job = {"id": jid, "channel": cid, "label": label, "cmd": cmd, "log": [], "dropped": 0, "done": False, "code": None, "started": time.time()}
     JOBS[jid] = job
+    pdir = cfg()["projects_dir"]
     def run():
-        env = dict(os.environ, PYTHONUTF8="1", PYTHONIOENCODING="utf-8", BEAN_PROJECTS_DIR=cfg()["projects_dir"])
+        env = dict(os.environ, PYTHONUTF8="1", PYTHONIOENCODING="utf-8", BEAN_PROJECTS_DIR=pdir, BEAN_TOKEN=token, BEAN_CHANNEL=cid)
         try:
             if window:      # its own console window: you watch (and can answer) the real Claude session
                 p = subprocess.Popen(cmd, cwd=cwd, env=env, creationflags=subprocess.CREATE_NEW_CONSOLE)
@@ -159,14 +192,14 @@ def start_job(label, cmd, cwd, unique=False, parser=None, window=False):
         try: record_run(job)
         except Exception: pass
         job["done"] = True
-    threading.Thread(target=run, daemon=True).start()
+    threading.Thread(target=channels.bound(run, cid), daemon=True).start()
     return job
 
 
 def record_run(job):
     """keeps a small ledger of agent runs (time, steps, Claude's own cost estimate) so the cost of a video is visible"""
     if job.get("cost") is None: return
-    f = ROOT / "data" / "runs.json"
+    f = DATA() / "runs.json"
     with store.lock_for(f):
         runs = store.read(f, []) or []
         u = job.get("usage") or {}
@@ -176,7 +209,7 @@ def record_run(job):
 
 @app.get("/api/runs")
 def runs():
-    rs = store.read(ROOT / "data" / "runs.json", []) or []
+    rs = store.read(DATA() / "runs.json", []) or []
     return jsonify(runs=rs[-30:][::-1], total=round(sum(r.get("cost") or 0 for r in rs), 2), count=len(rs))
 
 
@@ -194,23 +227,24 @@ def start_agent(label, prompt, model=None, mode="plain"):
 def start_staged(label, stages):
     """stages: [{"name", "model", "prompt", "expect"}] run one after the other as ONE job (see staged_agent.py)"""
     c = cfg()
-    spec = ROOT / "data" / "make" / (re.sub(r"[^\w.-]+", "_", label) + ".stages.json")
+    spec = DATA() / "make" / (re.sub(r"[^\w.-]+", "_", label) + ".stages.json")
     spec.parent.mkdir(parents=True, exist_ok=True)
     spec.write_text(json.dumps({"command": c["agent_command"], "cwd": c["agent_cwd"], "stages": stages}), encoding="utf-8")
     return start_job(label, [sys.executable, str(APP / "staged_agent.py"), str(spec)], c["agent_cwd"], parser=agentlog.parse)
 
 def job_view(j):
     v = {k: j[k] for k in ("id", "label", "done", "code", "started")}
-    v.update(activity=j.get("activity"), window=bool(j.get("window")), steps=j.get("steps", 0))
+    v.update(channel=j.get("channel"), activity=j.get("activity"), window=bool(j.get("window")), steps=j.get("steps", 0))
     if j["label"].startswith("make · "):         # a video being made: how far along it is, from the files it has produced
         slug = j["label"][7:]
-        kind = (store.read(ROOT / "data" / "make" / f"{slug}.json", {}) or {}).get("kind", "short")
+        kind = (store.read(DATA() / "make" / f"{slug}.json", {}) or {}).get("kind", "short")
         v.update(progress=agentlog.make_progress(Path(cfg()["projects_dir"]) / slug, kind), elapsed=agentlog.clock((time.time() if not j["done"] else j.get("ended", time.time())) - j["started"]), kind=kind)
     return v
 
 @app.get("/api/jobs")
 def jobs():
-    return jsonify([job_view(j) for j in sorted(JOBS.values(), key=lambda j: -j["started"])][:30])
+    cid = cfg()["channel_id"]      # Activity shows this channel's jobs
+    return jsonify([job_view(j) for j in sorted(JOBS.values(), key=lambda j: -j["started"]) if j["channel"] == cid][:30])
 
 @app.get("/api/jobs/<jid>")
 def job(jid):
@@ -242,7 +276,7 @@ def summary(p):
     script = store.read(p / "script.json", [])
     words = len(" ".join(script).split()) if isinstance(script, list) else 0
     pj = store.read(p / "project.json", {}) or {}
-    kind = (store.read(ROOT / "data" / "make" / f"{n}.json", {}) or {}).get("kind") or ("long" if pj.get("format") == "wide" else "short")
+    kind = (store.read(DATA() / "make" / f"{n}.json", {}) or {}).get("kind") or ("long" if pj.get("format") == "wide" else "short")
     if kind == "long":     # a 16:9 video with chapters and sources, made with the line-boil-wide skill
         steps = {"script": words > 20, "sources": has("-sources.md"), "chapters": has("-chapters.txt"), "video": has(".mp4"), "srt": has(".srt"),
                  "thumbnail": has("-thumbnail.png"), "sheet": has("-youtube.txt"), "uploaded": bool(upinfo)}
@@ -300,7 +334,7 @@ def delete_project(name):
         shutil.rmtree(p, onerror=unlock)
     except OSError as e:
         abort(500, f"could not delete everything ({e}). Close anything using that folder and try again.")
-    (ROOT / "data" / "make" / f"{name}.json").unlink(missing_ok=True)
+    (DATA() / "make" / f"{name}.json").unlink(missing_ok=True)
     return jsonify(ok=True, freed_mb=round(size / 1e6, 1))
 
 @app.get("/media/<name>/<path:fname>")
@@ -354,6 +388,10 @@ def agent():
         if not 20 <= seconds <= 1800: abort(400, "duration must be between 20 seconds and 30 minutes")
         prompt += "\n\n" + topics.length_instructions(seconds)
     mode = "window" if (b.get("window") or c.get("agent_window")) else "feed"
+    if c["channel_id"] != channels.home(cfg_raw()):    # a channel other than home: say whose it is and where its files are
+        prompt = (f'This task is for the YouTube channel "{c["channel"]}" (language: {c["language"]}), not for The Bean With Bad Ideas. '
+                  f'Its videos live in {c["projects_dir"]}, its data in {c["data_dir"]}, its planner is {c["planner"]}, and its voice notes are {c["voice_file"]} (create it if it is missing). '
+                  "Do not touch the other channels' folders.\n\n") + prompt
     return jsonify(start_agent("agent · " + prompt[:50], prompt, mode=mode))
 
 
@@ -427,9 +465,29 @@ def restart():
     threading.Timer(0.5, lambda: os._exit(3)).start()
     return jsonify(ok=True)
 
+@app.get("/api/channels")
+def list_channels():
+    raw = cfg_raw()
+    return jsonify(channels=channels.public(ROOT, raw, lambda p: Path(p).exists()), current=cfg()["channel_id"], home=channels.home(raw))
+
+@app.post("/api/channels")
+def add_channel():
+    b, raw = body(), cfg_raw()
+    cid = re.sub(r"[^a-z0-9-]+", "-", str(b.get("id") or b.get("name") or "").lower()).strip("-")[:24]
+    name = str(b.get("name") or "").strip()
+    if not name: abort(400, "give the channel a name")
+    try: chs = channels.add(raw, cid, name[:80], str(b.get("language") or "")[:30], str(b.get("emoji") or "")[:4], str(b.get("color") or "")[:9])
+    except ValueError as e: abort(400, str(e))
+    user = json.loads(CONFIG.read_text(encoding="utf-8")) if CONFIG.exists() else {}
+    user["channels"] = chs
+    if CONFIG.exists(): shutil.copy2(CONFIG, CONFIG.with_suffix(".json.bak"))
+    CONFIG.write_text(json.dumps(user, indent=2, ensure_ascii=False), encoding="utf-8")
+    channels.make_dirs(ROOT, cfg_raw(), cid)
+    return jsonify(ok=True, id=cid)
+
 @app.get("/api/config")
 def get_config():
-    return jsonify(cfg())
+    return jsonify(cfg_raw())      # global settings as saved; each channel's own settings live under "channels"
 
 @app.put("/api/config")
 def put_config():
@@ -438,7 +496,8 @@ def put_config():
     if errs: abort(400, "Not saved: " + "; ".join(errs))
     overrides = {k: v for k, v in new.items() if DEFAULTS.get(k, object()) != v}      # only what differs from the defaults
     if CONFIG.exists(): shutil.copy2(CONFIG, CONFIG.with_suffix(".json.bak"))
-    CONFIG.write_text(json.dumps(overrides, indent=2), encoding="utf-8")
+    CONFIG.write_text(json.dumps(overrides, indent=2, ensure_ascii=False), encoding="utf-8")
+    for cid in channels.ids(new) if "channels" in new else []: channels.make_dirs(ROOT, new, cid)
     return jsonify(ok=True, saved=len(overrides), note="Saved. Restart start.bat to apply a new port." if "port" in overrides else "Saved.")
 
 @app.get("/")
