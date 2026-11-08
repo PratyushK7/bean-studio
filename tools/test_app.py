@@ -294,7 +294,7 @@ def test_thumbnail_flow():
     (proj / "demo-thumb-ideas-new.json").write_text(json.dumps([{"name": f"Idea {i}", "trigger": "Fear" if i == 0 else "Nope", "words": "how does caffeine keep us awake at night", "concept": f"A mug {i}"} for i in range(7)] + ["junk", {"name": "no concept"}]))
     JOBS[r["job"]]["done"] = True
     d = c4.get(f"/api/thumbnail/ideas/demo?job={r['job']}").json
-    assert d["status"] == "done" and len(d["ideas"]) == 3 and d["ideas"][0]["trigger"] == "Fear" and d["ideas"][1]["trigger"] == "Curiosity" and d["ideas"][0]["words"] == "HOW DOES CAFFEINE" and "THREE different thumbnail ideas" in prompt
+    assert d["status"] == "done" and len(d["ideas"]) == 3 and d["ideas"][0]["trigger"] == "Fear" and d["ideas"][1]["trigger"] == "Curiosity" and d["ideas"][0]["words"] == "HOW DOES CAFFEINE KEEP" and "THREE different thumbnail ideas" in prompt
     n_calls = len(calls)
     again = c4.get("/api/thumbnail/ideas/demo").json
     assert again["status"] == "done" and [x["name"] for x in again["ideas"]] == [x["name"] for x in d["ideas"]] and len(calls) == n_calls, "saved ideas reopen with no new run"

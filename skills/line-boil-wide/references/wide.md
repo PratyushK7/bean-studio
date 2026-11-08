@@ -80,11 +80,13 @@ Then build the shots from it. The rules:
 
 ## Chapters
 
-- 5 to 9 chapters of 45 to 90 s. Hook, the idea in three beats, the payoff, the callback, the closing hook (in the last chapter).
+- 5 to 9 chapters of 45 to 90 s. Hook (the paradox only), the idea in three beats, the payoff, the callback, the closing hook (in the last
+  chapter). No recap chapter and no summary of earlier chapters anywhere.
 
 ## The ending (every long video)
 
-1. **The callback**, the last line of the payoff, on a `cut` or `smear`.
+1. **The callback**, one or two sentences back to the opening image, right after the last chapter's new payoff (practical, or the
+   wildest escalation; never a recap), on a `cut` or `smear`.
 2. **The closing hook**, 2 or 3 sentences, 10 to 15 s: the question the video leaves open (or the next idea), "that's a ... for another
    day", and a comment prompt the viewer can answer in a few words. Give it its own shots and a new set; it is a beat, not a footnote.
 3. **The last shot**: `tr: 'iris'` on the speaker's face, a held loop to `VO_END()`.
@@ -96,10 +98,11 @@ Then build the shots from it. The rules:
 
 ## 16:9 thumbnails (1280 x 720)
 
-- Same subject test, text test and click test as a Short (see line-boil step 9: one emotion, one unresolved thing, honest stakes), and at most 3 words. The words go in the upper left or the left third; faces in the middle
+- Same subject test and click test as a Short, but the words follow `line-boil-thumbnail-long`: 2 to 4 big words that share at most
+  one noun with the title and add the stakes or the twist (a 16:9 thumbnail always sits next to its title, so repeating it wastes it). The words go in the upper left or the left third; faces in the middle
   and the right.
 - The **bottom-right corner is hidden by the duration badge**: keep nothing important in the bottom 15% of the right 20%.
-- It is shown very small next to other videos (about 246 px wide), so one big object, one big face, three words.
+- It is shown very small next to other videos (about 246 px wide), so one big object, one big face, a few big words.
 - The renderer draws at 1920x1080 and publishes 1280x720 under YouTube's 2 MB limit; `build.py thumb` warns if it is larger.
   There is no `gridSafe` for 16:9.
 

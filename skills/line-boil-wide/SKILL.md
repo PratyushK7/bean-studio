@@ -46,26 +46,33 @@ A 7-minute video renders in about 2.5 minutes on the user's computer (it is free
 
 1. **Length and shape.** The user gives minutes (the Bean Studio prompt says `TARGET LENGTH: N seconds`). The voice reads about 3.1 words
    a second, so 7 minutes is about 1,300 words. Plan 5 to 9 **chapters** of 45 to 90 seconds. Every chapter has one idea, one
-   metaphor (a bean) and a one-line takeaway; the video ends on a callback to its opening image.
+   metaphor (a bean) and a one-line takeaway; the video ends on a callback to its opening image, never on a recap.
 2. **Hook, with yt-script.** The first 15 seconds do three jobs or the video leaks: confirm the click the title promised, open a
    question the viewer cannot close, and prove the payoff exists. Write **five** candidate first lines (against the 21 formulas in
    `~/.claude/skills/yt-script/hooks.json`), put them one per line in `<project>-hooks.txt`, run
    `PYTHONUTF8=1 python ~/.claude/skills/yt-script/hookscore.py <project>-hooks.txt`, keep the top two and use the winner (append the scored panel to the same file so the user can see the choice).
-   The score separates deliberately weak hooks from real ones well and a creator's own hits from misses barely at all: a low score is a reason to look again, not a verdict. Then 0:15 to 0:45 is **the turn**: say what the video will do in one
-   sentence and start doing it. **No channel intro, no "before we get started", no subscribe pitch** (the voiced outro asks for likes,
-   shares and subscribes on every video; do not add another ask). Deliver the payoff the hook promised explicitly and land the callback,
-   then a **closing hook** of 2 or 3 sentences (10 to 15 s): one question the video leaves open or a tease of the next idea, a dry "that's a
+   The score separates deliberately weak hooks from real ones well and a creator's own hits from misses barely at all (it rates most explainer hooks WEAK because it is tuned to creator advice): a low score is a reason to look again, not a verdict, so compare the five and choose by judgment.
+   **The paradox, not the answer.** The first 30 seconds set up the paradox the viewer has lived (you drank a coffee at 3 p.m., felt
+   fine, slept your usual hours, and still lost sleep) and then go straight into chapter 1. Never state the mechanism or the answer in
+   the intro (the caffeine script gave it away at 0:19, "caffeine doesn't actually give you energy"), and never read out a table of
+   contents: no "in this video", "we'll meet", "let's follow", "first ... then ... finally" (the caffeine roadmap at 0:29 is exactly
+   where long videos leak before 0:40). **No channel intro, no "before we get started", no subscribe pitch** (the voiced outro asks for likes,
+   shares and subscribes on every video; do not add another ask). **No recap.** The last chapter is
+   the practical payoff or the wildest escalation (the caffeine video's 9-hour cutoff and its 6 p.m. pre-workout math), then the callback
+   to the opening image in one or two sentences, then the closing hook. Never re-summarise the chapters ("So, how does caffeine steal
+   your sleep? It never gave you energy... It sat in the mailboxes... Your liver cleared it slowly..."): the viewer just watched them, and
+   a recap is where they leave. Then a **closing hook** of 2 or 3 sentences (10 to 15 s): one question the video leaves open or a tease of the next idea, a dry "that's a
    ... for another day", and a comment prompt the viewer can answer in a few words ("Until then, tell us in the comments: what time is
    your last coffee?"). Never end on the callback with nothing after it. Count the closing hook in the target length.
 3. **Sources.** Long videos live or die on being right. Use the research brief if one is given (follow its "do not claim" list; it
    overrides your assumptions). Verify every figure in a primary source (the paper, the review, the agency page) with web searches.
-   Hedge what is contested and drop what you cannot verify. Never invent a number. Write `<project>-sources.md`: a table of claim,
+   **Hedge inside the claim, never in a sentence of its own:** one word or phrase in the line that makes the claim ("about", "roughly", "typically", "can", "on average", "scientists think"). Never a standalone apology sentence about cup sizes, sample sizes, averages or "not a law": the caffeine script had four, each right after its best moment, and each one deflated it. The one exception is a real safety point for a group (pregnancy, a medication, a condition): ONE short line, once in the video, ideally with the channel's dry joke. Drop what you cannot verify. Never invent a number. Write `<project>-sources.md`: a table of claim,
    link, and how far you checked (full text / abstract only / secondary report).
 4. **Script and chapters.** `script.json`, one sentence per entry (this is also how the voice is cut, so keep each sentence to about 25
    words or fewer), written chapter by chapter in the channel voice: dry and calm, funny in the pictures and the last line of each
    chapter, never hype. **Write it like a script people repeat:** a hook that names the belief everyone holds and breaks it (honestly:
-   never say a popular idea is false when the evidence supports it, say "not quite" and give the real reason, and hedge anything
-   uncertain), the second sentence deepening it rather than explaining, one drawable image per sentence, plain words, no padding (cut
+   never say a popular idea is false when the evidence supports it, say "not quite" and give the real reason, and hedge inside
+   the claim, see step 3), the second sentence deepening it rather than explaining, one drawable image per sentence, plain words, no padding (cut
    any line that carries no fact and no laugh). **Re-hook inside every chapter and at the middle of the video:** a catch, a scale jump
    or a strange consequence ("Here's the catch.") before the chapter's takeaway, so no stretch of more than about a minute is pure
    explanation. A joke or sight gag at least every 15 s. Long videos still end on the payback callback plus the closing hook below.

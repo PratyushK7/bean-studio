@@ -25,8 +25,8 @@ def title_of(p):
 
 
 def words_of(v):
-    """up to 3 words, upper case"""
-    return " ".join(re.findall(r"[A-Za-z0-9$%'?!+\u2192-]+", str(v or "").upper())[:3])
+    """up to 4 words, upper case (the thumbnail skills allow 2 to 4)"""
+    return " ".join(re.findall(r"[A-Za-z0-9$%'?!+\u2192-]+", str(v or "").upper())[:4])
 
 
 def register(app, ROOT, cfg, start_agent, proj_dir, JOBS):
