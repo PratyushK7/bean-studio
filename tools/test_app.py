@@ -4,7 +4,7 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent / "app")); sys.path.insert(0, str(HERE))
-import server, planner, analytics, store, ytstate
+import server, planner, store, ytstate
 
 TMP = Path(tempfile.mkdtemp(prefix="bean-test-"))
 server.CONFIG = TMP / "config.json"          # never touch the real settings
@@ -57,7 +57,7 @@ def test_jobs():
     ok("jobs: de-duplicated, log bounded with correct offsets, bad requests refused")
 
 
-def test_planner_and_schedule():
+def test_planner():
     rows, err = planner.rows(TMP / "missing.xlsx"); assert rows == [] and "no planner" in err
     real = HERE.parent / "bean-planner.xlsx"
     rows, err = planner.rows(real); assert err is None and rows and isinstance(rows[0]["date"], dt.date), err
@@ -68,10 +68,7 @@ def test_planner_and_schedule():
     try:
         r2, e2 = planner.rows(real); assert "locked" in e2
     finally: openpyxl.load_workbook = orig
-    server.CONFIG.write_text(json.dumps({"planner": str(TMP / "gone.xlsx")})); os.utime(server.CONFIG, (time.time() + 9, time.time() + 9))
-    r = c.get("/api/schedule", headers=H)
-    assert r.status_code == 200 and "no planner" in r.json["planner_error"], "a missing planner must not break the YouTube half"
-    server.CONFIG.unlink(); server._cfg.update(stamp="unset", val=None)
+    assert c.get("/api/schedule", headers=H).status_code == 404 and c.get("/api/analytics", headers=H).status_code == 404, "the Schedule and Analytics tabs are gone"
     ok("planner: missing and locked files are reported, not fatal")
 
 
@@ -87,23 +84,6 @@ def test_next_slot():
     assert second["at"] != first["at"] and dt.datetime.strptime(second["at"], "%Y-%m-%d %H:%M") > dt.datetime.strptime(first["at"], "%Y-%m-%d %H:%M")
     ytstate.STATE["videos"] = []; server.CONFIG.unlink(); server._cfg.update(stamp="unset", val=None)
     ok(f"next slot: {first['at']} (slot {first['slot']}), then skips it once scheduled -> {second['at']}")
-
-
-def test_analytics_merge():
-    app2 = server.Flask("t2"); root = TMP / "root"; (root / "data").mkdir(parents=True)
-    analytics.register(app2, root, server.cfg, server.start_job)
-    c2 = app2.test_client()
-    store.write(root / "data" / "analytics.json", [{"id": "v1", "title": "One", "views": 100, "slot": None, "type": None, "notes": None}])
-    # the user edits an OLD copy of the table while a newer sync has already changed the numbers
-    store.write(root / "data" / "analytics.json", [{"id": "v1", "title": "One", "views": 999, "slot": None, "type": None, "notes": None}])
-    r = c2.put("/api/analytics", json={"rows": [{"id": "v1", "title": "One", "views": 100, "slot": "B", "type": "Why", "notes": "mine", "likes": 5}]}).json
-    row = store.read(root / "data" / "analytics.json")[0]
-    assert r["changed"] == 3 and row["views"] == 999 and row["slot"] == "B" and row["type"] == "Why" and "likes" not in row, row
-    new = [{"id": "v1", "title": "One", "views": 1500, "slot": "A", "type": None}]
-    out = analytics.apply_edits(new, store.read(root / "data" / "analytics.json"))
-    assert out[0]["slot"] == "B" and out[0]["type"] == "Why" and out[0]["views"] == 1500, "a sync keeps hand-set fields and takes new numbers"
-    assert c2.put("/api/analytics", json={"rows": "x"}).status_code == 400
-    ok("analytics: saving edits never reverts newer numbers; sync keeps your edits")
 
 
 def test_channels():
@@ -191,7 +171,7 @@ def test_agent_duration():
     seen, orig = [], server.start_job
     server.start_job = lambda label, cmd, cwd, unique=False, **kw: seen.append(cmd[-1]) or {"id": "x", "label": label}
     try:
-        assert c.post("/api/agent", json={"prompt": "Make a Short about onions", "duration": 50}, headers=H).status_code == 200
+        assert c.post("/api/agent", json={"prompt": "Write a Short about onions", "duration": 50}, headers=H).status_code == 200
         p = seen[-1]
         assert "TARGET LENGTH: 50 seconds" in p and "--target 50" in p and "about 155 words" in p and "Short about onions" in p
         c.post("/api/agent", json={"prompt": "x", "duration": 420}, headers=H)
@@ -203,6 +183,54 @@ def test_agent_duration():
         assert meta["lengths"]["short"] == [30, 40, 50, 60] and meta["lengths"]["long"][0] == 300
     finally: server.start_job = orig
     ok("agent: the chosen duration reaches the skill (Short rule or long-form rule), bad values refused")
+
+
+def test_agent_tab_models_and_labels():
+    import topics
+    lbl = topics.short_label('Suggest ten new Short ideas about "Hidden costs of everyday things" for the channel')
+    assert lbl == "Suggest ten new Short ideas about…" and '"' not in lbl, lbl
+    assert topics.make_request('Make a new Short with the line-boil skill about why onions make you cry. Go straight through.') == {"topic": "why onions make you cry", "long": False}
+    assert topics.make_request('make a long video about the sun')["long"] and topics.make_request("Make a Short about x", 420)["long"]
+    assert topics.make_request("Suggest 10 new Short ideas") is None and topics.make_request("Write the YouTube upload sheet for the project x") is None
+    seen_agent, seen_staged, old_a, old_s = [], [], server.start_agent, server.start_staged
+    server.start_agent = lambda label, prompt, model=None, mode="plain": seen_agent.append((label, model, mode)) or {"id": "x", "label": label}
+    server.start_staged = lambda label, stages: seen_staged.append((label, stages)) or {"id": "y", "label": label}
+    try:
+        assert c.post("/api/agent", json={"prompt": 'Make a new Short with the line-boil skill about why onions make you cry. Go straight through.'}, headers=H).status_code == 200
+        label, stages = seen_staged[-1]
+        assert label == "make · why onions make you cry" and [x["model"] for x in stages] == ["opus", "sonnet"], "a video request is Opus plan + Sonnet build"
+        assert "STAGE 1 OF 2" in stages[0]["prompt"] and "<project>-shotplan.md" in stages[0]["prompt"] and "STAGE 2 OF 2" in stages[1]["prompt"] and "*-shotplan.md" in stages[1]["prompt"]
+        n = len(seen_staged)
+        c.post("/api/agent", json={"prompt": "Suggest 10 new Short ideas"}, headers=H)
+        assert len(seen_staged) == n and seen_agent[-1][0].startswith("agent · Suggest") and seen_agent[-1][1] is None, "any other request is one run (start_agent then falls back to Sonnet, never the session default)"
+        c.post("/api/agent", json={"prompt": "Make a new Short about x", "model": "opus"}, headers=H)
+        assert len(seen_staged) == n and seen_agent[-1][1] == "opus", "a model picked on the tab means one run on it"
+    finally: server.start_agent, server.start_staged = old_a, old_s
+    cmds, old_j = [], server.start_job
+    server.start_job = lambda label, cmd, cwd, unique=False, **kw: cmds.append(cmd) or {"id": "z", "label": label}
+    try:
+        server.start_agent("t", "P", None, "plain"); assert cmds[-1][cmds[-1].index("--model") + 1] == "sonnet"
+        server.start_agent("t", "P", "opus", "plain"); assert cmds[-1][cmds[-1].index("--model") + 1] == "opus"
+    finally: server.start_job = old_j
+    ok("agent tab: readable run names, a video request is Opus plan + Sonnet build, no run ever uses the session default")
+
+
+def test_topics_follow_a_batch():
+    import topics
+    root = TMP / "froot"; (root / "data").mkdir(parents=True); (root / "proj").mkdir()
+    cfgd = dict(server.cfg()); cfgd["projects_dir"] = str(root / "proj")
+    JOBS = {}
+    def fake(label, cmd, cwd, unique=False):
+        j = {"id": f"j{len(JOBS)}", "label": label, "log": [], "done": False, "code": None, "started": time.time()}; JOBS[j["id"]] = j; return j
+    app6 = server.Flask("t6"); topics.register(app6, root, lambda: cfgd, fake, JOBS); c6 = app6.test_client()
+    store.write(root / "data" / "topic-pool.json", {"fetched": "2026-11-04T00:00:00", "videos": [
+        {"id": f"v{i}", "title": f"Thing {i} explained", "channel": "Ch", "views": 1000 * i, "multiple": 2 + i / 10, "type": "Explainer", "url": "u"} for i in range(1, 16)]})
+    r = c6.post("/api/topics/options", json={"kind": "short"}).json
+    assert c6.get("/api/topics/picks?kind=short").json["running"] == r["batch"], "a page that opens mid-batch is told which one to follow"
+    JOBS[r["job"]]["done"] = True                                   # the agent finishes while nobody is polling the batch (another tab, a reload)
+    p = c6.get("/api/topics/picks?kind=short").json
+    assert p["running"] is None and len(p["last"]) == 3 and p["last_when"], "the Topics tab collects a batch that finished unseen, so it is never stale"
+    ok("topics: a batch that finished while the page was away shows up on the next visit; a running one is followed")
 
 
 def test_long_topics():
@@ -254,7 +282,8 @@ def test_long_topics():
     assert "Make a new Short" in sp and "TARGET LENGTH: 50 seconds" in sp and "build.py video" in sp
     assert "hookscore.py" in sp and "yt-script" in sp, "a Short is also opened with a scored hook"
     assert json.loads((root / "data" / "make" / f"{m['project']}.json").read_text())["kind"] == "long"
-    assert not server.DEFAULTS["video_model_short"] and not server.DEFAULTS["video_model_long"] and not server.DEFAULTS["video_model"], "no model is pinned: the session default applies"
+    D = server.DEFAULTS
+    assert D["plan_model"] == "opus" and D["build_model"] == "sonnet" and D["options_model"] == "opus" and D["thumbnail_ideas_model"] == "opus" and D["thumbnail_draw_model"] == "sonnet" and D["agent_model"] == "sonnet", "every run names its model: Opus decides, Sonnet codes"
     # the Videos tab sees a long project as a package, with its own checklist and documents
     pdir = root / "proj" / m["project"]; (pdir / "script.json").write_text(json.dumps(["word " * 40]))
     (pdir / f"{m['project']}-sources.md").write_text("claim | link"); (pdir / f"{m['project']}-youtube.txt").write_text("== TITLE ==\nA long title\n")
@@ -329,7 +358,7 @@ def test_thumbnail_flow():
     app4 = server.Flask("t4"); thumbs.register(app4, root, lambda: cfgd, fake, pdir, JOBS); c4 = app4.test_client()
     r = c4.post("/api/thumbnail/ideas", json={"project": "demo"}).json
     label, prompt, model, mode = calls[-1]
-    assert label == "thumb ideas · demo" and model is None and "THREE different thumbnail ideas" in prompt and "line-boil-thumbnail-long/SKILL.md" in prompt and "fear or loss" in prompt and "1280x720" in prompt
+    assert label == "thumb ideas · demo" and model == "opus" and "THREE different thumbnail ideas" in prompt and "line-boil-thumbnail-long/SKILL.md" in prompt and "fear or loss" in prompt and "1280x720" in prompt
     assert c4.get(f"/api/thumbnail/ideas/demo?job={r['job']}").json["status"] == "running"
     (proj / "demo-thumb-ideas-new.json").write_text(json.dumps([{"name": f"Idea {i}", "trigger": "Fear" if i == 0 else "Nope", "words": "how does caffeine keep us awake at night", "concept": f"A mug {i}"} for i in range(7)] + ["junk", {"name": "no concept"}]))
     JOBS[r["job"]]["done"] = True
@@ -355,7 +384,7 @@ def test_thumbnail_flow():
     d["ideas"] = c4.get("/api/thumbnail/ideas/demo").json["ideas"]
     c4.post("/api/thumbnail/make", json={"project": "demo", "idea": d["ideas"][0]})
     label, prompt, model, mode = calls[-1]
-    assert label == "thumb · demo" and model is None and mode == "feed" and "From the log" in prompt and "thumbnail-prev.png" in prompt and "upload nothing" in prompt and "line-boil-thumbnail-long/SKILL.md" in prompt
+    assert label == "thumb · demo" and model == "sonnet" and mode == "feed" and "From the log" in prompt and "thumbnail-prev.png" in prompt and "upload nothing" in prompt and "line-boil-thumbnail-long/SKILL.md" in prompt
     assert "build.py thumb demo" in prompt and "alone on its line" in prompt and "non-interactive" in prompt and "copy or back up anything yourself" in prompt, "the draw agent gets a render command its permission rules allow, and no copy step"
     assert (proj / "demo-thumbnail-prev.png").exists() or not (proj / "demo-thumbnail.png").exists(), "the studio keeps the old picture itself"
     assert c4.post("/api/thumbnail/make", json={"project": "demo", "idea": {}}).status_code == 400
@@ -446,12 +475,6 @@ def test_spinoffs():
     finally:
         server.CONFIG, server.start_agent = old_cfg, old_start; server._cfg.update(stamp="unset", val=None)
     ok("spin-offs: the yt-shorts skill runs on a finished long video; refused without an .srt")
-
-
-def test_analyst_uses_yt_retention():
-    src = (HERE.parent / "app" / "analytics.py").read_text(encoding="utf-8")
-    assert "yt-retention" in src and "HOOK LEAK" in src and "CLIFFS" in src and "SLIDE" in src
-    ok("analyst: reads retention with the yt-retention framing (hook leak, cliffs, slide)")
 
 
 def test_delete_and_media():

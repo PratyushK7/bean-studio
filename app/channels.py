@@ -12,7 +12,7 @@ from pathlib import Path
 
 from flask import has_request_context, request
 
-ALL_TOOLS = ["projects", "topics", "schedule", "analytics", "agent", "jobs", "settings"]
+ALL_TOOLS = ["projects", "topics", "agent", "jobs", "settings"]
 ID = re.compile(r"^[a-z][a-z0-9-]{0,24}$")
 _tl = threading.local()
 _raw = {"fn": lambda: {}}

@@ -30,9 +30,9 @@ def words_of(v):
 
 
 def register(app, ROOT, cfg, start_agent, proj_dir, JOBS):
-    def model(wide):
-        if not wide: return cfg().get("thumbnail_model_short") or None      # a Short's thumbnail: the session default, ideas and drawing
-        return cfg().get("thumbnail_model") or None
+    def model(draw):
+        """the ideas are a judgment call (Opus), the drawing is code (Sonnet); both from the settings, never the session default"""
+        return (cfg().get("thumbnail_draw_model") if draw else cfg().get("thumbnail_ideas_model")) or None
 
     def ideas_file(p): return p / f"{p.name}-thumb-ideas.json"          # the saved three (what the button shows)
     def new_file(p): return p / f"{p.name}-thumb-ideas-new.json"        # a reroll in progress: replaces the saved five only when it is done
@@ -99,7 +99,7 @@ Write a JSON array of exactly 3 objects to {out} and nothing else on disk (no ot
 {{"name": "3 to 6 word label", "trigger": one of the triggers, "words": "the on-image words, as the skill says", "concept": "the whole picture in two sentences: what is drawn, where, doing what", "subject": "the one big object", "face": "which bean and what expression, or \"none\" if no character helps this topic", "why": "one sentence: what makes a stranger click and why the video pays it off", "risk": "one sentence: how this could mislead or fail, and how it is avoided"}}
 Then print the array.
 """
-        j = start_agent(label_of(name), prompt, model(wide), "plain")
+        j = start_agent(label_of(name), prompt, model(False), "plain")
         return jsonify(job=j["id"], project=name)
 
     @app.get("/api/thumbnail/ideas/<name>")
@@ -156,5 +156,5 @@ Read {THUMB_SKILL} first and follow it. The picture is {size}. Then:
 6. Update the YouTube sheet's THUMBNAIL section (File:, Text:, Still:, Brief:) to match what you drew, and change nothing else in that file.
 7. Finish by printing the final text, what is drawn, and the result of each test, honestly (say so if one still fails). Then upload nothing.
 """
-        j = start_agent(f"thumb · {name}", prompt, model(wide), "feed")
+        j = start_agent(f"thumb · {name}", prompt, model(True), "feed")
         return jsonify(job=j["id"], project=name)

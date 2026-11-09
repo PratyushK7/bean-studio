@@ -29,7 +29,6 @@ DEFAULTS = {
     "slots": {"A": "12:00", "B": "06:30", "Long": "21:30"},
     "channel": "The Bean With Bad Ideas",
     "hide_projects": ["bean-avatar"],   # folders in projects_dir that aren't videos
-    "analytics_sync_hours": 6,          # 0 = only when you press Sync now
     "topic_category": "funny animated explainers that teach something useful, in any genre (science, health, money, tech, history, psychology, how things work, everyday life)",
     "topic_channels": [
         # animated / funny explainers
@@ -45,12 +44,11 @@ DEFAULTS = {
         # tech, productivity and learning
         "ColdFusion", "Fireship", "Computerphile", "TwoMinutePapers", "Mrwhosetheboss", "Techquickie", "MKBHD", "ThomasFrank", "CleoAbram", "Nerdwriter1", "TomScottGo", "LegalEagle", "dhruvrathee", "DailyDoseOfInternet",
     ],
-    "options_model": "",                  # model that adapts outliers into 5 ideas (empty = the session default)
-    "thumbnail_model": "",                # empty = the session default
-    "thumbnail_model_short": "",          # empty = the session default
-    "video_model": "",                  # one model for every video; empty = the session default
-    "video_model_short": "",          # empty = the session default
-    "video_model_long": "",           # empty = the session default
+    # Every agent run names its model, so the session's default model never decides: Opus for the polished decisions, Sonnet for the coding.
+    "options_model": "opus",              # adapts outliers into 3 topic ideas, and finds spin-off Shorts (judgment)
+    "thumbnail_ideas_model": "opus",      # the three thumbnail ideas (judgment)
+    "thumbnail_draw_model": "sonnet",     # drawing the picked thumbnail (code)
+    "agent_model": "sonnet",              # an Agent-tab request, and any run that was not given a model (a video is still Opus plan + Sonnet build)
     "agent_window": False,              # True: every video the agent makes opens in its own visible Claude window
     "staged_make": True,                # a video is made in two runs: a PLAN (script, hook, shot plan) then a BUILD (code, render); a model picked in the form overrides this
     "plan_model": "opus",               # the plan stage: the polished decisions (hook, script, jokes, staging)
@@ -60,9 +58,9 @@ DEFAULTS = {
     # Each can override: name, slots, topic_category, topic_channels, projects_dir, planner, voice_file. tools = which tabs it shows.
     "channels": {
         "bean": {"name": "The Bean With Bad Ideas", "language": "English", "emoji": "🫘", "color": "#1982c4",
-                 "tools": ["projects", "topics", "schedule", "analytics", "agent", "jobs", "settings"]},
+                 "tools": ["projects", "topics", "agent", "jobs", "settings"]},
         "hindi": {"name": "Decoding Vyapaar", "language": "Hindi", "emoji": "🪔", "color": "#c0262d",
-                  "tools": ["projects", "schedule", "analytics", "agent", "jobs", "settings"],
+                  "tools": ["projects", "agent", "jobs", "settings"],
                   "note": "Topics turn on once this channel has a video skill (its explainer style). Until then use the Agent tab.",
                   "slots": {"A": "12:00", "B": "18:30", "Long": "20:30"},
                   "topic_category": "Hindi business case studies for Indian viewers: the economics of owning an everyday business, how a famous Indian company rose, split or fell, and the rivalry, revenge or rise of a businessman everyone knows",
@@ -109,7 +107,7 @@ def validate_config(new):
     if not isinstance(new, dict): return ["settings must be a JSON object { ... }"]
     kinds = {"port": int, "open_browser": bool, "projects_dir": str, "planner": str, "python": str, "engine": str, "uploader": str,
              "agent_command": list, "agent_cwd": str, "slots": dict, "channel": str, "hide_projects": list,
-             "analytics_sync_hours": (int, float), "topic_category": str, "topic_channels": list, "options_model": str, "video_model": str, "video_model_short": str, "video_model_long": str, "thumbnail_model": str, "staged_make": bool, "plan_model": str, "build_model": str, "voice_file": str, "channels": dict}
+             "topic_category": str, "topic_channels": list, "options_model": str, "thumbnail_ideas_model": str, "thumbnail_draw_model": str, "agent_model": str, "staged_make": bool, "plan_model": str, "build_model": str, "voice_file": str, "channels": dict}
     errs = [f'"{k}" has the wrong type' for k, t in kinds.items() if k in new and (not isinstance(new[k], t) or (t is not bool and isinstance(new[k], bool)))]
     if errs: return errs
     if "agent_command" in new and (not new["agent_command"] or not all(isinstance(x, str) for x in new["agent_command"])):
@@ -220,6 +218,7 @@ def start_agent(label, prompt, model=None, mode="plain"):
     """one place that builds the agent's command line. mode: "plain" (output as is), "feed" (live readable steps),
     "window" (its own visible Claude window, interactive)"""
     c = cfg()
+    model = model or c.get("agent_model") or None                  # a run with no model of its own still never falls back to the session default
     if mode == "window":
         cmd = [x for x in c["agent_command"] if x != "-p"] + (["--model", model] if model else []) + [prompt]   # interactive: no -p
         return start_job(label, cmd, c["agent_cwd"], window=True)
@@ -395,24 +394,21 @@ def agent():
         prompt = (f'This task is for the YouTube channel "{c["channel"]}" (language: {c["language"]}), not for The Bean With Bad Ideas. '
                   f'Its videos live in {c["projects_dir"]}, its data in {c["data_dir"]}, its planner is {c["planner"]}, and its voice notes are {c["voice_file"]} (create it if it is missing). '
                   "Do not touch the other channels' folders.\n\n") + prompt
-    return jsonify(start_agent("agent · " + prompt[:50], prompt, mode=mode))
+    model = b.get("model") if b.get("model") in ("opus", "sonnet", "haiku") else None
+    vid = topics.make_request(prompt, seconds if b.get("duration") not in (None, "", 0) else None)
+    label = "make · " + vid["topic"] if vid else "agent · " + topics.short_label(prompt)
+    if vid and mode != "window" and not model and c.get("staged_make", True):       # "make a new Short ..." is the same two-stage job as the Topics tab: Opus plans, Sonnet builds
+        plan_note, build_note = topics.stage_notes("<project>", vid["long"])
+        find = (f" The project is the folder under {c['projects_dir']} that the plan run created: the most recently changed folder that contains a *-shotplan.md."
+                " In the notes below, <project> means that folder's name.")
+        return jsonify(start_staged(label, [
+            {"name": "Plan: script, hook and shot plan", "model": c.get("plan_model") or None,
+             "prompt": prompt + plan_note.replace("STAGE 1 OF 2: THE PLAN.", "STAGE 1 OF 2: THE PLAN. Choose the project name (a short lowercase slug) yourself; <project> below is that name.", 1), "expect": []},
+            {"name": "Build: code, render and sheet", "model": c.get("build_model") or None, "prompt": prompt + build_note + find, "expect": []}]))
+    return jsonify(start_agent(label, prompt, model or (c.get("plan_model") if vid else None), mode=mode))
 
 
-# ---------- schedule: YouTube is the truth, the planner only fills in what is still to come ----------
-@app.get("/api/schedule")
-def schedule():
-    import ytstate
-    refresh_youtube(force=bool(request.args.get("refresh")))
-    vids = ytstate.STATE["videos"]
-    prow, perr = planner.rows(cfg()["planner"])
-    today, planned = dt.datetime.now(IST).date(), []
-    for r in prow:
-        if r["date"] < today - dt.timedelta(days=1) or r.get("status") in ("Posted", "Skipped"): continue
-        if vids and ytstate.match_title(r.get("title"), vids, 0.78): continue    # already on YouTube: shown above with its real state
-        planned.append({**r, "date": r["date"].isoformat(), "day": r["date"].strftime("%a")})
-    return jsonify(youtube=vids, connected=ytstate.STATE["connected"], error=ytstate.STATE["error"], last=ytstate.STATE["last"],
-                   planned=planned[:60], planner_error=perr)
-
+# ---------- the next free posting slot (the upload form's "Next free slot" button; YouTube is the truth for what is taken) ----------
 @app.get("/api/next-slot")
 def next_slot():
     """the first posting slot (not Long) that is in the future and has nothing live or scheduled around it"""
@@ -433,16 +429,7 @@ def next_slot():
             return jsonify(at=t.strftime("%Y-%m-%d %H:%M"), date=t.strftime("%Y-%m-%d"), time=hhmm, slot=name, checked_youtube=ytstate.STATE["connected"])
     return jsonify(at=None)
 
-@app.post("/api/open-planner")
-def open_planner():
-    f = Path(cfg()["planner"])
-    if not f.exists(): abort(404, f"no planner at {f}")
-    os.startfile(f)
-    return jsonify(ok=True)
-
-
-import analytics, ytstate, topics   # noqa: E402
-analytics.register(app, ROOT, cfg, start_job)
+import ytstate, topics   # noqa: E402
 refresh_youtube = ytstate.register(app, ROOT, cfg)      # live posted / scheduled / private state for every tab
 topics.register(app, ROOT, cfg, start_job, JOBS, start_agent, start_staged)
 import thumbs

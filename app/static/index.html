@@ -97,8 +97,6 @@
   <nav>
     <button data-tab="projects" class="on">Videos</button>
     <button data-tab="topics">✨ Topics</button>
-    <button data-tab="schedule">Schedule</button>
-    <button data-tab="analytics">Analytics</button>
     <button data-tab="agent">Agent</button>
     <button data-tab="jobs">Activity</button>
     <button data-tab="settings">Settings</button>
@@ -143,45 +141,6 @@
   <div class="card" style="padding:0; overflow:auto"><table id="tptop"></table></div>
 </section>
 
-<section id="schedule" class="tab">
-  <div class="row" style="margin-bottom:12px">
-    <h2 style="margin:0">Schedule</h2><span class="muted" id="schedmeta">from YouTube</span>
-    <span style="flex:1"></span>
-    <button class="act sec" onclick="loadSchedule(true)">↻ Refresh from YouTube</button>
-    <button class="act sec" onclick="api('/api/open-planner',{method:'POST'})">Open planner in Excel</button>
-  </div>
-  <div id="schedwarn" class="card" style="display:none; margin-bottom:12px"></div>
-  <h4 style="margin-top:0">On YouTube <span class="muted">(live, scheduled and private, straight from the channel)</span></h4>
-  <div class="card" style="padding:0; max-height:46vh; overflow:auto"><table id="schedyt"></table></div>
-  <h4>Still to make and post <span class="muted">(planner rows that are not on YouTube yet)</span></h4>
-  <div class="card" style="padding:0; max-height:40vh; overflow:auto"><table id="sched"></table></div>
-</section>
-
-<section id="analytics" class="tab">
-  <div class="row" style="margin-bottom:12px">
-    <h2 style="margin:0">Analytics</h2><span class="muted" id="ancount"></span>
-    <span style="flex:1"></span>
-    <button class="act sec" id="connbtn" onclick="run({action:'auth'})" style="display:none">Connect YouTube</button>
-    <button class="act" id="syncbtn" onclick="syncNow()">⟳ Sync now</button>
-  </div>
-  <div class="card" id="anstatus" style="margin-bottom:12px"></div>
-  <div class="card" style="padding:0; overflow:auto; max-height:46vh"><table id="antable"></table></div>
-  <p class="muted">Numbers come from YouTube by themselves (Data API + Analytics API) and refresh every few hours; they run 1 to 2 days behind. You can change slot, type, project and notes (kept across syncs). <b>Engaged %</b> = engaged views / views, a proxy: YouTube's "Viewed vs swiped away" isn't available to the API, so type it into the last-but-one column from Studio if you want it. <b>Drop at</b> = the second where the retention curve falls hardest after the first 10%.</p>
-
-  <div id="ansum" class="grid" style="grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); margin:14px 0"></div>
-
-  <div class="card">
-    <h2 style="margin-bottom:6px">Analyze with the agent</h2>
-    <p class="muted" style="margin:0 0 8px">The agent reads the numbers, the planner and the scripts, then writes a report with what worked, what's noise, and up to 3 decisions. It never edits your planner or videos; you decide what to apply.</p>
-    <textarea id="anq" rows="2" placeholder="Optional question, e.g. Should I move slot A to the evening?"></textarea>
-    <div class="row" style="margin:8px 0"><button class="act blue" id="anbtn" onclick="analyze()">Analyze &amp; recommend</button><span class="muted">Needs numbers for at least 2 videos.</span></div>
-    <div class="log" id="anlog" style="height:150px"></div>
-  </div>
-  <h4>Reports</h4>
-  <div class="row" id="replist" style="margin-bottom:8px"></div>
-  <div class="card" id="report" style="display:none"></div>
-</section>
-
 <section id="agent" class="tab">
   <h2>Ask the agent</h2>
   <p class="muted">Runs Claude Code in your youtube folder with the command from Settings. It can use the line-boil and yt-* skills. Output appears below and in Activity.</p>
@@ -189,6 +148,7 @@
   <textarea id="prompt" rows="5" placeholder="e.g. Make a new Short with the line-boil skill about why onions make you cry. Go straight through without waiting for my OK."></textarea>
   <div class="row" style="margin:10px 0"><button class="act blue" onclick="askAgent()">Run agent</button>
     <label class="muted" style="font-weight:600">Length <select id="agentlen" title="Passed to the line-boil skill as a target length"></select></label>
+    <label class="muted" style="font-weight:600">Model <select id="agentmodel" title="Auto: a request to make a video runs as Opus plans, Sonnet builds; anything else runs on Sonnet. Whatever the Claude session default is, it is never used."><option value="">Auto (Opus plans, Sonnet builds)</option><option value="opus">Opus</option><option value="sonnet">Sonnet</option></select></label>
     <label class="muted" style="font-weight:600"><input type="checkbox" id="agentwin"> 🪟 own window</label>
     <span class="muted">Long jobs keep running if you switch tabs.</span></div>
   <div class="log" id="agentlog"></div>
@@ -246,7 +206,7 @@ const istDate = (add = 0) => new Intl.DateTimeFormat('en-CA', {timeZone: 'Asia/K
 let TYPES = [], VOICES = [], META = null;       // shared lists come from the server, so they exist in one place only
 function fillLengths() {           // the Agent tab's Length option: what you pick is passed to the skill as the target length
   const L = META.lengths;
-  $('#agentlen').innerHTML = '<option value="">Auto (the skill default, 32 to 42 s)</option>' +
+  $('#agentlen').innerHTML = '<option value="">Auto (the agent decides)</option>' +
     `<optgroup label="Short (9:16)">${L.short.map(x => `<option value="${x}">${x} seconds</option>`).join('')}</optgroup>` +
     `<optgroup label="Long video (16:9)">${L.long.map(x => `<option value="${x}">${x / 60} minutes</option>`).join('')}</optgroup>`;
 }
@@ -280,7 +240,7 @@ document.querySelectorAll('nav button').forEach(b => b.onclick = () => show(b.da
 function show(tab) {
   document.querySelectorAll('nav button').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('on', t.id === tab));
-  ({projects: loadProjects, topics: loadTopics, schedule: loadSchedule, analytics: loadAnalytics, jobs: loadJobs, settings: loadCfg}[tab] || (() => {}))();
+  ({projects: loadProjects, topics: loadTopics, jobs: loadJobs, settings: loadCfg}[tab] || (() => {}))();
 }
 
 // ---------- videos ----------
@@ -453,30 +413,31 @@ const QUICK = [
   ['Rebuild old Short', 'Rebuild the line-boil project SLUG with the current engine so it has captions and the .srt (and no outro: Shorts loop). Check caption placement on a still per shot.'],
   ['Idea batch', 'Suggest 10 new Short ideas for The Bean With Bad Ideas across different video types (see the Types tab in bean-planner.xlsx), avoiding topics already in the planner.'],
 ];
-$('#quick').innerHTML = QUICK.map(([l, t], i) => `<button class="act sec" onclick="$('#prompt').value=QUICK[${i}][1]">${l}</button>`).join('') +
-  `<button class="act blue" onclick="show('analytics'); analyze()" title="Reads your Analytics tab, writes a report with decisions">📊 Analyze analytics</button>`;
+$('#quick').innerHTML = QUICK.map(([l, t], i) => `<button class="act sec" onclick="$('#prompt').value=QUICK[${i}][1]">${l}</button>`).join('');
 async function askAgent() {
   const prompt = $('#prompt').value.trim(); if (!prompt) return;
-  const j = await api('/api/agent', {method: 'POST', body: {prompt, duration: $('#agentlen').value || null, window: $('#agentwin').checked}});
+  const j = await api('/api/agent', {method: 'POST', body: {prompt, duration: $('#agentlen').value || null, model: $('#agentmodel').value || null, window: $('#agentwin').checked}});
   watch(j.id, '#agentlog');
 }
 
 // ---------- topics ----------
-let TKIND = 'short', TPPOLL = null;
+let TKIND = 'short', TPPOLL = null, TBATCH = null;
+const TLAST = {short: null, long: null};
 const TOPT = {short: [], long: []}, TPICK = {short: [], long: []};
 const TDESC = {
   short: `Studies what is beating its own channel's average on other channels in your category (<span id="tpcat"></span>), then adapts the best into <b>3 original ideas</b> for you: the topic and format are borrowed, never the script or title. Pick one, answer a few questions, and the agent makes the whole video.`,
   long: `The same study for <b>long videos</b> (4 to 40 minutes) on other channels, adapted into 3 ideas with chapters, a runtime and sources to check. <b>Researched picks</b> sit on top. A long video is made end to end in <b>16:9</b> with the line-boil-wide skill: sourced script, chapters timed from the real voiceover, the animation, a 1280×720 thumbnail and the upload sheet.`};
 function setKind(k) {
   TKIND = k; $('#kshort').classList.toggle('on', k === 'short'); $('#klong').classList.toggle('on', k === 'long');
-  clearInterval(TPPOLL); $('#tpstatus').textContent = ''; loadTopics();
+  clearInterval(TPPOLL); TPPOLL = null; TBATCH = null; $('#tpstatus').textContent = ''; loadTopics();
 }
 async function loadTopics() {
   const k = TKIND;
   const [t, pk] = await Promise.all([api('/api/topics?kind=' + k), api('/api/topics/picks?kind=' + k)]);
   if (k !== TKIND) return;                               // switched format while this was loading
   TPICK[k] = pk.picks;
-  if (!TOPT[k].length && pk.last.length) TOPT[k] = pk.last;          // the last five ideas are still here after a reload
+  if (pk.last.length && TLAST[k] !== pk.last_when) { TOPT[k] = pk.last; TLAST[k] = pk.last_when; }          // the newest ideas, also when they finished while this page was away
+  if (pk.running) watchBatch(k, pk.running);                          // a batch is still being written: follow it
   $('#tpdesc').innerHTML = TDESC[k]; if ($('#tpcat')) $('#tpcat').textContent = t.category || 'your category';
   $('#tpmeta').textContent = t.fetched ? `${t.videos} ${k === 'short' ? 'Shorts' : 'long videos'} from ${t.channels.length} channels · studied ${ago(t.fetched)}` : '';
   $('#tprefresh').disabled = t.refreshing; $('#tprefresh').textContent = t.refreshing ? `↻ Studying… ${t.progress}` : '↻ Refresh sources';
@@ -511,21 +472,26 @@ function drawOptions() {
   $('#tpopts').innerHTML = o.map((x, i) => optionCard(x, i, 'opt')).join('');
   $('#tpgo').style.display = o.length ? 'none' : ''; $('#tpreroll').style.display = o.length ? '' : 'none';
 }
-async function getIdeas() {
-  const k = TKIND, busy = on => { $('#tpgo').disabled = on; $('#tpreroll').disabled = on; };
-  busy(true);
+function watchBatch(k, bid) {
+  if (TBATCH === bid && TPPOLL) return;
+  clearInterval(TPPOLL); TBATCH = bid;
+  const busy = on => { if (k === TKIND) { $('#tpgo').disabled = on; $('#tpreroll').disabled = on; } };
   const say = m => { if (k === TKIND) $('#tpstatus').innerHTML = m; };
-  say(`<span class="spin">⟳</span> The agent is adapting the best performers into ${k === 'long' ? 'long-video' : ''} ideas for your channel… (usually 30–90 s)`);
-  let r; try { r = await api('/api/topics/options', {method: 'POST', body: {kind: k}}); } catch (e) { busy(false); say(''); return; }
-  clearInterval(TPPOLL);
+  busy(true); say(`<span class="spin">⟳</span> The agent is adapting the best performers into ${k === 'long' ? 'long-video ' : ''}ideas for your channel… (usually 30–90 s)`);
   TPPOLL = setInterval(async () => {
     let b;
-    try { b = await api('/api/topics/batch/' + r.batch, {silent: true}); }
-    catch (e) { clearInterval(TPPOLL); busy(false); say('Lost track of that request (the studio restarted?). Press the button to try again.'); return; }
+    try { b = await api('/api/topics/batch/' + bid, {silent: true}); }
+    catch (e) { clearInterval(TPPOLL); TPPOLL = null; TBATCH = null; busy(false); say('Lost track of that request (the studio restarted?). Press the button to try again.'); return; }
     if (b.status === 'running') { say(`<span class="spin">⟳</span> The agent is adapting the best performers into ideas… ${b.seconds}s`); return; }
-    clearInterval(TPPOLL); TOPT[k] = b.options; busy(false); say('');
+    clearInterval(TPPOLL); TPPOLL = null; TBATCH = null; TOPT[k] = b.options; busy(false); say('');
     if (k === TKIND) drawOptions();
   }, 2000);
+}
+async function getIdeas() {
+  const k = TKIND;
+  $('#tpgo').disabled = true; $('#tpreroll').disabled = true;
+  let r; try { r = await api('/api/topics/options', {method: 'POST', body: {kind: k}}); } catch (e) { $('#tpgo').disabled = false; $('#tpreroll').disabled = false; return; }
+  watchBatch(k, r.batch);
 }
 const LENGTH_LABEL = {0: 'Let the agent decide (recommended): as long as this topic needs, usually 30 to 50 seconds (no outro)', 30: 'Fixed: 30 seconds of voiceover (~93 words) · fastest, punchy', 40: 'Fixed: 40 seconds of voiceover (~124 words)', 50: 'Fixed: 50 seconds of voiceover (~155 words)', 60: 'Fixed: 60 seconds of voiceover (~186 words) · Shorts maximum'};
 const MIN_LABEL = {5: '5 minutes (~930 words)', 7: '7 minutes (~1,300 words) · the sweet spot for this style', 9: '9 minutes (~1,670 words)', 12: '12 minutes (~2,230 words)'};
@@ -548,7 +514,7 @@ function openWizard(src, i) {
     ${long ? `<div class="row" style="margin-top:12px"><label style="margin:0"><input type="checkbox" id="w_caps"> Burned-in captions <span class="muted">(not the long-form standard: YouTube's own captions come from the uploaded .srt)</span></label></div>` : ''}
     <div class="row" style="margin-top:12px"><label style="margin:0"><input type="checkbox" id="w_music" checked> Background music <span class="muted">(follows the script's mood)</span></label>${long ? `<label style="margin:0"><input type="checkbox" id="w_outro" checked> Channel outro (14.8 s)</label>` : ''}</div>
     <label>Quality <span class="muted">(the video itself renders on your computer for free; this is the AI that writes and draws it)</span></label>
-    <select id="w_model"><option value="">The session default</option><option value="sonnet">Balanced · Sonnet: lighter on your usage, good for most Shorts</option><option value="opus">Best · Opus: strongest writing and staging, uses more</option></select>
+    <select id="w_model"><option value="">Auto: Opus plans (hook, script, shots), Sonnet builds (code, render)</option><option value="opus">Opus for everything: the most usage</option><option value="sonnet">Sonnet for everything: the least usage</option></select>
     <div class="row" style="margin-top:10px"><label style="margin:0"><input type="checkbox" id="w_window"> 🪟 Open in its own Claude window so I can watch every step (it may ask for permissions)</label></div>
     ${long ? `<label style="margin-top:12px">Thumbnail <span class="muted">(a long video: pick when it is drawn)</span></label><select id="w_thumbmode"><option value="later">Later: from the Better thumbnail button (three ideas, you pick one)</option><option value="now">Now: drawn after the video, with the long-thumbnail skill</option></select><input type="hidden" id="w_thumb" value="">` : `<label>Thumbnail text <span class="muted">(optional, up to 3 words; blank = the agent chooses)</span></label><input type="text" id="w_thumb" maxlength="24" placeholder="e.g. TOO TALL?">`}<label style="margin-top:12px">Describe the thumbnail yourself <span class="muted">(optional: the agent draws exactly this${long ? "; a long video is then drawn now" : ""})</span></label><textarea id="w_thumbdesc" rows="3" placeholder="e.g. a huge coffee mug with a worried bean peeking over the rim, big words WHY CAN'T I SLEEP?"></textarea>
     <label>Anything else? <span class="muted">(optional)</span></label><textarea id="w_notes" rows="3" placeholder="e.g. keep it gentle, include the 1982 lawn chair story, avoid mentioning X"></textarea>
@@ -616,120 +582,11 @@ async function thumbMake(name, k) {
   closeWizard(); show('jobs'); watch(j.id);
 }
 
-// ---------- analytics ----------
-let AN = [], PROJ = [];
-const AN_COLS = [['title','Video',240,'ro'],['posted','Posted',78,'ro'],['slot','Slot',54,'sel'],['type','Type',100,'sel'],['project','Project',100,'sel'],
-  ['views','Views',58,'ro'],['engaged_pct','Engaged %',66,'ro'],['avg_pct','% watched',68,'ro'],['avd_s','AVD s',54,'ro'],['likes','Likes',46,'ro'],
-  ['comments','Cmts',46,'ro'],['shares','Shares',52,'ro'],['subs','Subs',46,'ro'],['drop_s','Drop at s',62,'ro'],['geo','Top countries',150,'ro'],
-  ['viewed_pct','Viewed % (Studio)',92,'edit'],['notes','Notes',160,'edit']];
-let ANST = null, ANPOLL = null;
-async function loadAnalytics() {
-  const [a, ps] = await Promise.all([api('/api/analytics'), api('/api/projects')]);
-  AN = a.rows; PROJ = ps.map(p => p.name); ANST = a.status; drawAnalytics(a.summary); drawStatus(); loadReports();
-  clearInterval(ANPOLL);
-  if (a.status.syncing) ANPOLL = setInterval(async () => {          // while a sync runs, refresh only the status line (the table keeps your edits)
-    const x = await api('/api/analytics', {silent: true}).catch(() => null);
-    if (x && !x.status.syncing) { clearInterval(ANPOLL); loadAnalytics(); } else if (x) { ANST = x.status; drawStatus(); }
-  }, 4000);
-}
+// ---------- small helpers ----------
 function ago(iso) {
   if (!iso) return 'never';
   const m = Math.round((Date.now() - new Date(iso)) / 60000);
   return m < 1 ? 'just now' : m < 90 ? `${m} min ago` : m < 2880 ? `${Math.round(m / 60)} h ago` : `${Math.round(m / 1440)} days ago`;
-}
-function drawStatus() {
-  const st = ANST, box = $('#anstatus');
-  $('#connbtn').style.display = st.connected ? 'none' : '';
-  $('#syncbtn').disabled = !st.connected || st.syncing; $('#syncbtn').textContent = st.syncing ? '⟳ Syncing…' : '⟳ Sync now';
-  if (!st.connected) box.innerHTML = `<b>● Not connected.</b> Press <b>Connect YouTube</b> and sign in with the channel's Google account. It asks for two read-only permissions (YouTube and YouTube Analytics). Also enable the <b>YouTube Analytics API</b> in your Google Cloud project once (see <code>tools/yt_upload.md</code>). <span class="muted">${esc((st.missing || []).join(', ').replace(/https:\/\/www.googleapis.com\/auth\//g, ''))}</span>`;
-  else box.innerHTML = `<b style="color:#2f8f3a">● Connected</b>${st.info ? ' · ' + esc(st.info.channel) + (st.info.subscribers ? ` · ${st.info.subscribers} subscribers` : '') : ''} · last synced <b>${ago(st.last_sync)}</b> · auto-refresh every ${st.auto_hours || 'no'} h` +
-    (st.error ? `<div style="color:#c0262d;margin-top:6px">⚠ ${esc(st.error)}</div>` : '') +
-    ((st.info && st.info.warnings && st.info.warnings.length) ? `<div class="muted" style="margin-top:4px">Some per-video details were skipped (usually videos with too few views): ${esc(st.info.warnings[0])}</div>` : '');
-}
-function drawAnalytics(summary) {
-  $('#ancount').textContent = `${AN.length} videos · ${AN.filter(r => r.views != null).length} with numbers`;
-  const fmt = (k, v) => v == null || v === '' ? '<span class="muted">–</span>' : k === 'posted' ? esc(String(v).slice(5)) : typeof v === 'number' ? (k === 'views' || k === 'likes' || k === 'comments' || k === 'shares' || k === 'subs' ? v.toLocaleString() : (Math.round(v * 10) / 10)) : esc(v);
-  const cell = (r, i, [k, , w, kind]) => {
-    const v = r[k] ?? '';
-    if (kind === 'ro') return `<div style="min-width:${w}px;max-width:${w + 40}px;padding:4px 6px;${k === 'title' ? 'font-weight:600;' : ''}">${fmt(k, r[k])}</div>`;
-    if (k === 'project') return `<select style="width:${w}px" onchange="AN[${i}].project=this.value||null;queueSave()"><option value=""></option>${PROJ.map(p => `<option ${p === v ? 'selected' : ''}>${p}</option>`).join('')}</select>`;
-    if (k === 'slot') return `<select style="width:${w}px" onchange="AN[${i}].slot=this.value||null;queueSave()">${['', 'A', 'B', 'Long'].map(o => `<option ${o === v ? 'selected' : ''}>${o}</option>`).join('')}</select>`;
-    if (k === 'type') return `<select style="width:${w}px" onchange="AN[${i}].type=this.value||null;queueSave()"><option value=""></option>${TYPES.map(o => `<option ${o === v ? 'selected' : ''}>${o}</option>`).join('')}</select>`;
-    return `<input style="width:${w}px" value="${esc(v)}" oninput="AN[${i}]['${k}']=this.value;queueSave()">`;
-  };
-  $('#antable').innerHTML = `<tr>${AN_COLS.map(c => `<th>${c[1]}</th>`).join('')}</tr>` +
-    (AN.length ? AN.map((r, i) => `<tr>${AN_COLS.map(c => `<td style="padding:3px">${cell(r, i, c)}</td>`).join('')}</tr>`).join('')
-      : `<tr><td colspan="${AN_COLS.length}" class="muted" style="padding:16px">No numbers yet. Connect YouTube and press Sync now.</td></tr>`);
-  if (summary) {
-    const tbl = (rows, key, label) => `<div class="card"><h4 style="margin-top:0">${label}</h4>${rows.length ? `<table><tr><th>${label.split(' ').pop()}</th><th>n</th><th>Views</th><th>Engaged %</th><th>% watched</th></tr>` +
-      rows.map(r => `<tr><td>${esc(r[key])}</td><td>${r.videos}${r.videos < 5 ? ' <span title="too few to trust">⚠️</span>' : ''}</td><td>${r.avg_views ?? '–'}</td><td>${r.avg_engaged_pct ?? '–'}</td><td>${r.avg_pct_watched ?? '–'}</td></tr>`).join('') + '</table>' : '<span class="muted">Add slot/type and views to see this.</span>'}</div>`;
-    $('#ansum').innerHTML = tbl(summary.by_slot, 'slot', 'By slot') + tbl(summary.by_type, 'type', 'By type') + `<div class="muted" style="align-self:center">⚠️ = fewer than 5 videos, a hint rather than a result.</div>`;
-  }
-}
-let SAVET = null;
-function queueSave() { clearTimeout(SAVET); SAVET = setTimeout(saveAnalytics, 700); }
-async function saveAnalytics() {        // sends the editable fields only; the server merges them into the current data
-  clearTimeout(SAVET);
-  await api('/api/analytics', {method: 'PUT', body: {rows: AN.map(r => ({id: r.id, title: r.title, project: r.project, slot: r.slot, type: r.type, notes: r.notes, viewed_pct: r.viewed_pct, drop_note: r.drop_note}))}, silent: true}).catch(() => toast('Could not save your edits.'));
-}
-async function syncNow() {
-  $('#syncbtn').disabled = true; $('#syncbtn').textContent = '⟳ Syncing…';
-  try { await saveAnalytics(); const r = await api('/api/analytics/sync', {method: 'POST'}); AN = r.rows; ANST = r.status; drawAnalytics(r.summary); drawStatus(); }
-  finally { loadAnalytics(); }
-}
-async function analyze() {
-  await saveAnalytics();
-  const j = await api('/api/analytics/analyze', {method: 'POST', body: {question: $('#anq').value}});
-  $('#anbtn').disabled = true; $('#report').style.display = 'none';
-  watch(j.id, '#anlog', async () => { $('#anbtn').disabled = false; await loadReports(); openReport(j.report); });
-}
-async function loadReports() {
-  const rs = await api('/api/reports');
-  $('#replist').innerHTML = rs.map(r => `<button class="act sec" onclick="openReport('${r.name}')">${r.name.replace('analysis-', '').replace('.md', '')}</button>`).join('') || '<span class="muted">No reports yet.</span>';
-}
-function md(t) {   // tiny markdown: headings, bullets, bold, tables
-  const inl = s => esc(s).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/`(.+?)`/g, '<code>$1</code>');
-  const out = []; let list = false, tbl = null;
-  const close = () => { if (list) { out.push('</ul>'); list = false; } if (tbl) { out.push('</table>'); tbl = null; } };
-  for (const line of t.split('\n')) {
-    if (/^\s*\|/.test(line)) {
-      if (/^\s*\|[\s:|-]+\|?\s*$/.test(line)) continue;
-      const cells = line.trim().replace(/^\||\|$/g, '').split('|').map(c => c.trim());
-      if (!tbl) { close(); out.push('<table>'); tbl = 1; out.push('<tr>' + cells.map(c => `<th>${inl(c)}</th>`).join('') + '</tr>'); }
-      else out.push('<tr>' + cells.map(c => `<td>${inl(c)}</td>`).join('') + '</tr>');
-      continue;
-    }
-    if (tbl) { out.push('</table>'); tbl = null; }
-    let m;
-    if ((m = line.match(/^(#{1,3})\s+(.*)/))) { close(); out.push(`<h${m[1].length + 1} style="margin:14px 0 6px">${inl(m[2])}</h${m[1].length + 1}>`); }
-    else if ((m = line.match(/^\s*(?:[-*]|\d+\.)\s+(.*)/))) { if (!list) { out.push('<ul style="margin:4px 0 4px 18px;padding:0">'); list = true; } out.push(`<li>${inl(m[1])}</li>`); }
-    else if (line.trim()) { close(); out.push(`<p style="margin:6px 0">${inl(line)}</p>`); }
-  }
-  close(); return out.join('');
-}
-async function openReport(name) {
-  try { const r = await api('/api/reports/' + name); $('#report').innerHTML = md(r.text); $('#report').style.display = ''; $('#report').scrollIntoView({behavior: 'smooth'}); } catch (e) {}
-}
-
-// ---------- schedule ----------
-async function loadSchedule(refresh) {
-  const d = await api('/api/schedule' + (refresh ? '?refresh=1' : ''));
-  const today = istDate();
-  $('#schedmeta').textContent = d.last ? `YouTube data from ${ago(d.last)}` : 'from YouTube';
-  const warn = $('#schedwarn');
-  const msgs = [];
-  if (!d.connected) msgs.push('<b>● Not connected to YouTube.</b> Open the Analytics tab and press <b>Connect YouTube</b>; then this table shows what is really live and scheduled.');
-  else if (d.error) msgs.push(`⚠ ${esc(d.error)}`);
-  if (d.planner_error) msgs.push(`📋 ${esc(d.planner_error)}`);
-  warn.style.display = msgs.length ? '' : 'none'; warn.innerHTML = msgs.join('<br>');
-  const order = {scheduled: 0, live: 1, private: 2, unlisted: 3};
-  const yt = d.youtube.slice().sort((a, b) => (order[a.state] - order[b.state]) || (a.state === 'scheduled' ? a.when.localeCompare(b.when) : b.when.localeCompare(a.when)));
-  $('#schedyt').innerHTML = `<tr><th>State</th><th>When (IST)</th><th>Title</th><th>Views</th><th></th></tr>` +
-    (yt.length ? yt.map(v => `<tr class="${v.duration_s > 180 ? 'Long' : ''}"><td>${ytBadge(v)}</td><td>${esc(v.when.slice(0, 16).replace('T', ' '))}</td><td>${esc(v.title)}</td><td>${v.state === 'live' ? v.views.toLocaleString() : '–'}</td>
-      <td><a href="${v.url}" target="_blank">watch</a> · <a href="${v.studio}" target="_blank">Studio</a></td></tr>`).join('') : `<tr><td colspan=5 class="muted" style="padding:14px">${d.connected ? 'No videos on the channel yet.' : 'Connect YouTube to see them.'}</td></tr>`);
-  $('#sched').innerHTML = `<tr><th>Date</th><th>Slot</th><th>IST</th><th>Type</th><th>Working title</th><th>Planner status</th><th>Notes</th></tr>` +
-    (d.planned.length ? d.planned.map(r => `<tr class="${r.format} ${r.date === today ? 'today' : ''}"><td>${r.day} ${r.date.slice(5)}</td><td>${esc(r.slot)}</td><td>${esc(r.time)}</td><td>${esc(r.type)}</td>
-      <td>${esc(r.title)}</td><td><span class="stt planned">${esc(r.status || 'Idea')}</span></td><td class="muted">${esc(r.notes)}</td></tr>`).join('') : '<tr><td colspan=7 class="muted" style="padding:14px">Nothing left in the planner.</td></tr>');
 }
 
 // ---------- settings ----------

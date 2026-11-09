@@ -60,6 +60,29 @@ def length_instructions(seconds):
             f" prints TARGET {seconds}s: OK. Plan 5 to 9 chapters of 45 to 90 seconds, write chapters.json, and make the video, chapter by chapter.")
 
 
+MAKE_REQ = re.compile(r"^\s*(?:please\s+)?(?:make|create|build|produce)\s+(?:me\s+)?(?:a|an|another|the)?\s*(?:new\s+)?(short|long video|video|reel)\b(?P<rest>.*)", re.I | re.S)
+
+
+def make_request(prompt, seconds=None):
+    """an Agent-tab prompt that asks for a whole video ("Make a new Short ... about X"): {"topic", "long"}; None for any other request"""
+    m = MAKE_REQ.match(prompt or "")
+    if not m: return None
+    low = (prompt or "").lower()
+    long = m.group(1).lower() == "long video" or bool(seconds and seconds > 60) or "16:9" in low or bool(re.search(r"\b\d+\s*(?:-|\s)?minute", low))
+    t = re.search(r"\babout\s+(.+?)(?:\.\s|\n|$)", m.group("rest"), re.S)
+    topic = clean((t.group(1) if t else m.group("rest")).strip(" .\"'"), 60) or "new video"
+    return {"topic": topic, "long": long}
+
+
+def short_label(prompt):
+    """a readable name for an Agent-tab run: the first line, cut at a word, never in the middle of a quote"""
+    first = re.sub(r"\s+", " ", (prompt or "").strip().split("\n")[0])
+    if len(first) <= 50: return first
+    cut = first[:50].rsplit(" ", 1)[0]
+    if cut.count('"') % 2: cut = cut[:cut.rindex('"')]            # never end inside an opened quote
+    return cut.rstrip(" ,;:\"'") + "…"
+
+
 def classify(title):
     for name, pat in FMT:
         if re.search(pat, title, re.I): return name
@@ -77,6 +100,23 @@ def clean(s, n=500):
 
 def kind_of(v):
     return v if v in KINDS else "short"
+
+
+def stage_notes(slug, long):
+    """the two notes of a two-stage video: STAGE 1 (Opus plans) and STAGE 2 (Sonnet builds). slug may be a placeholder such as <project>"""
+    unit = "chapter" if long else "shot"
+    plan_note = f"""
+
+STAGE 1 OF 2: THE PLAN. You are the writer and director. A second, separate run (a cheaper model) will code the shots from your files, so every creative decision must be made and written down by you, now.
+Do these and then STOP: build.py new, the hook, the script, the fact-check, {'chapters.json, ' if long else ''}the cast concept, build.py voice (rewrite and re-run until it hits the length), and the sheet's text decisions (title with alternates, thumbnail words and brief, description, tags, sources) written to {slug}-youtube.txt.
+Then write {slug}-shotplan.md: ONE ROW PER SHOT, detailed enough that someone who has never seen the script can code it without making a single creative choice. For each shot give: the sentence numbers and the exact words to anchor on with at('...'), the set, place and colours, which beans are on screen and their expressions, the action beat by beat, the props, the camera move, the visual joke and where it lands, the sound cue and the music mood. Put a cast table at the top: each bean's shape, colour, hat, size and what it stands for (apply the Mindful details section of ~/.claude/skills/line-boil/references/style.md: a real brand, product or place keeps its own recognisable colours and symbol, never a random palette colour), and the list of props to build{' (and the per-chapter ' + unit + ' groups)' if long else ''}.{'' if long else ' Also write the THUMBNAIL BRIEF at the top (the Build run draws it exactly, following ~/.claude/skills/line-boil-thumbnail-short/SKILL.md): the 2 to 4 words, the one big topic object and why a stranger would know the topic from it at feed size (an abstract topic needs a symbol such as a giant clock for time zones), the bean and its expression, the video shot it matches, and the one-sentence accuracy check. If the user described the thumbnail (see the Thumbnail line above), the brief is their description, word for word.'}
+Do NOT write web/cast.js or the shots files, and do NOT run build.py check, stills, video, sheet or thumb: ignore every later step in the list above. Finish by printing the plan's path and a two-line summary."""
+    build_note = f"""
+
+STAGE 2 OF 2: THE BUILD. The plan was done by a separate run; do not redo it. Already written for you: script.json, the voice and word timings (audio/), {slug}-hooks.txt, {slug}-sources.md, {slug}-youtube.txt and {slug}-shotplan.md, which holds every creative decision.
+Read those files ONCE. Do not rewrite or reorder the script, do not run build.py voice, do not redo the fact-check or the hook. If something in the plan cannot be done in the engine, take the closest option and note it at the end instead of redesigning it.
+Now do the remaining steps in the list above: write web/cast.js and the shots exactly as the shot plan says{', one chapter at a time' if long else ''}, build.py check, stills (at most two rounds, fixing only real overlaps and clipped text), build.py video, build.py sheet{'' if long else ', the thumbnail exactly as the THUMBNAIL BRIEF in the plan says, with the thumbnail skill accuracy test'}, and finish {slug}-youtube.txt (the Video line with the real length and the thumbnail section with the real file). Do not upload anything and do not touch other projects."""
+    return plan_note, build_note
 
 
 def register(app, ROOT, cfg, start_job, JOBS, start_agent=None, start_staged=None):
@@ -222,8 +262,12 @@ def register(app, ROOT, cfg, start_job, JOBS, start_agent=None, start_staged=Non
         """hand-researched topics (data/picks.json), shown above the generated ideas"""
         kind = kind_of(request.args.get("kind"))
         picks = (load_json(PICKS(), {}) or {}).get(kind, [])
+        for b in list(st["batches"].values()):       # a batch whose agent finished while nobody was watching (another tab, a reload): collect it now
+            j = JOBS.get(b["job"])
+            if b["kind"] == kind and b["status"] == "running" and j and j["done"]: finish_batch(b)
+        running = next((b["id"] for b in st["batches"].values() if b["kind"] == kind and b["status"] == "running"), None)
         last = load_json(DATA / f"topic-last-{kind}.json", {}) or {}
-        return jsonify(picks=[dict(p, n=i, pick=True, adapted=True) for i, p in enumerate(picks)], last=last.get("options", []), last_when=last.get("when"))
+        return jsonify(picks=[dict(p, n=i, pick=True, adapted=True) for i, p in enumerate(picks)], last=last.get("options", []), last_when=last.get("when"), running=running)
 
     @app.post("/api/topics/refresh")
     def topics_refresh():
@@ -369,23 +413,11 @@ Do not upload anything and do not touch other projects. Finish by printing the p
         (DATA / "make").mkdir(parents=True, exist_ok=True)
         save_json(DATA / "make" / f"{slug}.json", {"kind": kind, "topic": t, "answers": a, "when": dt.datetime.now().isoformat(timespec="seconds")})
         mode = "window" if (a.get("window") or c.get("agent_window")) else "feed"      # watch it live, or in its own Claude window
-        model = a.get("model") if a.get("model") in ("opus", "sonnet", "haiku") else None
+        model = a.get("model") if a.get("model") in ("opus", "sonnet", "haiku") else (c.get("plan_model") or None)      # one run (own window, or staging off): the polished model
         proj = Path(c["projects_dir"]) / slug
         staged = bool(start_staged) and bool(c.get("staged_make", True)) and mode != "window" and not a.get("model")      # a model picked in the form means one run on that model
         if staged:
-            long = kind == "long"
-            unit = "chapter" if long else "shot"
-            plan_note = f"""
-
-STAGE 1 OF 2: THE PLAN. You are the writer and director. A second, separate run (a cheaper model) will code the shots from your files, so every creative decision must be made and written down by you, now.
-Do these and then STOP: build.py new, the hook, the script, the fact-check, {'chapters.json, ' if long else ''}the cast concept, build.py voice (rewrite and re-run until it hits the length), and the sheet's text decisions (title with alternates, thumbnail words and brief, description, tags, sources) written to {slug}-youtube.txt.
-Then write {slug}-shotplan.md: ONE ROW PER SHOT, detailed enough that someone who has never seen the script can code it without making a single creative choice. For each shot give: the sentence numbers and the exact words to anchor on with at('...'), the set, place and colours, which beans are on screen and their expressions, the action beat by beat, the props, the camera move, the visual joke and where it lands, the sound cue and the music mood. Put a cast table at the top: each bean's shape, colour, hat, size and what it stands for (apply the Mindful details section of ~/.claude/skills/line-boil/references/style.md: a real brand, product or place keeps its own recognisable colours and symbol, never a random palette colour), and the list of props to build{' (and the per-chapter ' + unit + ' groups)' if long else ''}.{'' if long else ' Also write the THUMBNAIL BRIEF at the top (the Build run draws it exactly, following ~/.claude/skills/line-boil-thumbnail-short/SKILL.md): the 2 to 4 words, the one big topic object and why a stranger would know the topic from it at feed size (an abstract topic needs a symbol such as a giant clock for time zones), the bean and its expression, the video shot it matches, and the one-sentence accuracy check. If the user described the thumbnail (see the Thumbnail line above), the brief is their description, word for word.'}
-Do NOT write web/cast.js or the shots files, and do NOT run build.py check, stills, video, sheet or thumb: ignore every later step in the list above. Finish by printing the plan's path and a two-line summary."""
-            build_note = f"""
-
-STAGE 2 OF 2: THE BUILD. The plan was done by a separate run; do not redo it. Already written for you: script.json, the voice and word timings (audio/), {slug}-hooks.txt, {slug}-sources.md, {slug}-youtube.txt and {slug}-shotplan.md, which holds every creative decision.
-Read those files ONCE. Do not rewrite or reorder the script, do not run build.py voice, do not redo the fact-check or the hook. If something in the plan cannot be done in the engine, take the closest option and note it at the end instead of redesigning it.
-Now do the remaining steps in the list above: write web/cast.js and the shots exactly as the shot plan says{', one chapter at a time' if long else ''}, build.py check, stills (at most two rounds, fixing only real overlaps and clipped text), build.py video, build.py sheet{'' if long else ', the thumbnail exactly as the THUMBNAIL BRIEF in the plan says, with the thumbnail skill accuracy test'}, and finish {slug}-youtube.txt (the Video line with the real length and the thumbnail section with the real file). Do not upload anything and do not touch other projects."""
+            plan_note, build_note = stage_notes(slug, kind == "long")
             j = start_staged(f"make · {slug}", [
                 {"name": "Plan: script, hook and shot plan", "model": c.get("plan_model") or None, "prompt": prompt + plan_note,
                  "expect": [str(proj / "script.json"), str(proj / f"{slug}-shotplan.md")]},
