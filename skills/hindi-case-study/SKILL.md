@@ -2,8 +2,8 @@
 name: hindi-case-study
 description: >-
   Writes the script for a long Hindi business case-study video (14 to 20 minutes) for the Hindi channel Decoding Vyapaar, using the hooks,
-  re-hooks, chapter shapes and closes of the top Hindi business-documentary channels (HinExp, ABFinDoc), studied line by
-  line from their ten most-viewed videos. Four formats: the economics of owning a business (bus, petrol pump, jewellery
+  re-hooks, chapter shapes and closes of the top Hindi business-documentary channels, studied from the transcripts of 38
+  hits across 12 channels (Shivanshu Agrawal, HiddenOps, HinExp, ABFinDoc, Paisa Decode, Think School Hindi and more). Four formats: the economics of owning a business (bus, petrol pump, jewellery
   shop), a company's rise, split or fall, a person's rivalry/revenge/rise story, and two people making one money decision.
   Output is a researched, sourced script.json (Devanagari narration, sparse Hinglish on-screen text, a visual note per
   beat) checked by casecheck.py, plus the research file and three hook options. Use whenever the user asks for a Hindi
@@ -40,12 +40,14 @@ A topic works when all three hold (this is what separates both channels' million
 - **There is a gap between what everyone assumes and what is true.** Write the assumption down in one Hindi line.
 - **It has money math or a human conflict** (a rivalry, a revenge, a fall, a rise from nothing).
 
-If a topic misses one, say which and offer a sharper angle before writing. Then pick the format:
+If a topic misses one, say which and offer a sharper angle before writing. Then pick the format. **B and C are the safest
+bet**: the only two channels in the niche whose typical video (not just one hit) beats 300K, Shivanshu Agrawal (3.8M) and
+HiddenOps (336K), tell one company's or one person's story from a humble start to its peak or fall.
 
 | Format | `format` | Use for | Study videos |
 |---|---|---|---|
-| A. Economics of owning X | `economics` | a business the viewer meets as a customer | bus 2.0M, petrol pump 1.1M |
-| B. A company's rise, split or fall | `story` | a brand with nostalgia or a betrayal | Hero Honda 1.3M, Tavera 1.0M |
+| A. Economics of owning X | `economics` | a business the viewer meets as a customer | bus 2.0M, petrol pump 1.1M; told as a story: sleeper bus 3.6M |
+| B. A company's rise, split or fall | `story` | a brand with nostalgia or a betrayal; "X is in trouble" | Haldiram's 12M, Byju's 10M, Nirma 9.2M, Hero Honda 1.3M |
 | C. A person's story | `person` | rivalry, revenge, rags to riches, a big bet | Ambani 1.4M, Rolls-Royce 1.2M, Jhunjhunwala 976K |
 | D. Two people, one decision | `compare` | rent vs buy, SIP vs plot, job vs business | rent vs buy 1.1M |
 
@@ -60,7 +62,9 @@ ministry data, and established business press (Economic Times, Mint, Business St
 Real people: their documented words only. Dramatise with the scene (place, time, the phone ringing, the silence), not
 with invented quotes. A reconstruction is marked ("उस दिन कुछ ऐसा माहौल रहा होगा"). Allegations are attributed and the
 other side is given. For format A, a made-up model business with a made-up owner is fine and helps (study: "हाईवे फ्यूल
-पॉइंट"); say it is a model.
+पॉइंट"); say it is a model. Best of all is **the owner's story** (HiddenOps' sleeper bus, 3.6M, beat HinExp's 2.0M on the
+same topic): invented recurring characters, real numbers, and one plain line saying so ("ये किरदार सिर्फ इस कहानी में हैं; पैसा
+असली है, एक-एक रुपया"). Invented characters suit this channel's illustrated stills too.
 
 ## 3. Packaging first
 
@@ -70,21 +74,36 @@ the customer's price first: "₹1,200/Hour Turf Business: Weekend Full, Phir Bhi
 Hinglish that add the stakes ("असली कमाई?", "भाई vs भाई"). The hook has to confirm whichever title wins. Lint them with
 **yt-package** if time allows.
 
-## 4. The hook: 60 to 110 seconds, ends on "चलिए शुरू करते हैं"
+## 4. The hook: short (25 to 40 s) or long (60 to 110 s)
 
-Longer than an English hook, and every second is working. Its parts, in order:
+**The short hook** is what the niche's strongest channel uses on every video (Shivanshu Agrawal: Haldiram's, Byju's, Nirma,
+Oberoi, Big Bazaar, 6.5M to 12M each). Use it for formats B and C. Three beats, then straight into the origin:
+
+1. **Year, place, a humble act or the peak moment**: "साल 1969, गुजरात। एक 24 साल का लड़का साइकिल पर घर-घर जाकर पीला
+   पाउडर बेचना शुरू करता है।" / "26 जनवरी 2001, सुबह 5 बजे, हजारों लोग बिग बाजार की दीवार फांद रहे थे।"
+2. **Dramatic irony or the fall**: "उस वक्त किसी ने सपने में भी नहीं सोचा होगा कि..." / "लेकिन अगले 20 सालों में ऐसा क्या हुआ
+   कि इसी बिग बाजार के हर स्टोर पर ताला लग गया?"
+3. **Name it**: "यह कहानी है ... की।" Then the birth, the family, the first job. No roadmap.
+
+**The long hook** (HinExp, ABFinDoc, HiddenOps) suits format A, D and a mystery ("X is in trouble"). Every second works.
+Its parts, in order:
 
 1. **The scene (first 15 s).** One of: *you are there* ("एक सीन इमेजिन कीजिए। आप...", format A); *the stamped moment*
    ("साल 1982, 18 मार्च, दोपहर के डेढ़ बजे...", format C); *nostalgia* ("आपके पापा ने जिंदगी में एक बाइक जरूर चलाई होगी...",
-   format B); *the accusation* (a trusted brand did something unforgivable, format B); *two people* (format D).
+   format B); *the accusation* (a trusted brand did something unforgivable, format B); *two people* (format D); *the
+   paradox* ("स्टोर में पैर रखने की जगह नहीं, फिर भी शेयर महीनों से गिर रहा है", a mystery); *you are the owner* ("मान लो यह
+   कैफे तुम खोल रहे हो। तुम 26 साल के हो, ₹35,000 की नौकरी है", format A); *the story scene* (invented characters at the
+   worst moment, then "यह कहानी उस रात से 11 महीने पहले शुरू होती है", format A told as a story).
 2. **The belief** the viewer holds, said in their voice, with the naive math if there is money ("36 बर्थ, हर एक बारह सौ की...").
 3. **The break**: the shock number, the reveal ("...वो अलवर के महाराजा थे"), or the reframe ("यह सिर्फ X नहीं था, यह Y था").
-4. **One to three questions** the video will answer, ending on the big one.
+4. **One to three questions** the video will answer, ending on the big one. The strongest version **defers one exact
+   answer to the end and says so**: "उस टिकट में 10 हिस्सेदार हैं, मालिक की बारी 11वीं। जवाब आखिर में।" / "और आखिर में बताऊंगा
+   कि अगर मुझे कल यह कैफे खोलना हो तो मैं सबसे उल्टा क्या करूंगा।" Then pay it off, exactly, at the end.
 5. **The roadmap as promises**: three to five things the video will open, each phrased as a secret or a stake ("वो खर्च
    जिसकी बात कोई नहीं करता", "वो फैसला जिसने..."). Then the start line, in this channel's own words.
 
-Write **three complete hooks** with different scene types into `<slug>-hooks.md`, pick one, and say in one line why it
-fits this topic. Never a greeting, a channel intro or an ask in the hook.
+Write **three complete hooks** (at least one short, one long, with different scene types) into `<slug>-hooks.md`, pick
+one, and say in one line why it fits this topic. Never a greeting, a channel intro or an ask in the hook.
 
 ## 5. The body
 
@@ -96,6 +115,14 @@ Chapter order comes from the format's section in `references/study.md`. Through 
   other side of the coin, putting the viewer in someone's place, dramatic irony ("उन्हें अंदाजा भी नहीं था कि..."), a setback
   chain and reversal, an escalating numbered list ("पहली वजह... चौथी और सबसे बड़ी"). Use the moves in the toolkit, in fresh
   words every time.
+- **In a company or person story, explain every win as a named strategy with its mechanism and a number** (Shivanshu's
+  method): Nirma hired women to ask shopkeepers for Nirma until the shops stocked it; 65% soda ash; three stages to the
+  customer instead of Surf's four; a 15% excise rebate. Give the rival's counter-move its own scene (HLL's secret "STING"
+  mission, then Wheel). Foreshadow every fall: "सब अच्छा चल रहा था, कि तभी कुछ ऐसा हुआ जिसने...", "लेकिन ये कामयाबी
+  ज्यादा देर टिकने वाली नहीं थी", "लेकिन फिर कहानी में एंट्री होती है एक ऐसे खिलाड़ी की जो...". In a fall, say what they should
+  have done, then "लेकिन उन्होंने इनमें से कुछ भी नहीं किया".
+- **In an owner's story, plant the naive math early and promise it will flip** ("याद रखिए, यह हिसाब आखिर में पलटेगा"), then
+  let the real costs arrive as events in the character's life (the bank refuses, a tyre bursts, the agent takes 15%).
 - **The biggest twist in the middle third.** In format C, **return to the cold-open scene at 60 to 75%**, then give one
   more twist after the loop closes.
 - **Numbers carry the trust** (rupees, percentages, years): format A at least 3.5 a minute, D at least 6, B 2.5, C 1, with the source in the research file. Say an
@@ -108,10 +135,12 @@ Chapter order comes from the format's section in `references/study.md`. Through 
 
 1. **The verdict**, a judgment, not a recap of the chapters ("हां भी और ना भी, और फर्क इस बात से पड़ता है कि...").
 2. **The maxim**: one line the viewer could repeat ("अपने धंधे की सबसे जरूरी चाबी कभी किसी और के हाथ में मत दो").
-3. **The callback**: back to the opening scene, changed by what the viewer now knows ("अगली बार जब आप किसी ज्वेलरी शोरूम
-   के शीशे के सामने खड़े हों...").
-4. **One ask block**: send it to a specific friend ("उस दोस्त को भेजिए जो सोचता है कि..."), a personal comment question
-   ("आपके घर की पहली गाड़ी कौन सी थी?") or let them pick the next topic, subscribe for the next video named with two
+3. **The callback as an observation test**: back to the opening scene, with one thing to go and look at (used by four
+   channels): "अगली बार संडे शाम टर्फ के ₹75 दो, तो एक बार सुबह 6 बजे भी उस टर्फ के पास से गुजरना। वहां जो दिखेगा, वही
+   बता देगा..." / "अगली बार DMart की लाइन में खड़े हों, तो देखिएगा कितने लोग सामान गिन रहे हैं और कितने फोन।"
+4. **One ask block**: send it to a specific friend ("उस दोस्त को भेजिए जो सोचता है कि..."), a personal or two-sided comment
+   question ("आपके घर की पहली गाड़ी कौन सी थी?", "हक पद का बनता है या हिस्से का?"), while the channel is small the Hype
+   button ("नीचे Hype का बटन दिखे तो एक Hype दे दीजिए, छोटे चैनल के लिए वो एक लाइक से कहीं ज्यादा काम करता है"), or let them pick the next topic, subscribe for the next video named with two
    questions about it. No ask anywhere before this.
 5. **The sign-off line** from `voice-hindi.md`.
 

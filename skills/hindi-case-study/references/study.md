@@ -1,7 +1,8 @@
-# The study: ten Hindi case-study hits, read line by line
+# The study: 38 Hindi case-study hits from 12 channels
 
-Source material: the five most-viewed videos of **HinExp** (@HinExpofficial) and of **ABFinDoc** (@ABFinDoc), the two
-Hindi business-documentary channels this channel is modelled on. Views are as listed on 9 Nov 2026 (no upload dates
+Part one (the four formats below): the five most-viewed videos of **HinExp** (@HinExpofficial) and of **ABFinDoc**
+(@ABFinDoc), read line by line. Part two ("The second study", further down): 28 more hits from ten more channels, read
+for their hooks, re-hooks and closes, with Shivanshu Agrawal's and HiddenOps' videos read in full. Views are as listed on 9 Nov 2026 (no upload dates
 were available, so a low number on a recent video may only mean it is new). The scripts were read from YouTube's Hindi
 auto-captions, so a few numbers in them are garbled; the structure, the timings and the phrasing are reliable.
 
@@ -156,7 +157,7 @@ Everyday spoken Hindi, not Sanskritised. Business words stay English (EMI, क�
 voice (HinExp) talks to the viewer as "आप" with the friendly imperative ("समझो", "सोचो", "सुनो", "भाई"); the documentary
 voice (ABFinDoc) narrates in the third person and adds "जी" to elders' names. Sentences are short: one picture each.
 
-## A third reference channel: PaisaDecodeHQ (added 9 Nov 2026, titles only, not yet read line by line)
+## Paisa Decode (@PaisaDecodeHQ): packaging
 
 @PaisaDecodeHQ, 60 videos, 10 to 22 min, all format A on small businesses a young viewer could start. Its top five: a
 ₹1,200/hour turf (1.0M), a ₹100/hour PS5 gaming café (684K), "5 boring businesses that quietly make people rich" (423K),
@@ -168,7 +169,7 @@ question about the owner's cut**, in Hinglish: "₹1,200/Hour Turf Business: Wee
 youth businesses (turf, gaming café) rather than the classic bus and petrol pump, a sign that format A works best on
 a business the 18 to 30 viewer actually walks into.
 
-## The wider roster (added 9 Nov 2026): titles and views only, transcripts pending
+## The wider roster (9 Nov 2026)
 
 All of these are in Bean Studio's topic sources for Decoding Vyapaar. Median = the median views of the channel's videos,
 which says more about a repeatable format than one viral hit does.
@@ -196,6 +197,83 @@ Trouble: What Went Wrong?" (copied by three channels); "X Expose: The Business M
 Family Is in Trouble? Parivaar Ki Jang"). Most channels here are hit-driven (a small median under one big hit); the two
 with a high median, Shivanshu Agrawal and HiddenOps, tell **one company's or one person's story from humble start to
 peak or fall**, which is format B and C in this skill.
+
+## The second study: 28 more hits (read 9 Nov 2026)
+
+Shivanshu Agrawal's top five (6.5M to 12M), HiddenOps' sleeper bus, D-Mart and Patanjali (1.3M to 3.6M), and the two or
+three biggest business videos of Money Code, Think School Hindi, Ani Explainer Hindi, Truth Finance, FinXplain, Monexa,
+Finance In Minutes and Paisa Decode (250K to 2.6M). What they add to part one:
+
+**1. The short hook wins at the top.** Shivanshu Agrawal, the niche's strongest channel by a distance, never uses a long
+hook. Every one of his five: year and place, a humble act or the peak moment, one line of dramatic irony or the fall, "यह
+कहानी है X की" / "आइए जानते हैं इस वीडियो में", and the birth and family by 0:25 to 0:40. Haldiram's (12M): "साल 1919,
+बीकानेर की गलियों में एक 12 साल का बच्चा अपनी बुआ से भुजिया बनाना सीखता है और केवल दो पैसे में बेचना चालू करता है, इस बात से
+बिल्कुल अनजान कि यही भुजिया एक दिन हजारों करोड़ के एंपायर की नींव बनेगी।" Oberoi (8.6M): a 23-year-old turned away by the
+guard of Shimla's Cecil Hotel, "उस समय किसी ने सपने में भी नहीं सोचा होगा कि आगे चलकर यही लड़का इस होटल का मालिक बनेगा".
+Big Bazaar (6.5M): crowds climbing the walls at 5 am on 26 Jan 2001, "लेकिन अगले 20 सालों में ऐसा क्या हुआ कि हर स्टोर में ताला
+लग गया?" No roadmap, no list of secrets. The long hook still works for economics and mysteries (part one, HiddenOps).
+
+**2. His body is mechanism, not mood.** 177 to 189 words a minute, plain, fast, with very little drama in the voice.
+Every phase of the rise is split into named strategies, each with how it worked and a number (Nirma: priced at the
+laundry-soap level against Surf; women hired to ask shopkeepers for Nirma until they stocked it; 65% soda ash, no
+whitener, no perfume; three stages to the customer instead of four; a 15% excise rebate for working without
+electricity; the jingle sung on screen). The rival gets its own scene (HLL's secret mission "STING", market research on
+Nirma's smell and the burning hands, then Wheel at the same price with better quality, then Ghadi at 10% more with fatter
+dealer margins). The fall is analysed as what they should have done ("निर्मा को यह करना चाहिए था... लेकिन निर्मा ने इनमें से कुछ
+भी नहीं किया") and the wrong move they made instead (Nirma Blue, Nirma shampoo, Hrithik Roshan). His re-hook is one move,
+every 2 to 3 minutes: "सब अच्छा चल रहा था कि तभी कुछ ऐसा हुआ जिसने...", "लेकिन फिर कहानी में एंट्री होती है एक ऐसे... की
+जो...", "लेकिन ये सक्सेस ज्यादा देर टिकने वाली नहीं थी", "निर्मा के बुरे दिनों की यह तो केवल शुरुआत थी, क्योंकि यूपी की गलियों से
+एक ऐसा कंपीटीटर निकल रहा था जो...". The close is one maxim ("नंबर वन बनना और नंबर वन बने रहना दो अलग चीजें हैं") and "next,
+watch this video". No like or subscribe ask at all. The sponsor (an online MBA) comes at about 4:30, bridged from the
+lesson ("इन सब बिजनेस पहलुओं को गहराई से समझना ही आज की MBA का कोर है"). His narration is heavy Hinglish (स्ट्रेटेजी,
+कंज्यूमर्स, मार्केट शेयर, टर्न्स आउट).
+
+**3. The owner's story beats the explainer.** HiddenOps told the sleeper-bus economics (3.6M, against HinExp's 2.0M on the
+same subject) as a 34-minute drama: a cold open at 2:40 am (the bus on fire on a ghat, 36 asleep, "90 सेकंड, दो दरवाजे, 36
+जिंदगियां"), three questions, the money question with a deferred exact answer ("उस टिकट में 10 हिस्सेदार हैं। मालिक की बारी
+11वीं। जवाब आखिर में।"), a disclosure ("इन किरदारों को ढूंढने मत निकलिएगा। वो सिर्फ इस कहानी में हैं। हां, पैसा ढूंढेंगे तो
+एक-एक रुपया मिलेगा।"), then "यह कहानी उस रात से 11 महीने पहले शुरू होती है". Raghu, a driver for 18 years, is humiliated
+by his boss Kailash Seth ("तू स्टीयरिंग पकड़ना जानता है, हिसाब पकड़ना नहीं"), does the naive math on the back of an old ticket
+("आप भी यही सोच रहे हैं ना? याद रखिए, यह हिसाब आखिर में पलटेगा"), mortgages the house with his wife Sarla, and every real
+cost arrives as an event (three banks refuse; the chassis and the body are bought separately, 42 + 33 lakh). The payoff
+splits ₹1,200 line by line (diesel 517, EMI 158, apps and booking 144, toll 104, staff 92, tyres and repairs 62, permit
+46, office 23, insurance 17, water and blankets 17, owner 20) and lands the irony (five years as a seth, ₹1 lakh less
+than his own driver), then reverses once more ("अब कहानी पलटती है। किस्तें खत्म") and ends on an image (the next morning,
+back at the loan office with papers for a second bus). Its D-Mart video opens on a paradox and a mystery number ("जवाब
+पूरी रिपोर्ट में नहीं था, जवाब उसमें छुपे एक छोटे से नंबर में था। ज्यादातर लोगों ने उसे पढ़ा तक नहीं।").
+
+**4. Other hook shapes that hit.**
+- The viewer as the owner, in तुम (Paisa Decode, PS5 café 685K): "₹100 का 1 घंटा, और इसमें से कैफे ओनर के पास बचते हैं
+  लगभग ₹46... मान लो यह कैफे तुम खोल रहे हो। तुम 26 साल के हो, ₹35,000 की नौकरी है"; with personal stakes ("हो सकता है अगला
+  टर्फ तुम खोलो, अपनी लाख की सेविंग से").
+- The internet's number, half true: "इंटरनेट कहता है टर्फ 12 से 18 महीने में पैसे वापस दे देता है। यह नंबर सच है, पर सिर्फ एक
+  तरह के इंसान के लिए।"
+- The narrator's own playbook as the deferred payoff: "एंड में बताऊंगा कि अगर मुझे कल यह कैफे खोलना हो तो मैं सबसे उल्टा क्या
+  करूंगा।"
+- The numbers' source said aloud: "यह हिसाब एक असली कैफे ओनर के अपने नंबर से निकाला है", "मिंट की रिपोर्ट के मुताबिक".
+- Two shops face to face (Monexa, 975K): 40% margin against 2%, and the 2% trader is the rich one.
+- Guess the number (Money Code, 2.2M): "₹150 दिए, ढाबे वाले की जेब में कितने गए? ₹100? ₹80? जी नहीं।" with a withheld
+  specific: "₹5 की एक छोटी सी चीज, वही ढाबे वाले की असली सोने की खान है।"
+- The stakes reaching the viewer's home (FinXplain, 1.6M): the Birla vs Adani cement war, "असर आपके घर की दीवारों तक".
+- The boardroom date stamp (Finance In Minutes, TVS, 561K): "27 मार्च 2026, शुक्रवार... सबको लगा बात यहीं खत्म हो गई। फिर
+  आई रविवार की शाम।"
+- "X is in trouble" (Ani Explainer, Truth Finance): the brand everyone trusted, then the share price halved, or the full
+  store against the falling share.
+
+**5. Closes.** The observation test is the shared move (Paisa Decode, FinXplain, Truth Finance, HiddenOps): one thing to
+go and look at next time (the turf at 6 am, the price of the next cement bag, how many in the D-Mart queue are on their
+phones). Also a two-sided comment question (Monexa: a fat margin with few customers, or a thin one that never stops?
+Finance In Minutes: "हक पद का बनता है या हिस्से का?"), "the best comment is read in the next video" (Money Code), and for a
+small channel the Hype button (Paisa Decode: "छोटे चैनल के लिए वो एक लाइक से कहीं ज्यादा काम करता है"). Paisa Decode ends
+each video by naming the next business with its hook ("अगला बिजनेस बाहर से इससे भी आसान दिखता है: गेमिंग कैफे").
+
+**6. Register.** The newer, younger channels (Paisa Decode, FinXplain, Truth Finance, Finance In Minutes) talk to the
+viewer as "तुम"; HinExp mixes; ABFinDoc and Shivanshu narrate. This channel keeps "आप" (voice-hindi.md) unless a test
+says otherwise.
+
+**7. What the checker learned.** All 28 punctuated transcripts pass `casecheck.py` except Money Code's two early
+like/subscribe asks (kept as a FAIL: this channel's rule). Shivanshu's and Think School's captions have no sentence
+punctuation, so the checker cannot measure them; they were read by eye.
 
 ## What not to copy
 

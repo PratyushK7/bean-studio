@@ -38,7 +38,7 @@ START = rx(r"चलिए (शुरू|देखते)|चलो शुरू|
 GREET = rx(r"नमस्ते|नमस्कार|स्वागत|हेलो|हैलो|दोस्तों|welcome")
 CTA = rx(r"लाइक (जरूर|करें|करो|कीजिए|कर दो|कर दीजिए)|चैनल को सब्सक्राइब|सब्सक्राइब (करना|कर लीजिए|कर लो|करें|करो|कीजिए)|बेल आइकन|नोटिफिकेशन|कमेंट में|शेयर (करें|करो|कीजिए)|(दोस्तों|दोस्त) (को|तक) .{0,30}भेज")
 NEXT = rx(r"अगली (वीडियो|कहानी|डॉक्यूमेंट्री|बार|एपिसोड)")
-SECOND_PERSON = rx(r"इमेजिन|कल्पना|सोचो|सोचिए|आप")
+SECOND_PERSON = rx(r"इमेजिन|कल्पना|सोचो|सोचिए|आप|तुम|मान लीजिए|मान लो|क्या आपने कभी")
 QWORD = rx(r"आखिर (क्या|कैसे|क्यों|कौन)|क्या सच में|कैसे एक")
 LATIN_NAME = re.compile(r"\b[A-Z][a-zA-Z]{2,}")   # a brand or person named in Latin letters (Tavera, Volvo)
 YEAR = re.compile(r"\b(1[89]|20)\d\d\b")
@@ -92,8 +92,8 @@ def check(doc):
     else:
         hook_end = start_i + 1
         hs = times[start_i][1]
-        lvl = "PASS" if 50 <= hs <= 120 else "WARN"
-        say(lvl, f"hook ends at {mmss(hs)} (line {start_i + 1}); the hits end it between 01:00 and 01:50")
+        lvl = "PASS" if 20 <= hs <= 120 else "WARN"
+        say(lvl, f"hook ends at {mmss(hs)} (line {start_i + 1}); the hits end it at 00:25 to 00:40 (short hook, Shivanshu Agrawal) or 01:00 to 01:50 (long hook)")
     hook = " ".join(txt[:hook_end])
 
     # 3. the first two lines put the viewer somewhere concrete
@@ -101,13 +101,13 @@ def check(doc):
     anchors = [k for k, ok in (("year/date", YEAR.search(first)), ("number", NUM.search(first)), ("second-person scene", SECOND_PERSON.search(first)),
                                ("named product/person", LATIN_NAME.search(" ".join(ln.get("hi", "") for ln in lines[:2])))) if ok]
     if anchors: say("PASS", f"opening anchor: {', '.join(anchors)}")
-    else: say("FAIL", "the first two lines have no year, number, 'you' scene or famous name; every hit opens on one (a date and place, a price, 'imagine you...', or a product everyone knows)")
+    else: say("WARN", "the first two lines have no year, number, 'you' scene or Latin-letter name; nearly every hit opens on one (a date and place, a price, 'imagine you...'), or on a brand everyone knows (check that by eye)")
 
     # 4. hook contents
-    if GREET.search(" ".join(txt[:3])): say("FAIL", "a greeting or channel intro in the first lines; none of the ten hits opens with one")
+    if GREET.search(" ".join(txt[:3])): say("FAIL", "a greeting or channel intro in the first lines (the channel's rule; of 38 hits studied only Think School opens with 'दोस्तों')")
     if "?" not in hook and not QWORD.search(hook): say("WARN", "the hook asks no question; the hits end the hook on 1 to 3 open questions")
     if not TURN.search(hook) and not any(p.search(hook) for p in STRONG): say("WARN", "the hook has no turn (लेकिन/पर/the twist); it should break the belief it sets up")
-    if CTA.search(hook): say("FAIL", "a like/subscribe/comment ask inside the hook")
+    if CTA.search(hook): say("FAIL", "a like/subscribe/comment ask inside the hook (the channel's rule; Money Code asks early and still hits, the strongest channels never do)")
 
     # 5. re-hooks through the body (hook end -> where the closing CTA starts)
     cta_i = next((i for i, s in enumerate(txt) if i >= hook_end and CTA.search(s)), len(lines))
@@ -123,8 +123,8 @@ def check(doc):
         return g
     g, at = longest([p for p, _ in strong], hook_t, body_end_t)
     per = len(strong) / max(0.1, (body_end_t - hook_t) / 60)
-    lvl = "PASS" if g <= 150 else "WARN" if g <= 300 else "FAIL"
-    say(lvl, f"strong re-hooks: {len(strong)} in the body ({per:.1f}/min); longest gap {g:.0f} s from {mmss(at)}. Aim for one every 60 to 90 s; the hits never go past 4.3 min (FAIL over 5)")
+    lvl = "PASS" if g <= 150 else "WARN"   # never FAIL: the phrase detector cannot see a scene's own tension (HiddenOps runs 5 to 12 min on dialogue)
+    say(lvl, f"strong re-hooks: {len(strong)} in the body ({per:.1f}/min); longest gap {g:.0f} s from {mmss(at)}. Aim for one every 60 to 90 s. Over 2.5 min, either add one or write in the check file what keeps that stretch tense (a scene with dialogue, a ticking question)")
     g2, at2 = longest(turns, hook_t, body_end_t)
     lvl = "PASS" if g2 <= 75 else "WARN"
     say(lvl, f"turns (लेकिन/पर/a question/a re-hook): longest gap {g2:.0f} s from {mmss(at2)}; aim for a turn every 20 to 40 s, never a minute and a quarter without one")
