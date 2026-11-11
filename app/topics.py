@@ -19,6 +19,7 @@ from flask import abort, jsonify, request
 import channels, planner, store
 from ytstate import norm
 
+HI_FORMATS = {"economics": "Economics of owning X", "story": "Company rise/split/fall", "person": "A person's story", "compare": "Two people, one decision"}
 TYPES = ["What if", "Myth test", "Why", "True story", "Versus", "Ranking", "Levels", "Paradox", "Puzzle",
          "How it works", "Superlative", "How many", "Map/scale", "Explainer"]
 FMT = [("What if", r"^what if|^what would happen|^what happens"), ("How many", r"^how (many|much|long|far|big|fast|hot|cold|deep|high|old)"),
@@ -133,6 +134,13 @@ def register(app, ROOT, cfg, start_job, JOBS, start_agent=None, start_staged=Non
         cmd = list(cfg()["agent_command"]) + (["--model", model] if model else [])
         return start_job(label, cmd + [prompt], cfg()["agent_cwd"])
 
+    def KIND(v):
+        """the kind asked for, limited to what this channel makes (the Hindi channel makes long videos only)"""
+        ks = cfg().get("kinds") or list(KINDS)
+        return v if v in ks else ks[0]
+
+    def hindi(): return (cfg().get("language") or "").lower() == "hindi"
+
     POOL = lambda kind: DATA / ("topic-pool.json" if kind == "short" else "topic-pool-long.json")
     STATEF, PICKS = lambda: DATA / "topic-state.json", lambda: DATA / "picks.json"
     st = channels.PerChannel(lambda cid: {**{k: {"refreshing": False, "progress": "", "error": None} for k in KINDS}, "batches": {}})
@@ -149,7 +157,8 @@ def register(app, ROOT, cfg, start_job, JOBS, start_agent=None, start_staged=Non
         d = json.loads(r.stdout)
         ents = [e for e in (d.get("entries") or []) if e and e.get("view_count")]
         if not short:                                 # long-form means an actual episode: 4 to 40 minutes, not a Short or a live stream
-            ents = [e for e in ents if 240 <= (e.get("duration") or 0) <= 2400]
+            lo, hi = (480, 3600) if hindi() else (240, 2400)           # the Hindi channel studies 8 to 60 minute documentaries
+            ents = [e for e in ents if lo <= (e.get("duration") or 0) <= hi]
         if len(ents) < (8 if short else 6): return []
         med = statistics.median(e["view_count"] for e in ents)
         name = d.get("channel") or d.get("uploader") or handle
@@ -232,7 +241,9 @@ def register(app, ROOT, cfg, start_job, JOBS, start_agent=None, start_staged=Non
         good = []
         for o in (opts or []):
             if isinstance(o, dict) and o.get("title") and isinstance(o.get("inspired_by"), dict):
-                o["type"] = o.get("type") if o.get("type") in TYPES else "Other"
+                o["type"] = o.get("type") if o.get("type") in TYPES + list(HI_FORMATS.values()) else "Other"
+                for k in ("angle", "gap", "assumption"): o[k] = clean(o.get(k), 300)
+                o["covered_by"] = strings(o.get("covered_by"), 5, 160)
                 for k in ("promise", "visual", "fact_note"): o[k] = clean(o.get(k), 300)
                 o["fact_risk"] = o.get("fact_risk") if o.get("fact_risk") in ("low", "medium", "high") else "medium"
                 if b["kind"] == "long":
@@ -252,7 +263,7 @@ def register(app, ROOT, cfg, start_job, JOBS, start_agent=None, start_staged=Non
 
     @app.get("/api/topics")
     def topics_get():
-        kind = kind_of(request.args.get("kind"))
+        kind = KIND(request.args.get("kind"))
         pool = load_json(POOL(kind), None)
         s = st[kind]
         return jsonify(kind=kind, refreshing=s["refreshing"], progress=s["progress"], error=s["error"],
@@ -263,7 +274,7 @@ def register(app, ROOT, cfg, start_job, JOBS, start_agent=None, start_staged=Non
     @app.get("/api/topics/picks")
     def topics_picks():
         """hand-researched topics (data/picks.json), shown above the generated ideas"""
-        kind = kind_of(request.args.get("kind"))
+        kind = KIND(request.args.get("kind"))
         picks = (load_json(PICKS(), {}) or {}).get(kind, [])
         for b in list(st["batches"].values()):       # a batch whose agent finished while nobody was watching (another tab, a reload): collect it now
             j = JOBS.get(b["job"])
@@ -274,14 +285,14 @@ def register(app, ROOT, cfg, start_job, JOBS, start_agent=None, start_staged=Non
 
     @app.post("/api/topics/refresh")
     def topics_refresh():
-        kind = kind_of((request.get_json(silent=True) or {}).get("kind"))
+        kind = KIND((request.get_json(silent=True) or {}).get("kind"))
         if not any(s["refreshing"] for k, s in st.items() if k in KINDS):
             threading.Thread(target=channels.bound(refresh_pool, cfg()["channel_id"]), args=(kind,), daemon=True).start()
         return jsonify(ok=True)
 
     @app.post("/api/topics/options")
     def topics_options():
-        kind = kind_of((request.get_json(silent=True) or {}).get("kind"))
+        kind = KIND((request.get_json(silent=True) or {}).get("kind"))
         pool = load_json(POOL(kind), None)
         if not pool: abort(400, "no source data yet: press 'Refresh sources' first")
         state = load_json(STATEF(), {"seen": []})
@@ -317,6 +328,7 @@ Pick THREE different candidates and adapt each into an ORIGINAL topic for our ch
 Write a JSON array of exactly 3 objects to {out} and nothing else on disk. Each object:
 {what[3]}
 Do not use any other tool than reading that file and writing that file. When done, also print the same JSON array as your final message."""
+        if hindi(): prompt = hindi_options_prompt(c, cfile, out)
         j = run_agent(f"topics · 3 {kind} ideas", prompt, c.get("options_model") or None, "plain")
         b = {"id": bid, "kind": kind, "job": j["id"], "out": str(out), "status": "running", "candidates": cands, "options": [], "started": time.time()}
         st["batches"][bid] = b
@@ -344,13 +356,102 @@ Do not use any other tool than reading that file and writing that file. When don
         try: return min(hi, max(lo, float(v)))
         except (TypeError, ValueError): return default
 
+
+    def hindi_options_prompt(c, cfile, out):
+        return f"""You are the topic scout for the Hindi YouTube channel "{c['channel']}": long (10 to 15 minute) faceless business case-study videos in the style of HinExp, ABFinDoc, HiddenOps and Shivanshu Agrawal. Category: {c.get('topic_category', '')}.
+
+Read ~/.claude/skills/hindi-case-study/SKILL.md (section 1, Topic and format, including the rule for repeating a covered topic cleverly) and {cfile}. "candidates" are long videos from the reference channels that beat their own channel's median views by "multiple". "already_made_titles" are ours: never repeat them.
+
+Pick THREE different candidates and turn each into a topic for us. A topic someone already covered is fine IF you give it a clearly different angle: a different question, the unit economics or contract nobody put on screen, a human on the other side, or a story shape the competitor does not use. Keep the proven title FORMULA, never the competitor's script. Each topic must pass the skill's three tests (the viewer can picture it in the first sentence; a gap between what everyone assumes and what is true; money math or a human conflict). Use three different formats among economics / story / person / compare. You may check competition with yt_dlp: C:/Users/praty/youtube/.venv/Scripts/python.exe -m yt_dlp "ytsearch8:<query>" --flat-playlist --print "%(view_count)s | %(channel)s | %(title)s". Never invent a view count: if you did not see it, leave it out.
+
+Write a JSON array of exactly 3 objects to {out} and nothing else on disk. Each object:
+{{"title": "English or Hinglish, under 80 characters, using a proven formula", "type": one of {list(HI_FORMATS.values())}, "format": one of {list(HI_FORMATS)}, "assumption": "what everyone assumes, one line", "gap": "what is actually true, one line", "angle": "how this differs from the covered versions, one sentence", "covered_by": ["Channel: title (views)", ...], "promise": "one sentence: the story and where it lands", "visual": "one line: the recurring characters and set", "chapters": [5 to 8 short English chapter titles], "runtime_min": 10 to 15, "fact_risk": "low"|"medium"|"high", "fact_note": "what must be checked", "inspired_by": {{"title": source title, "channel": source channel, "multiple": number, "url": source url}}}}
+When done, also print the same JSON array as your final message."""
+
+    @app.post("/api/topics/analyze")
+    def topics_analyze():
+        """the topic analyzer (Hindi channel): one idea in, a verdict out: three tests, who covered it, the different angle, titles, chapters"""
+        topic = clean((request.get_json(silent=True) or {}).get("topic"), 300)
+        if not topic: abort(400, "write the topic first")
+        if not hindi(): abort(400, "the topic analyzer is for the Hindi channel")
+        aid = uuid.uuid4().hex[:8]; out = DATA / f"topic-analysis-{aid}.json"
+        prompt = f"""You are the topic analyzer for the Hindi YouTube channel "{cfg()['channel']}" (long faceless business case-study videos, 10 to 15 minutes). Judge ONE topic: {topic}
+
+Read ~/.claude/skills/hindi-case-study/SKILL.md section 1 (the three tests and the rule for repeating a covered topic cleverly). Then search YouTube for the topic: C:/Users/praty/youtube/.venv/Scripts/python.exe -m yt_dlp "ytsearch10:<query in English and Hinglish>" --flat-playlist --print "%(view_count)s | %(channel)s | %(title)s | %(duration_string)s | %(id)s" (two or three queries). Report only views you actually saw. Be honest: a verdict of "skip" is a fine answer.
+
+Write ONE JSON object to {out} and nothing else on disk:
+{{"topic": str, "verdict": "go"|"sharpen"|"skip", "verdict_line": "one plain sentence why", "tests": {{"picture": {{"ok": bool, "note": str}}, "gap": {{"ok": bool, "assumption": str, "truth": str}}, "money_or_conflict": {{"ok": bool, "note": str}}}}, "format": "economics"|"story"|"person"|"compare", "covered_by": [{{"channel": str, "title": str, "views": int or null, "url": str}}], "demand_note": "what the search shows about demand and the gap", "angle": "the different angle to take", "titles": [3 titles using a proven formula, under 80 characters], "thumbnail_words": [2 to 3 options of 2 to 4 words], "runtime_min": 10 to 15, "chapters": [5 to 8 short English chapter titles], "fact_risk": "low"|"medium"|"high", "facts_to_check": [up to 6]}}
+When done, print the same JSON as your final message."""
+        j = run_agent("topic analysis", prompt, "opus", "plain")
+        st["batches"][aid] = {"id": aid, "kind": "analysis", "job": j["id"], "out": str(out), "status": "running", "started": time.time(), "topic": topic}
+        return jsonify(analysis=aid, job=j["id"])
+
+    def finish_analysis(b):
+        a = None
+        try: a = json.loads(Path(b["out"]).read_text(encoding="utf-8")) if Path(b["out"]).exists() else None
+        except Exception: a = None
+        if not a:
+            j = JOBS.get(b["job"]); text = "\n".join(j["log"]) if j else ""
+            m = re.search(r"\{.*\}", text, re.S)
+            try: a = json.loads(m.group(0)) if m else None
+            except Exception: a = None
+        if not isinstance(a, dict) or not a.get("verdict"):
+            b["status"], b["result"] = "failed", None; return
+        a["verdict"] = a["verdict"] if a["verdict"] in ("go", "sharpen", "skip") else "sharpen"
+        a["topic"] = clean(a.get("topic") or b.get("topic"), 300)
+        for k in ("verdict_line", "demand_note", "angle"): a[k] = clean(a.get(k), 500)
+        a["titles"] = strings(a.get("titles"), 3, 100); a["thumbnail_words"] = strings(a.get("thumbnail_words"), 3, 40)
+        a["chapters"] = strings(a.get("chapters"), 9, 80); a["facts_to_check"] = strings(a.get("facts_to_check"), 6, 160)
+        a["covered_by"] = [{"channel": clean(x.get("channel"), 80), "title": clean(x.get("title"), 140), "views": x.get("views") if isinstance(x.get("views"), int) else None,
+                            "url": clean(x.get("url"), 200)} for x in (a.get("covered_by") or [])[:8] if isinstance(x, dict)]
+        try: a["runtime_min"] = int(min(15, max(8, float(a.get("runtime_min") or 12))))
+        except (TypeError, ValueError): a["runtime_min"] = 12
+        a["format"] = a.get("format") if a.get("format") in HI_FORMATS else "economics"
+        a["when"] = dt.datetime.now().isoformat(timespec="seconds"); a["id"] = b["id"]
+        b["status"], b["result"] = "ready", a
+        hist = (load_json(DATA / "topic-analyses.json", []) or [])[:7]
+        save_json(DATA / "topic-analyses.json", [a] + hist)
+
+    @app.get("/api/topics/analysis/<aid>")
+    def topics_analysis(aid):
+        b = st["batches"].get(aid) or abort(404, "unknown analysis (server restarted?)")
+        j = JOBS.get(b["job"])
+        if b["status"] == "running" and j and j["done"]: finish_analysis(b)
+        return jsonify(status=b["status"], result=b.get("result"), seconds=int(time.time() - b["started"]))
+
+    @app.get("/api/topics/analyses")
+    def topics_analyses():
+        return jsonify(analyses=load_json(DATA / "topic-analyses.json", []) or [])
+
+    def make_hindi(t, a, title):
+        """a chosen or analysed topic -> a new Pipeline project and the script, written by Opus with the hindi-case-study skill"""
+        c = cfg(); slug = slug_for(title); p = Path(c["projects_dir"]) / slug
+        for sub in ("prompts", "images", "assets"): (p / sub).mkdir(parents=True, exist_ok=True)
+        mins = int(number(a.get("minutes"), 12, 10, 15))
+        fmt = a.get("format") if a.get("format") in HI_FORMATS else (t.get("format") if t.get("format") in HI_FORMATS else "economics")
+        facts = "\n".join(f"- {k}: {clean(t.get(k), 400)}" for k in ("assumption", "gap", "angle", "promise", "visual") if t.get(k))
+        covered = "; ".join(strings(t.get("covered_by"), 5, 160))
+        prompt = f"""Use the hindi-case-study skill (read ~/.claude/skills/hindi-case-study/SKILL.md, references/study.md and ~/.claude/youtube/voice-hindi.md) for the channel "{c['channel']}". Write the script for this video.
+Title: {title}
+Format: {fmt} ({HI_FORMATS[fmt]}). Target runtime: {mins} minutes (about {int(mins * 155 * 0.97)} Hindi words).
+{facts}
+{('Already covered by: ' + covered + '. Take the different angle above; never retell their script.') if covered else ''}
+{('Chapters suggested: ' + ', '.join(strings(t.get('chapters'), 9, 80))) if t.get('chapters') else ''}
+{('Extra notes from the user: ' + clean(a.get('notes'), 800)) if a.get('notes') else ''}
+The project folder is {p} (it exists). Write script.json (with the per-line kind and shot plan from the skill), the research file, the check output and the voice text there. Run casecheck.py, fix every FAIL, and finish with the hand-back (including the shot counts and the estimated xAI cost). Do not generate images, video or voice and do not touch other projects."""
+        j = run_agent(f"script · {slug}", prompt, "opus", "feed")
+        (DATA / "make").mkdir(parents=True, exist_ok=True)
+        save_json(DATA / "make" / f"{slug}.json", {"kind": "long", "topic": t, "answers": a, "when": dt.datetime.now().isoformat(timespec="seconds")})
+        return jsonify(job=j["id"], project=slug, title=title, kind="long", mode="feed", staged=False)
+
     @app.post("/api/topics/make")
     def topics_make():
         b = request.get_json(silent=True) or {}
         t, a, c = b.get("topic") or {}, b.get("answers") or {}, cfg()
-        kind = kind_of(b.get("kind"))
+        kind = KIND(b.get("kind"))
         title = clean(t.get("title"), 120)
         if not title: abort(400, "no topic")
+        if hindi(): return make_hindi(t, a, title)
         voice = a.get("voice") if a.get("voice") in VOICE_IDS else "af_heart"
         speed = round(number(a.get("speed"), 1.0, 0.9, 1.15), 2)
         dur = int(number(a.get("minutes"), 7, 4, 15) * 60) if kind == "long" else (int(number(a.get("duration"), 40, 25, 60)) if a.get("duration") else None)      # a Short with no duration: the agent decides

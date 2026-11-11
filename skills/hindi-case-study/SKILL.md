@@ -40,7 +40,17 @@ A topic works when all three hold (this is what separates both channels' million
 - **There is a gap between what everyone assumes and what is true.** Write the assumption down in one Hindi line.
 - **It has money math or a human conflict** (a rivalry, a revenge, a fall, a rise from nothing).
 
-If a topic misses one, say which and offer a sharper angle before writing. Then pick the format. **B and C are the safest
+**A topic someone already covered is fine, and often the best bet, if you repeat it cleverly** (the demand is proven; the
+viewer clicks the title they already trust). Search YouTube for the topic first and list who has it and with how many
+views. Then pick a **different angle**, not a retelling: (1) a different question in the title (the competitor asks "how
+did X rise?", you ask "where does the money actually go?" or "what did X's rival do right?"); (2) the mechanism or the
+numbers nobody put on screen (unit economics, a ledger, a loan, a contract clause); (3) a human on the other side (the
+small shopkeeper, the employee, the customer); (4) a story shape the competitor doesn't use (money math as a story with
+two characters, not a lecture). Keep the title formula of the proven hit (e.g. "X BUSINESS | Investment, Expenses,
+Revenue & Real Profit") but never its script, its examples or its order. Write the competitor list and your angle in
+`<slug>-research.md` under "Covered by".
+
+If a topic misses one of the three, say which and offer a sharper angle before writing. Then pick the format. **B and C are the safest
 bet**: the only two channels in the niche whose typical video (not just one hit) beats 300K, Shivanshu Agrawal (3.8M) and
 HiddenOps (336K), tell one company's or one person's story from a humble start to its peak or fall.
 
@@ -167,7 +177,32 @@ Chapter order comes from the format's section in `references/study.md`. Through 
 - `chapter` on the first line of each chapter: a 3 to 5 word English title that promises the section (it becomes the
   YouTube chapter).
 
-Aim for 2,200 to 2,800 Hindi words (14 to 18 minutes at 155 words a minute).
+Aim for 2,200 to 2,800 Hindi words (14 to 18 minutes at 155 words a minute); for a 10 to 15 minute video, 1,600 to 2,300.
+
+### The shot plan (every line carries `kind`)
+
+The pictures follow how the reference channels edit, measured on their real clips (HinExp, ABFinDoc, Finance In Minutes
+animate 88 to 99% of the time in 1 to 4 s shots; Money Code is the hybrid: 3 to 4 s shots, about half moving; HiddenOps
+cuts under 1 s in the hook, then 3 to 6 s). Add to each line `"kind"`:
+
+- `hero`: an AI image-to-video clip of 2 to 4 s (a face turning, a gesture, a walk-in, coins falling). Costs money, so
+  it goes where the narration matters.
+- `still`: an illustration held 3 to 6 s with a slow code camera move (push-in, parallax, drifting dust, a light flicker).
+- `card`: a code graphic (a number, a ledger, a bar, a map, a flow arrow) drawn in clean Hindi/Hinglish; free.
+
+Timing rules (a shot is not the same as a line: one `kind` marks the picture that starts on that line):
+1. **Hook (0 to 40 s): a new shot every 1.5 to 3 s, at least 70% `hero`**, with a card for the first number. The hook is
+   where the real channels cut fastest and move most.
+2. **Body: a new shot every 3 to 5 s; about 35 to 45% `hero`, 35 to 45% `still`, 15 to 25% `card`.** Never hold a `still`
+   longer than 6 s. Never two `card`s in a row.
+3. **Every money-math line gets a `card`** (the number on screen while it is said). Every emotional beat (a fall, a
+   betrayal, relief) gets a `hero` on the face.
+4. **Re-hook burst**: at each chapter start and about every 3 minutes, a run of 3 to 4 short `hero` shots.
+5. **Close (last 60 s)**: slow down to `still` and one long `hero` on the closing face; the last line holds a still.
+6. The same scene may appear again from a new angle or a new moment (an animated repeat of the same still counts as a new
+   shot): repeating the location or the character is how the cost stays low without the video feeling repetitive.
+Also add `"shot": "<what moves>"` for `hero` lines (the motion prompt: one action, camera almost still). Count the kinds in
+the hand-back (shots, `hero` seconds, estimated xAI cost at $0.032 per `hero` second and $0.055 per distinct image).
 
 ## 8. Check, then hand back
 

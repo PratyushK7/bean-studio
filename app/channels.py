@@ -92,7 +92,7 @@ def resolve(ROOT, c):
         base = ROOT / "channels" / cid
         out.update(projects_dir=str(base / "videos"), planner=str(base / "planner.xlsx"), hide_projects=[])
     for src, dst in (("name", "channel"), ("projects_dir", "projects_dir"), ("planner", "planner"), ("slots", "slots"),
-                     ("topic_category", "topic_category"), ("topic_channels", "topic_channels"), ("hide_projects", "hide_projects"),
+                     ("topic_category", "topic_category"), ("topic_channels", "topic_channels"), ("kinds", "kinds"), ("hide_projects", "hide_projects"),
                      ("voice_file", "voice_file")):
         if ch.get(src) not in (None, ""): out[dst] = ch[src]
     out.setdefault("voice_file", "~/.claude/youtube/voice.md")
@@ -108,7 +108,8 @@ def public(ROOT, c, token_exists):
     for cid, ch in (c.get("channels") or {}).items():
         rows.append({"id": cid, "name": ch.get("name") or cid, "emoji": ch.get("emoji") or "📺", "color": ch.get("color") or "#1982c4",
                      "language": ch.get("language") or "English", "note": ch.get("note") or "",
-                     "tools": [t for t in (ch.get("tools") or ALL_TOOLS) if t in ALL_TOOLS], "home": cid == home(c),
+                     "tools": [t for t in (ch.get("tools") or ALL_TOOLS) if t in ALL_TOOLS],
+                     "kinds": [k for k in (ch.get("kinds") or ["short", "long"]) if k in ("short", "long")] or ["short", "long"], "home": cid == home(c),
                      "connected": token_exists(token_path(ROOT, c, cid))})
     return rows
 

@@ -124,12 +124,19 @@
 <section id="topics" class="tab">
   <div class="row" style="margin-bottom:6px">
     <h2 style="margin:0">Topics</h2>
-    <div class="seg"><button id="kshort" class="on" onclick="setKind('short')">Shorts</button><button id="klong" onclick="setKind('long')">Long videos</button></div>
+    <div class="seg" id="kseg"><button id="kshort" class="on" onclick="setKind('short')">Shorts</button><button id="klong" onclick="setKind('long')">Long videos</button></div>
     <span class="muted" id="tpmeta"></span>
     <span style="flex:1"></span>
     <button class="act sec" id="tprefresh" onclick="refreshSources()">↻ Refresh sources</button>
   </div>
   <p class="muted" style="margin:0 0 12px" id="tpdesc"></p>
+  <div id="tpana" class="card" style="display:none;margin-bottom:16px">
+    <h3 style="margin:0 0 4px">🔎 Topic analyzer</h3>
+    <p class="muted" style="margin:0 0 8px">Type one idea. Opus checks the three tests (can they picture it, is there a gap, is there money math or conflict), searches YouTube for who covered it and with how many views, and tells you <b>go</b>, <b>sharpen</b> or <b>skip</b> with a different angle, titles and chapters. A covered topic is fine when the angle is new.</p>
+    <div class="row"><input id="tpanatopic" style="flex:1" placeholder="e.g. Jewellery shop business: real profit, and why Tanishq squeezes the local sarafa" onkeydown="if (event.key === 'Enter') analyzeTopic()"><button class="act blue" id="tpanago" onclick="analyzeTopic()">Analyze</button></div>
+    <div id="tpanastatus" class="muted" style="margin-top:8px"></div>
+    <div id="tpanaout"></div>
+  </div>
   <div id="tpempty" class="card" style="display:none"></div>
   <div id="tppicks" style="margin-bottom:16px"></div>
   <div class="grid" id="tpopts" style="grid-template-columns:repeat(auto-fill,minmax(300px,1fr))"></div>
@@ -469,18 +476,27 @@ async function askAgent() {
 }
 
 // ---------- topics ----------
-let TKIND = 'short', TPPOLL = null, TBATCH = null;
+let TKIND = 'short', TPPOLL = null, TBATCH = null, ME = null, TANA = [], ANAPOLL = null;
 const TLAST = {short: null, long: null};
 const TOPT = {short: [], long: []}, TPICK = {short: [], long: []};
 const TDESC = {
   short: `Studies what is beating its own channel's average on other channels in your category (<span id="tpcat"></span>), then adapts the best into <b>3 original ideas</b> for you: the topic and format are borrowed, never the script or title. Pick one, answer a few questions, and the agent makes the whole video.`,
   long: `The same study for <b>long videos</b> (4 to 40 minutes) on other channels, adapted into 3 ideas with chapters, a runtime and sources to check. <b>Researched picks</b> sit on top. A long video is made end to end in <b>16:9</b> with the line-boil-wide skill: sourced script, chapters timed from the real voiceover, the animation, a 1280×720 thumbnail and the upload sheet.`};
+function applyKinds() {                      // a channel makes only the kinds it lists (the Hindi channel: long videos only, so no Shorts button)
+  const ks = (ME && ME.kinds) || ['short', 'long'];
+  $('#kshort').style.display = ks.includes('short') ? '' : 'none'; $('#klong').style.display = ks.includes('long') ? '' : 'none';
+  $('#kseg').style.display = ks.length > 1 ? '' : 'none';
+  if (!ks.includes(TKIND)) TKIND = ks[0];
+  $('#kshort').classList.toggle('on', TKIND === 'short'); $('#klong').classList.toggle('on', TKIND === 'long');
+  $('#tpana').style.display = ME && ME.language === 'Hindi' ? '' : 'none';
+  if (ME && ME.language === 'Hindi') TDESC.long = `Studies the <b>long documentaries</b> (8 to 60 minutes) of the reference channels in your category (<span id="tpcat"></span>) and shows what beats each channel's own median. <b>Get 3 ideas</b> turns the best into topics with a different angle (covered topics are fine when the angle is new); <b>Make this</b> has Opus write the script in the Pipeline tab. Use the analyzer above to judge your own idea.`;
+}
 function setKind(k) {
   TKIND = k; $('#kshort').classList.toggle('on', k === 'short'); $('#klong').classList.toggle('on', k === 'long');
   clearInterval(TPPOLL); TPPOLL = null; TBATCH = null; $('#tpstatus').textContent = ''; loadTopics();
 }
 async function loadTopics() {
-  const k = TKIND;
+  const k = TKIND; loadAnalyses();
   const [t, pk] = await Promise.all([api('/api/topics?kind=' + k), api('/api/topics/picks?kind=' + k)]);
   if (k !== TKIND) return;                               // switched format while this was loading
   TPICK[k] = pk.picks;
@@ -505,6 +521,9 @@ function optionCard(o, i, src) {
     <h3>${esc(o.title)}</h3>
     ${o.promise ? `<div style="font-size:13px">${esc(o.promise)}</div>` : ''}
     ${o.visual ? `<div class="muted" style="margin-top:6px">🎨 ${esc(o.visual)}</div>` : ''}
+    ${o.assumption ? `<div style="font-size:12px;margin-top:6px"><b>Everyone assumes:</b> ${esc(o.assumption)}<br><b>The truth:</b> ${esc(o.gap || '')}</div>` : ''}
+    ${o.angle ? `<div style="font-size:12px;margin-top:6px"><b>Our angle:</b> ${esc(o.angle)}</div>` : ''}
+    ${(o.covered_by || []).length ? `<div class="muted" style="font-size:12px;margin-top:4px">Covered by: ${o.covered_by.map(esc).join(' · ')}</div>` : ''}
     ${long && (o.chapters || []).length ? `<ul>${o.chapters.map(c => `<li>${esc(c)}</li>`).join('')}</ul>` : ''}
     ${long && (o.reuse_shorts || []).length ? `<div class="muted" style="margin-top:6px">♻ builds on: ${o.reuse_shorts.map(esc).join(' · ')}</div>` : ''}
     ${(o.why || []).length ? `<div style="margin-top:8px;font-size:12px"><b>Why this one</b><ul>${o.why.map(w => `<li>${esc(w)}</li>`).join('')}</ul></div>` : ''}
@@ -544,6 +563,7 @@ async function getIdeas() {
 const LENGTH_LABEL = {0: 'Let the agent decide (recommended): as long as this topic needs, usually 30 to 50 seconds (no outro)', 30: 'Fixed: 30 seconds of voiceover (~93 words) · fastest, punchy', 40: 'Fixed: 40 seconds of voiceover (~124 words)', 50: 'Fixed: 50 seconds of voiceover (~155 words)', 60: 'Fixed: 60 seconds of voiceover (~186 words) · Shorts maximum'};
 const MIN_LABEL = {5: '5 minutes (~930 words)', 7: '7 minutes (~1,300 words) · the sweet spot for this style', 9: '9 minutes (~1,670 words)', 12: '12 minutes (~2,230 words)'};
 function openWizard(src, i) {
+  if (ME && ME.language === 'Hindi') return openHindiWizard(src, i);
   const long = TKIND === 'long', o = (src === 'pick' ? TPICK : TOPT)[TKIND][i];
   const near = long ? ([5, 7, 9, 12].reduce((a, b) => Math.abs(b - (o.runtime_min || 7)) < Math.abs(a - (o.runtime_min || 7)) ? b : a)) : 40;
   $('#wizbox').innerHTML = `<h2 style="margin:0 0 4px">${long ? 'Make this long video' : 'Make this video'}</h2><p class="muted" style="margin:0">${long
@@ -571,7 +591,57 @@ function openWizard(src, i) {
   $('#wiz').classList.add('on');
 }
 function closeWizard() { $('#wiz').classList.remove('on'); }
+function hindiTopic(src, i) {
+  if (src === 'ana') { const a = TANA[i], g = (a.tests || {}).gap || {}; return {title: (a.titles || [a.topic])[0], format: a.format, angle: a.angle, assumption: g.assumption, gap: g.truth, chapters: a.chapters, runtime_min: a.runtime_min, covered_by: (a.covered_by || []).map(c => `${c.channel}: ${c.title}${c.views ? ' (' + c.views.toLocaleString() + ')' : ''}`)}; }
+  return (src === 'pick' ? TPICK : TOPT)[TKIND][i];
+}
+function openHindiWizard(src, i) {
+  const o = hindiTopic(src, i), fm = {economics: 'Economics of owning X', story: 'Company rise, split or fall', person: "A person's story", compare: 'Two people, one decision'};
+  $('#wizbox').innerHTML = `<h2 style="margin:0 0 4px">Write this script</h2><p class="muted" style="margin:0">Opus writes the script with the hindi-case-study skill (research file, hook, chapters, a shot plan marking each line hero / still / card, the checker report). It lands in a new <b>Pipeline</b> project; voice, images and video are the next buttons there. Nothing is published.</p>
+    <label>Title</label><input type="text" id="w_title" value="${esc(o.title)}">
+    <label>Format</label><select id="w_fmt">${Object.entries(fm).map(([k, v]) => `<option value="${k}" ${k === o.format ? 'selected' : ''}>${v}</option>`).join('')}</select>
+    <label>Length</label><select id="w_min">${[10, 12, 13, 15].map(m => `<option value="${m}" ${m === (o.runtime_min >= 10 ? o.runtime_min : 12) ? 'selected' : ''}>${m} minutes (~${Math.round(m * 150)} Hindi words) · about $${Math.round(m * 1.75)} to make at the middle plan</option>`).join('')}</select>
+    <label>Anything else? <span class="muted">(optional)</span></label><textarea id="w_notes" rows="3" placeholder="e.g. keep Ramesh and Ankit as the two characters, end on a hopeful note"></textarea>
+    <div class="row" style="margin-top:16px; justify-content:flex-end"><button class="act sec" onclick="closeWizard()">Cancel</button><button class="act red" id="wizgo" onclick="makeHindi('${src}', ${i})">✍ Write the script (Opus)</button></div>`;
+  $('#wiz').classList.add('on');
+}
+async function makeHindi(src, i) {
+  const o = Object.assign({}, hindiTopic(src, i), {title: $('#w_title').value.trim()});
+  const btn = $('#wizgo'), label = btn.textContent; btn.disabled = true; btn.textContent = 'Starting…';
+  try { await api('/api/topics/make', {method: 'POST', body: {kind: 'long', topic: o, answers: {minutes: +$('#w_min').value, format: $('#w_fmt').value, notes: $('#w_notes').value.trim()}}}); closeWizard(); show('pipeline'); }
+  finally { btn.disabled = false; btn.textContent = label; }
+}
+// the topic analyzer (Hindi channel)
+const VERDICT = {go: ['#1b7f3b', '✅ Go'], sharpen: ['#b7791f', '✏ Sharpen it'], skip: ['#c0262d', '⛔ Skip']};
+function drawAnalyses() {
+  $('#tpanaout').innerHTML = TANA.map((a, i) => { const v = VERDICT[a.verdict] || VERDICT.sharpen, t = a.tests || {};
+    return `<div class="card" style="margin-top:10px;border-left:5px solid ${v[0]}"><div class="row" style="justify-content:space-between"><b style="color:${v[0]}">${v[1]}</b><span class="muted">${esc(a.topic)}</span></div>
+      <div style="margin:4px 0">${esc(a.verdict_line || '')}</div>
+      <ul style="margin:4px 0;font-size:13px"><li>${t.picture && t.picture.ok ? '✔' : '✘'} Picture it: ${esc((t.picture || {}).note || '')}</li><li>${t.gap && t.gap.ok ? '✔' : '✘'} Gap: everyone assumes “${esc((t.gap || {}).assumption || '')}”, the truth is “${esc((t.gap || {}).truth || '')}”</li><li>${t.money_or_conflict && t.money_or_conflict.ok ? '✔' : '✘'} Money math or conflict: ${esc((t.money_or_conflict || {}).note || '')}</li></ul>
+      <div style="font-size:13px"><b>Demand:</b> ${esc(a.demand_note || '')}</div>
+      ${(a.covered_by || []).length ? `<div style="font-size:13px;margin-top:4px"><b>Covered by:</b> ${a.covered_by.map(c => `<a href="${esc(c.url)}" target="_blank">${esc(c.channel)}: ${esc(c.title)}</a>${c.views ? ' (' + c.views.toLocaleString() + ')' : ''}`).join(' · ')}</div>` : ''}
+      <div style="font-size:13px;margin-top:4px"><b>Our angle:</b> ${esc(a.angle || '')}</div>
+      <div style="font-size:13px;margin-top:4px"><b>Titles:</b> ${(a.titles || []).map(x => '“' + esc(x) + '”').join(' · ')} <span class="muted">· thumbnail words: ${(a.thumbnail_words || []).map(esc).join(' / ')}</span></div>
+      ${(a.chapters || []).length ? `<div class="muted" style="font-size:12px;margin-top:4px">⏱ ~${a.runtime_min} min · ${a.chapters.map(esc).join(' › ')}</div>` : ''}
+      ${(a.facts_to_check || []).length ? `<div class="muted" style="font-size:12px">facts: ${esc(a.fact_risk)} · check: ${a.facts_to_check.map(esc).join('; ')}</div>` : ''}
+      <div class="row" style="justify-content:flex-end;margin-top:8px"><button class="act red" ${a.verdict === 'skip' ? 'title="The analyzer says skip"' : ''} onclick="openHindiWizard('ana', ${i})">Make this →</button></div></div>`; }).join('');
+}
+async function loadAnalyses() { if (!(ME && ME.language === 'Hindi')) return; const r = await api('/api/topics/analyses', {silent: true}); TANA = r.analyses || []; drawAnalyses(); }
+async function analyzeTopic() {
+  const topic = $('#tpanatopic').value.trim(); if (!topic) return;
+  $('#tpanago').disabled = true; $('#tpanastatus').innerHTML = '<span class="spin">⟳</span> Opus is checking the idea and searching YouTube… (usually 1 to 2 minutes)';
+  let r; try { r = await api('/api/topics/analyze', {method: 'POST', body: {topic}}); } catch (e) { $('#tpanago').disabled = false; $('#tpanastatus').textContent = ''; return; }
+  clearInterval(ANAPOLL);
+  ANAPOLL = setInterval(async () => {
+    let b; try { b = await api('/api/topics/analysis/' + r.analysis, {silent: true}); } catch (e) { clearInterval(ANAPOLL); $('#tpanago').disabled = false; $('#tpanastatus').textContent = 'Lost track of that run (the studio restarted?). Press Analyze again.'; return; }
+    if (b.status === 'running') { $('#tpanastatus').innerHTML = `<span class="spin">⟳</span> Opus is checking the idea and searching YouTube… ${b.seconds}s`; return; }
+    clearInterval(ANAPOLL); $('#tpanago').disabled = false;
+    if (b.status === 'ready') { $('#tpanastatus').textContent = ''; TANA = [b.result, ...TANA.filter(x => x.id !== b.result.id)].slice(0, 8); drawAnalyses(); }
+    else $('#tpanastatus').textContent = 'The analyzer did not produce an answer. Try again, or shorten the topic.';
+  }, 2500);
+}
 async function makeVideo(src, i) {
+  if (ME && ME.language === 'Hindi') return makeHindi(src, i);
   const long = TKIND === 'long';
   const o = Object.assign({}, (src === 'pick' ? TPICK : TOPT)[TKIND][i], {title: $('#w_title').value.trim()});
   const answers = {voice: $('#w_voice').value, speed: +$('#w_speed').value, tone: $('#w_tone').value, cast: $('#w_cast').value, ending: $('#w_end').value,
@@ -654,6 +724,7 @@ async function initChannels() {
   document.documentElement.style.setProperty('--chc', me.color);
   document.querySelector('header').style.background = me.color;
   document.title = me.name + ' · Bean Studio';
+  ME = me; applyKinds();
   $('#chbar').innerHTML = CHANNELS.map(c => `<button class="ch ${c.id === CH ? 'on' : ''}" style="--chc:${esc(c.color)}" onclick="switchChannel('${esc(c.id)}')">${esc(c.emoji)} ${esc(c.name)}<small>${esc(c.language)}${c.connected ? '' : ' · not signed in'}</small></button>`).join('') +
     '<button class="act sec add" onclick="addChannelForm()">+ Add channel</button>';
   document.querySelectorAll('nav button').forEach(b => b.style.display = me.tools.includes(b.dataset.tab) ? '' : 'none');   // only this channel's tools

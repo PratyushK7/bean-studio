@@ -58,10 +58,10 @@ DEFAULTS = {
     # Each can override: name, slots, topic_category, topic_channels, projects_dir, planner, voice_file. tools = which tabs it shows.
     "channels": {
         "bean": {"name": "The Bean With Bad Ideas", "language": "English", "emoji": "🫘", "color": "#1982c4",
-                 "tools": ["projects", "topics", "agent", "jobs", "settings"]},
+                 "tools": ["projects", "topics", "agent", "jobs", "settings"], "kinds": ["short", "long"]},
         "hindi": {"name": "Decoding Vyapaar", "language": "Hindi", "emoji": "🪔", "color": "#c0262d",
-                  "tools": ["projects", "pipeline", "agent", "jobs", "settings"],
-                  "note": "Topics turn on once this channel has a video skill (its explainer style). Until then use the Agent tab.",
+                  "tools": ["projects", "pipeline", "topics", "agent", "jobs", "settings"], "kinds": ["long"],
+                  "note": "Long videos only (10 to 15 minutes). Topics studies the reference channels and has a topic analyzer; Pipeline takes a script to a finished video.",
                   "slots": {"A": "12:00", "B": "18:30", "Long": "20:30"},
                   "topic_category": "Hindi business case studies for Indian viewers: the economics of owning an everyday business, how a famous Indian company rose, split or fell, and the rivalry, revenge or rise of a businessman everyone knows",
                   "topic_channels": [
@@ -214,6 +214,18 @@ def runs():
     return jsonify(runs=rs[-30:][::-1], total=round(sum(r.get("cost") or 0 for r in rs), 2), count=len(rs))
 
 
+# Bash commands an unattended run may use without asking: python (the engine and small inline helpers) and read-only looking around.
+# Anything else needs approval, and nobody is there to give it, so the run stops. One comma-separated value, so it cannot swallow the prompt.
+AGENT_ALLOW = "Bash(python:*),Bash(python3:*),Bash(ls:*),Bash(cat:*),Bash(head:*),Bash(tail:*),Bash(grep:*),Bash(wc:*),Bash(mkdir:*),Bash(cp:*),Bash(mv:*)"
+
+
+def with_allow(cmd):
+    """the agent command with AGENT_ALLOW placed before --permission-mode (so the next token is a flag, never the prompt)"""
+    if "--allowedTools" in cmd or "--permission-mode" not in cmd: return list(cmd)
+    i = cmd.index("--permission-mode")
+    return list(cmd[:i]) + ["--allowedTools", AGENT_ALLOW] + list(cmd[i:])
+
+
 def start_agent(label, prompt, model=None, mode="plain"):
     """one place that builds the agent's command line. mode: "plain" (output as is), "feed" (live readable steps),
     "window" (its own visible Claude window, interactive)"""
@@ -222,7 +234,7 @@ def start_agent(label, prompt, model=None, mode="plain"):
     if mode == "window":
         cmd = [x for x in c["agent_command"] if x != "-p"] + (["--model", model] if model else []) + [prompt]   # interactive: no -p
         return start_job(label, cmd, c["agent_cwd"], window=True)
-    cmd = list(c["agent_command"]) + (["--model", model] if model else [])
+    cmd = with_allow(c["agent_command"]) + (["--model", model] if model else [])
     if mode == "feed": cmd += ["--output-format", "stream-json", "--verbose"]
     return start_job(label, cmd + [prompt], c["agent_cwd"], parser=agentlog.parse if mode == "feed" else None)
 
@@ -231,7 +243,7 @@ def start_staged(label, stages):
     c = cfg()
     spec = DATA() / "make" / (re.sub(r"[^\w.-]+", "_", label) + ".stages.json")
     spec.parent.mkdir(parents=True, exist_ok=True)
-    spec.write_text(json.dumps({"command": c["agent_command"], "cwd": c["agent_cwd"], "stages": stages}), encoding="utf-8")
+    spec.write_text(json.dumps({"command": with_allow(c["agent_command"]), "cwd": c["agent_cwd"], "stages": stages}), encoding="utf-8")
     return start_job(label, [sys.executable, str(APP / "staged_agent.py"), str(spec)], c["agent_cwd"], parser=agentlog.parse)
 
 def job_view(j):
