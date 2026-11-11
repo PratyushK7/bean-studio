@@ -259,7 +259,7 @@ def test_long_topics():
                                 "inspired_by": {"channel": "c", "title": "t", "multiple": 3}} for i in range(5)]))
     JOBS[r["job"]]["done"] = True
     o = c3.get(f"/api/topics/batch/{r['batch']}").json["options"]
-    assert len(o) == 5 and o[0]["runtime_min"] == 7 and o[1]["runtime_min"] == 15 and o[0]["fact_risk"] == "medium" and o[2]["type"] == "Other"
+    assert len(o) == 3 and o[0]["runtime_min"] == 7 and o[1]["runtime_min"] == 15 and o[0]["fact_risk"] == "medium" and o[2]["type"] == "Other"
     assert len(o[0]["chapters"]) == 9 and o[0]["reuse_shorts"] == []
     last = c3.get("/api/topics/picks?kind=long").json
     assert [x["title"] for x in last["last"]] == [x["title"] for x in o] and last["last_when"], "the last five ideas persist for the next visit"
@@ -281,6 +281,9 @@ def test_long_topics():
     sp = launched[-1][-1]
     assert "Make a new Short" in sp and "TARGET LENGTH: 50 seconds" in sp and "build.py video" in sp
     assert "hookscore.py" in sp and "yt-script" in sp, "a Short is also opened with a scored hook"
+    assert "Theme: AUTO" in sp and "noir" in sp, "no theme chosen: the planner picks it from the genre"
+    c3.post("/api/topics/make", json={"kind": "short", "topic": {"title": "Dark idea"}, "answers": {"theme": "noir"}})
+    assert "--theme noir" in launched[-1][-1] and "Theme: AUTO" not in launched[-1][-1], "a chosen theme is passed to build.py new"
     assert json.loads((root / "data" / "make" / f"{m['project']}.json").read_text())["kind"] == "long"
     D = server.DEFAULTS
     assert D["plan_model"] == "opus" and D["build_model"] == "sonnet" and D["options_model"] == "opus" and D["thumbnail_ideas_model"] == "opus" and D["thumbnail_draw_model"] == "sonnet" and D["agent_model"] == "sonnet", "every run names its model: Opus decides, Sonnet codes"
@@ -432,7 +435,7 @@ def test_agent_modes_and_runs():
         server.start_agent("t", "PROMPT", "opus", "feed"); cmd, parser, window = calls[-1]
         assert cmd[-1] == "PROMPT" and "-p" in cmd and cmd[cmd.index("--model") + 1] == "opus" and cmd[-4:-1] == ["--output-format", "stream-json", "--verbose"] and parser is agentlog.parse and not window
         server.start_agent("t", "PROMPT", None, "window"); cmd, parser, window = calls[-1]
-        assert window and "-p" not in cmd and cmd[-1] == "PROMPT" and "--model" not in cmd and "--permission-mode" in cmd
+        assert window and "-p" not in cmd and cmd[-1] == "PROMPT" and "--model" in cmd and "--permission-mode" in cmd
         server.start_agent("t", "PROMPT", "sonnet", "plain"); cmd, parser, window = calls[-1]
         assert parser is None and "--output-format" not in cmd and cmd[-1] == "PROMPT"
     finally: server.start_job = orig

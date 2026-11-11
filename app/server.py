@@ -60,7 +60,7 @@ DEFAULTS = {
         "bean": {"name": "The Bean With Bad Ideas", "language": "English", "emoji": "🫘", "color": "#1982c4",
                  "tools": ["projects", "topics", "agent", "jobs", "settings"]},
         "hindi": {"name": "Decoding Vyapaar", "language": "Hindi", "emoji": "🪔", "color": "#c0262d",
-                  "tools": ["projects", "agent", "jobs", "settings"],
+                  "tools": ["projects", "pipeline", "agent", "jobs", "settings"],
                   "note": "Topics turn on once this channel has a video skill (its explainer style). Until then use the Agent tab.",
                   "slots": {"A": "12:00", "B": "18:30", "Long": "20:30"},
                   "topic_category": "Hindi business case studies for Indian viewers: the economics of owning an everyday business, how a famous Indian company rose, split or fell, and the rivalry, revenge or rise of a businessman everyone knows",
@@ -107,7 +107,7 @@ def validate_config(new):
     if not isinstance(new, dict): return ["settings must be a JSON object { ... }"]
     kinds = {"port": int, "open_browser": bool, "projects_dir": str, "planner": str, "python": str, "engine": str, "uploader": str,
              "agent_command": list, "agent_cwd": str, "slots": dict, "channel": str, "hide_projects": list,
-             "topic_category": str, "topic_channels": list, "options_model": str, "thumbnail_ideas_model": str, "thumbnail_draw_model": str, "agent_model": str, "staged_make": bool, "plan_model": str, "build_model": str, "voice_file": str, "channels": dict}
+             "topic_category": str, "topic_channels": list, "options_model": str, "thumbnail_ideas_model": str, "thumbnail_draw_model": str, "agent_model": str, "staged_make": bool, "plan_model": str, "build_model": str, "voice_file": str, "downloads_dir": str, "channels": dict}
     errs = [f'"{k}" has the wrong type' for k, t in kinds.items() if k in new and (not isinstance(new[k], t) or (t is not bool and isinstance(new[k], bool)))]
     if errs: return errs
     if "agent_command" in new and (not new["agent_command"] or not all(isinstance(x, str) for x in new["agent_command"])):
@@ -433,6 +433,8 @@ import ytstate, topics   # noqa: E402
 refresh_youtube = ytstate.register(app, ROOT, cfg)      # live posted / scheduled / private state for every tab
 topics.register(app, ROOT, cfg, start_job, JOBS, start_agent, start_staged)
 import thumbs
+import pipeline
+pipeline.register(app, ROOT, cfg, start_agent, JOBS, start_job)      # Pipeline tab: stages, ChatGPT batch collection, contact sheet
 thumbs.register(app, ROOT, cfg, start_agent, proj_dir, JOBS)   # five thumbnail ideas, then the picked one drawn   # topic selector + the "make this video" job
 
 

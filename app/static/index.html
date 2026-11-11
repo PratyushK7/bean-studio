@@ -96,6 +96,7 @@
   <h1>🫘 Bean <span>Studio</span></h1>
   <nav>
     <button data-tab="projects" class="on">Videos</button>
+    <button data-tab="pipeline">🧱 Pipeline</button>
     <button data-tab="topics">✨ Topics</button>
     <button data-tab="agent">Agent</button>
     <button data-tab="jobs">Activity</button>
@@ -139,6 +140,13 @@
   <div id="tpstatus" class="muted" style="text-align:center"></div>
   <h4>Top performers it is learning from</h4>
   <div class="card" style="padding:0; overflow:auto"><table id="tptop"></table></div>
+</section>
+
+<section id="pipeline" class="tab">
+  <div class="row" style="margin-bottom:6px"><h2 style="margin:0">Pipeline</h2><span class="muted" id="plcount"></span><span style="flex:1"></span>
+    <input id="plslug" placeholder="new-video-slug" pattern="[a-z0-9-]+"><button class="act" onclick="plNew()">+ New video</button></div>
+  <p class="muted" id="plmodels" style="margin:0 0 14px"></p>
+  <div id="plgrid"></div>
 </section>
 
 <section id="agent" class="tab">
@@ -240,7 +248,47 @@ document.querySelectorAll('nav button').forEach(b => b.onclick = () => show(b.da
 function show(tab) {
   document.querySelectorAll('nav button').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
   document.querySelectorAll('.tab').forEach(t => t.classList.toggle('on', t.id === tab));
-  ({projects: loadProjects, topics: loadTopics, jobs: loadJobs, settings: loadCfg}[tab] || (() => {}))();
+  ({projects: loadProjects, pipeline: loadPipeline, topics: loadTopics, jobs: loadJobs, settings: loadCfg}[tab] || (() => {}))();
+}
+
+
+// ---------- pipeline ----------
+async function loadPipeline() {
+  const d = await api('/api/pipeline');
+  $('#plcount').textContent = d.projects.length + ' video' + (d.projects.length === 1 ? '' : 's');
+  $('#plmodels').innerHTML = 'Models: <b>Opus</b> for topic, research, script, packaging · <b>Sonnet</b> for prompt files, shot lists, building and rendering · <b>Haiku</b> for bulk checks. Images are made by your own ChatGPT extension; downloads are collected from <code>' + esc(d.downloads) + '</code>.';
+  $('#plgrid').innerHTML = d.projects.map(p => `<div class="card" style="margin-bottom:14px;padding:14px" id="pl-${esc(p.name)}">
+    <div class="row"><b style="font-size:16px">${esc(p.name)}</b><span style="flex:1"></span>
+      <button class="act sec" onclick="plOpen('${esc(p.name)}','')">📂 Folder</button></div>
+    <div class="row" style="flex-wrap:wrap;gap:6px;margin:10px 0">${p.stages.map(s => `<span title="${esc(s.state || 'not started')}" style="padding:3px 9px;border-radius:12px;font-size:12px;background:${s.state ? (/FAIL/.test(s.state) ? '#f8d7da' : '#d8f0dc') : '#eee'}">${s.state ? (/FAIL/.test(s.state) ? '⚠' : '✓') : '○'} ${esc(s.label)}${s.state ? ' · ' + esc(s.state) : ''}</span>`).join('')}</div>
+    <div class="muted" style="margin-bottom:10px">Next: ${esc(p.next)}</div>
+    <div class="row" style="flex-wrap:wrap;gap:8px">
+      <input id="plt-${esc(p.name)}" placeholder="topic for the script (Opus)" style="min-width:260px"><button class="act" onclick="plScript('${esc(p.name)}')">✍ Script</button>
+      <button class="act sec" onclick="plPrompts('${esc(p.name)}')">📋 Prompts</button>
+      <button class="act sec" onclick="plBatch('${esc(p.name)}','start')">▶ Start batch</button>
+      <button class="act sec" onclick="plBatch('${esc(p.name)}','collect')">⬇ Collect downloads</button>
+      <button class="act sec" onclick="plContact('${esc(p.name)}',0)">🖼 Contact sheet</button>
+      <button class="act sec" onclick="plVoice('${esc(p.name)}')">🎙 Voice</button></div>
+    <div id="plx-${esc(p.name)}" style="margin-top:10px"></div></div>`).join('') || '<p class="muted">No videos yet. Type a slug above and press + New video.</p>';
+}
+async function plVoice(n) { await api(`/api/pipeline/${n}/voice`, {method: 'POST', body: {}}); toast('Voice started (Sarvam aditya): follow it in the Activity tab.'); show('jobs'); }
+async function plNew() { const slug = $('#plslug').value.trim(); if (!slug) return; await api('/api/pipeline', {method: 'POST', body: {slug}}); $('#plslug').value = ''; loadPipeline(); }
+async function plOpen(n, sub) { await api(`/api/pipeline/${n}/open`, {method: 'POST', body: {sub}}); }
+async function plScript(n) { const topic = $(`#plt-${n}`).value.trim(); const j = await api(`/api/pipeline/${n}/script`, {method: 'POST', body: {topic}}); toast('Script started on Opus: follow it in the Activity tab.'); show('jobs'); }
+async function plBatch(n, action) {
+  const r = await api(`/api/pipeline/${n}/batch`, {method: 'POST', body: {action}});
+  if (action === 'start') toast('Batch started. Run the prompts in ChatGPT now, then press Collect downloads.');
+  else { toast(r.collected + ' image' + (r.collected === 1 ? '' : 's') + ' collected from ' + r.downloads + (r.collected ? ' (' + r.first + ' to ' + r.last + ')' : '. Nothing new yet.')); loadPipeline(); }
+}
+async function plContact(n, page) {
+  const r = await api(`/api/pipeline/${n}/contact`, {method: 'POST', body: {page}});
+  $(`#plx-${n}`).innerHTML = `<img src="${r.url}?t=${Date.now()}" style="max-width:100%;border:1px solid #ddd"><div class="muted">${r.count} images` + (r.pages > page + 1 ? ` · <a href="#" onclick="plContact('${n}',${page + 1});return false">next sheet</a>` : '') + '</div>';
+}
+async function plPrompts(n) {
+  const r = await api(`/api/pipeline/${n}/prompts`);
+  $(`#plx-${n}`).innerHTML = r.files.length ? `<div class="muted">Upload a file to the extension, or copy single prompts. Folder: <a href="#" onclick="plOpen('${n}','prompts');return false">${esc(r.folder)}</a></div>` +
+    r.files.map(f => `<div style="margin-top:8px"><b>${esc(f.file)}</b> · ${f.lines.length} prompts <button class="act sec" onclick="navigator.clipboard.writeText(${esc(JSON.stringify(f.lines.join('\n')))});toast('Copied all ${f.lines.length} prompts')">Copy all</button>
+      ${f.lines.map((l, i) => `<div class="muted" style="margin:3px 0"><button class="act sec" onclick="navigator.clipboard.writeText(${esc(JSON.stringify(l))});toast('Copied prompt ${i + 1}')">${i + 1}</button> ${esc(l.slice(0, 110))}…</div>`).join('')}</div>`).join('') : '<span class="muted">No prompt files yet (prompts/*.txt).</span>';
 }
 
 // ---------- videos ----------
@@ -514,6 +562,7 @@ function openWizard(src, i) {
     ${long ? `<div class="row" style="margin-top:12px"><label style="margin:0"><input type="checkbox" id="w_caps"> Burned-in captions <span class="muted">(not the long-form standard: YouTube's own captions come from the uploaded .srt)</span></label></div>` : ''}
     <div class="row" style="margin-top:12px"><label style="margin:0"><input type="checkbox" id="w_music" checked> Background music <span class="muted">(follows the script's mood)</span></label>${long ? `<label style="margin:0"><input type="checkbox" id="w_outro" checked> Channel outro (14.8 s)</label>` : ''}</div>
     <label>Quality <span class="muted">(the video itself renders on your computer for free; this is the AI that writes and draws it)</span></label>
+    <label class="muted">Look <select id="w_theme" title="Auto: the planner picks the look from the topic's genre. Noir is dark and dreadful, sepia old and warm, soft gentle, hype loud."><option value="">Auto: match the topic</option><option value="classic">Classic (bright)</option><option value="noir">Noir (dark)</option><option value="sepia">Sepia (old)</option><option value="soft">Soft (gentle)</option><option value="hype">Hype (loud)</option></select></label>
     <select id="w_model"><option value="">Auto: Opus plans (hook, script, shots), Sonnet builds (code, render)</option><option value="opus">Opus for everything: the most usage</option><option value="sonnet">Sonnet for everything: the least usage</option></select>
     <div class="row" style="margin-top:10px"><label style="margin:0"><input type="checkbox" id="w_window"> 🪟 Open in its own Claude window so I can watch every step (it may ask for permissions)</label></div>
     ${long ? `<label style="margin-top:12px">Thumbnail <span class="muted">(a long video: pick when it is drawn)</span></label><select id="w_thumbmode"><option value="later">Later: from the Better thumbnail button (three ideas, you pick one)</option><option value="now">Now: drawn after the video, with the long-thumbnail skill</option></select><input type="hidden" id="w_thumb" value="">` : `<label>Thumbnail text <span class="muted">(optional, up to 3 words; blank = the agent chooses)</span></label><input type="text" id="w_thumb" maxlength="24" placeholder="e.g. TOO TALL?">`}<label style="margin-top:12px">Describe the thumbnail yourself <span class="muted">(optional: the agent draws exactly this${long ? "; a long video is then drawn now" : ""})</span></label><textarea id="w_thumbdesc" rows="3" placeholder="e.g. a huge coffee mug with a worried bean peeking over the rim, big words WHY CAN'T I SLEEP?"></textarea>
@@ -527,7 +576,7 @@ async function makeVideo(src, i) {
   const o = Object.assign({}, (src === 'pick' ? TPICK : TOPT)[TKIND][i], {title: $('#w_title').value.trim()});
   const answers = {voice: $('#w_voice').value, speed: +$('#w_speed').value, tone: $('#w_tone').value, cast: $('#w_cast').value, ending: $('#w_end').value,
     music: $('#w_music').checked, outro: long ? $('#w_outro').checked : false, thumb_text: $('#w_thumb').value.trim(), thumb_desc: $('#w_thumbdesc').value.trim(), thumb_now: long && $('#w_thumbmode').value === 'now', notes: $('#w_notes').value.trim(),
-    model: $('#w_model').value, window: $('#w_window').checked, captions: long && $('#w_caps').checked,
+    model: $('#w_model').value, theme: $('#w_theme').value || null, window: $('#w_window').checked, captions: long && $('#w_caps').checked,
     ...(long ? {minutes: +$('#w_min').value, structure: $('#w_struct').value} : {duration: +$('#w_dur').value})};
   const btn = $('#wizgo'), label = btn.textContent; btn.disabled = true; btn.textContent = 'Starting…';          // a second click would start a second video
   try { await api('/api/topics/make', {method: 'POST', body: {kind: TKIND, topic: o, answers}}); closeWizard(); show('projects'); }
