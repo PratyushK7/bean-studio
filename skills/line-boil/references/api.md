@@ -134,7 +134,7 @@ Actions set absolute `x`/`y` only where they move the character, so put a base k
 ## 6b. Sets: ready-made scenes
 `setSunny(t)`, `setNight(t)`, `setRoom(t, {wall, floor})`, `setStreet(t)`, `setStage(t, {wall})`, `setDesk(t, {wall, chart})`, `setSpace(t)` and
 `setBlank(t, color)` draw a whole background, work in a Short and in a long video, and return the ground y. `setScene(name, t, opts)` picks one by
-name. Call one first in `draw()`, then draw the beans and props. See `line-boil-wide/references/wide.md` for what each is for.
+name. On a dark theme (`noir`) the sets paint a deep background instead of their bright one (see **Genre** in SKILL.md). Call one first in `draw()`, then draw the beans and props. See `line-boil-wide/references/wide.md` for what each is for.
 
 ## 7. Sound
 `musicMood(t, mood, gain)` changes the underscore from second `t` (a crossfade): `curious` (default), `playful`, `upbeat`, `calm`, `serious`, `tense`,

@@ -6,7 +6,7 @@ acting, timing and staging.
 ## What the engine does for you
 
 - **Palette.** Paper `PAPER` #fffaf0, ink `INK` #1c1c1c, and flat fills `RED` #ff595e, `BLUE` #1982c4 and `YEL` #ffca3a.
-  Use only these (the one exception is a real brand's own colours: see **Mindful details**). Paper doubles as "white" for eyes, gloves, clouds and molecules. Never add gradients, transparency
+  Use only these (the one exception is a real brand's own colours: see **Mindful details**). The five roles stay fixed but a **theme** (`classic`, `noir`, `sepia`, `soft`, `hype`) swaps their values to fit the genre: always write `RED`, `BLUE`, `YEL`, `PAPER`, `INK`, never a hex, so every theme works (see **Genre** in SKILL.md). Paper doubles as "white" for eyes, gloves, clouds and molecules. Never add gradients, transparency
   or shading. A shadow is a flat blue blob.
 - **Line.** Every mark goes through `shape`, `line`, `tube` or `fillOnly`. They give variable-width ink with tapered
   ends, slightly irregular geometry, and fills that sit a hair off the line. Don't call `ctx.arc`,

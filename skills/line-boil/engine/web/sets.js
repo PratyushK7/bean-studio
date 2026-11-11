@@ -13,12 +13,17 @@
 // setScene(name, t, opts) picks one by name. Add your own the same way: band(), ground(), hills(), cloud(), tree(), rock(), moon().
 
 const SET_NAMES = ['sunny', 'night', 'room', 'street', 'stage', 'desk', 'space', 'blank'];
-const _burst = { [BLUE]: '#2a8fd0', [RED]: '#ff7276', [YEL]: '#ffd966', [PAPER]: '#f7e6bd', [INK]: '#2e2e2e' };
+const _dk = c => DEEP || c;                          // a dark theme paints the big background areas deep; a bright theme keeps the set's own colour
+function _tint(hex, k = 0.14) {                       // a slightly lighter (or, on dark colours, lighter still) flat tint of a base colour, for the sunburst rays
+  const n = parseInt(hex.slice(1), 16), c = [n >> 16, (n >> 8) & 255, n & 255].map(v => Math.round(v + (255 - v) * k));
+  return '#' + c.map(v => v.toString(16).padStart(2, '0')).join('');
+}
+const _burst = { [PAPER]: _tint(PAPER, -0.03), [INK]: _tint(INK, 0.1) };
 const _floorFill = (y, color, seed) => fillDense(prep([[-30, y], [W + 30, y], [W + 30, H + 400], [-30, H + 400]], true, seed, 1.4, 4), color);
 
 function setSunny(t = 0, o = {}) {
   const gy = o.gy ?? H * 0.8;
-  band(o.sky || BLUE, 0, gy - 40, 12001);
+  band(o.sky || _dk(BLUE), 0, gy - 40, 12001);
   cloud(W * 0.2 + t * 6, H * 0.17, W * 0.1, W * 0.04, 12011);
   cloud(W * 0.78 - t * 4, H * 0.11, W * 0.07, W * 0.03, 12012);
   hills(gy - 50, 12020);
@@ -41,7 +46,7 @@ function setNight(t = 0, o = {}) {
 
 function setRoom(t = 0, o = {}) {
   const gy = o.gy ?? H * 0.82;
-  paper(o.wall || YEL);
+  paper(o.wall || _dk(YEL));
   _floorFill(gy, o.floor || BLUE, 12201);
   line([[-30, gy], [W / 2, gy + 2], [W + 30, gy - 1]], 4, 12202, INK, 1.2, false);
   const wx = W * 0.12, wy = H * 0.13, ww = Math.min(W * 0.2, H * 0.4), wh = Math.min(H * 0.38, W * 0.4);       // a window
@@ -57,7 +62,7 @@ function setRoom(t = 0, o = {}) {
 
 function setStreet(t = 0, o = {}) {
   const gy = o.gy ?? H * 0.72;
-  band(BLUE, 0, gy, 12301);
+  band(_dk(BLUE), 0, gy, 12301);
   const cols = [RED, YEL, PAPER, RED, YEL], bw = W / 4.2;
   for (let i = 0; i < 5; i++) {
     const x = -W * 0.04 + i * bw * 0.98, h = H * (0.34 + 0.14 * rnd(12302, i)), y = gy - h, c = cols[i];
@@ -75,7 +80,7 @@ function setStreet(t = 0, o = {}) {
 
 function setStage(t = 0, o = {}) {
   const gy = o.gy ?? H * 0.8;
-  paper(o.wall || BLUE);
+  paper(o.wall || _dk(BLUE));
   const cx = W / 2, cw = W * 0.3;
   fillOnly([[cx - 36, -10], [cx + 36, -10], [cx + cw, gy], [cx - cw, gy]], PAPER, 12501);                    // the spotlight
   ground(gy, 12510, { fill: YEL, grass: false });
@@ -91,7 +96,7 @@ function setStage(t = 0, o = {}) {
 
 function setDesk(t = 0, o = {}) {
   const gy = o.gy ?? H * 0.78;
-  paper(o.wall || PAPER);
+  paper(o.wall || _dk(PAPER));
   if (o.chart !== false) {                                                                                   // a chart on the wall
     const cx = W * 0.2, cy = H * 0.12, cw = Math.min(W * 0.24, H * 0.5), ch = cw * 0.7;
     shape(boxPts(cx, cy, cw, ch, 12601), PAPER, 4, 12601, 1);
@@ -119,9 +124,9 @@ function setSpace(t = 0, o = {}) {
   return gy;
 }
 
-function setBlank(t = 0, color = BLUE) {
+function setBlank(t = 0, color = _dk(BLUE)) {
   paper(color);
-  const cx = W / 2, cy = H * 0.46, ray = _burst[color] || '#2a8fd0';
+  const cx = W / 2, cy = H * 0.46, ray = _burst[color] || _tint(color);
   for (let i = 0; i < 24; i += 2) {
     const a0 = i / 24 * TAU, a1 = (i + 1) / 24 * TAU, R = Math.max(W, H) * 1.3;
     fillDense(prep([[cx, cy], [cx + Math.cos(a0) * R, cy + Math.sin(a0) * R], [cx + Math.cos(a1) * R, cy + Math.sin(a1) * R]], true, 12801 + i, 2, 2), ray);
@@ -131,7 +136,7 @@ function setBlank(t = 0, color = BLUE) {
 
 function setScene(name, t = 0, o = {}) {
   const f = { sunny: setSunny, night: setNight, room: setRoom, street: setStreet, stage: setStage, desk: setDesk, space: setSpace }[name];
-  if (name === 'blank') return setBlank(t, o.color || o.wall || BLUE);
+  if (name === 'blank') return setBlank(t, o.color || o.wall || _dk(BLUE));
   if (!f) throw new Error(`unknown set "${name}": use one of ${SET_NAMES.join(', ')}`);
   return f(t, o);
 }

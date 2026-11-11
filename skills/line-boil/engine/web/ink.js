@@ -7,7 +7,19 @@ const _WORLD = (typeof window !== 'undefined' && window.WORLD) || [540, 960];
 const _CANVAS = (typeof window !== 'undefined' && window.CANVAS) || [1080, 1920];
 const W = _WORLD[0], H = _WORLD[1], CW = _CANVAS[0], CH = _CANVAS[1];
 const WIDE = W > H;
-const INK = '#1c1c1c', PAPER = '#fffaf0', RED = '#ff595e', BLUE = '#1982c4', YEL = '#ffca3a';
+// The channel palette. Five flat colours, and a THEME can swap all five at once so the mood fits the topic: the page sets window.THEME
+// (build.py writes it from project.json) before this file loads. Each theme keeps the same roles (INK outlines, PAPER whites and base,
+// RED the alarm, BLUE the cool body, YEL the light), so every prop, set and bean still reads; only the feeling changes.
+const THEMES = {
+  classic: { INK: '#1c1c1c', PAPER: '#fffaf0', RED: '#ff595e', BLUE: '#1982c4', YEL: '#ffca3a' },   // bright, friendly: the default
+  noir:    { INK: '#0b0b12', PAPER: '#d8d0bd', RED: '#c0272d', BLUE: '#2c4a6e', YEL: '#d9a93a', DEEP: '#141a2c' },   // dark and dread: horror, extinction, crime, "what if it all goes wrong"
+  sepia:   { INK: '#2b211a', PAPER: '#f1e4c8', RED: '#b8452f', BLUE: '#4f7a86', YEL: '#d49a3a' },   // old and warm: history, nostalgia, how it used to be
+  soft:    { INK: '#2a2a33', PAPER: '#fff6ee', RED: '#f28b94', BLUE: '#7fb8d8', YEL: '#ffd98a' },   // gentle and pastel: sleep, kids, kindness, calm
+  hype:    { INK: '#14101c', PAPER: '#fffdf2', RED: '#ff3b4a', BLUE: '#2563ff', YEL: '#ffe11a' },   // loud and saturated: money, hustle, contests, hype
+};
+const THEME_NAME = (typeof window !== 'undefined' && THEMES[window.THEME]) ? window.THEME : 'classic';
+const { INK, PAPER, RED, BLUE, YEL } = THEMES[THEME_NAME];
+const DEEP = THEMES[THEME_NAME].DEEP || null;   // a dark theme's room, sky and wall colour: sets use it instead of their bright default (see _dk in sets.js)
 const TAU = Math.PI * 2;
 let ctx = null;
 let V = 0;

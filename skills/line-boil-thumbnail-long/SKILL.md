@@ -21,7 +21,7 @@ Before rendering, ask: **"Can someone understand, or become curious about, this 
 2. **One scene.** One strong, instantly understandable scene that shows the subject or opens a curiosity gap the video pays off.
 3. **Subject-driven.** Pick the strongest visual elements for this topic (its own object, place, symbol or situation). The Bean is optional: include it only when it improves the storytelling, the emotion or the channel identity, never by default.
 4. **Simple.** One dominant focal point, strong contrast, a clear composition, and minimal text (ideally 2 to 4 words). It must read at mobile size (judge a 180 px copy).
-5. **On brand.** Keep the hand-drawn line-boil look: imperfect outlines and the channel palette, without trading away topic relevance. Be mindful of recognisability: a real brand or product keeps its own colours and symbol (an Instagram phone gets the Instagram purple-magenta-orange, not plain yellow); see **Mindful details** in `~/.claude/skills/line-boil/references/style.md`.
+5. **On brand.** Keep the hand-drawn line-boil look: imperfect outlines and the channel palette (the video's theme applies by itself: write `RED`/`BLUE`/`YEL`/`PAPER`/`INK`, never hex; a `noir` video's thumbnail is dark, with the words still high-contrast), without trading away topic relevance. Be mindful of recognisability: a real brand or product keeps its own colours and symbol (an Instagram phone gets the Instagram purple-magenta-orange, not plain yellow); see **Mindful details** in `~/.claude/skills/line-boil/references/style.md`.
 
 ## The words add the stakes, not the title again
 - **2 to 4 words, big:** one or two lines, the main word about 100 to 130 tall in world units (the 960x540 frame), so they read at

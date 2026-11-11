@@ -47,6 +47,27 @@ directory, from any working directory. Don't put projects anywhere else unless t
 The API is in `references/api.md`. Read it before writing cast or shots. The style rules, which are what makes
 this look hand-animated and not just "drawn in code", are in `references/style.md`. Read that too.
 
+## Genre: the mood of the topic decides the look
+The style adapts. Before the script, name the topic's **genre** (one word: playful, curious, dark, eerie, nostalgic, calm, hype), because the genre
+picks the theme, the sets, the music, the acting and the jokes. A topic like "What if we killed all the mosquitoes?" is *dark*: it must not look like
+the bright default, with a sunny yellow room and a grinning bean. The voice, ink line and boil stay the same on every theme; that is what keeps it the channel.
+
+| Genre (examples) | Theme | Sets and props | Music (`musicMood`) | Acting and jokes |
+|---|---|---|---|---|
+| **playful / curious** (most how-things-work, everyday life) | `classic` | `sunny`, `room`, `street`, `stage` | `curious`, `playful`, `upbeat` | big takes, bounce, a joke every 8 to 10 s |
+| **dark / dread** (extinction, "what if we killed all X", crime, disasters, "the thing nobody warns you about") | `noir` | `night`, `space`, or a deep wall; empty ground; one lit object; a lot of INK background | `tense`, `mystery`, `serious`, and `silent` before the reveal | slow push-ins, `scared`/`worried`/`deadpan` faces, long holds, **dry** jokes (deadpan and understatement, never slapstick bounce), fewer bounces and sparkle sounds |
+| **history / how it used to be** | `sepia` | `room`, `street`, `stage` with muted colours | `calm`, `mystery` | storyteller bean, wry |
+| **calm / sleep / kindness** | `soft` | `sunny`, `room`, empty space | `calm` | slow, warm, gentle jokes |
+| **money / hustle / contests / hype** | `hype` | `stage`, `desk`, `street` | `upbeat`, `playful`, `triumphant` | fast cuts, bold reactions |
+
+How to apply it:
+- **Pick one theme per video** and pass it at the start: `python ~/.claude/skills/line-boil/engine/build.py new <project> --theme noir` (themes: `classic`, `noir`, `sepia`, `soft`, `hype`).
+  The theme swaps the five channel colours together and the sets use a deep background on a dark theme, so everything you draw keeps working: use `RED`, `BLUE`, `YEL`, `PAPER`, `INK` as always and never type a colour in.
+  The thumbnail renders in the same theme, so it matches the video. To change the theme later, set `"theme"` in `project.json` and re-render.
+- **A theme is a tone, not a licence to be grim or graphic.** A dark topic still teaches, stays honest, keeps the hook and the jokes, and does not show gore, violence on people or anything a young viewer should not see. Dark here means **dread and dry humour**: the quiet room, the one lit window, the bean who slowly understands.
+- **Mixed topics:** use the theme of the *opening promise*. The mood can swing inside a video by changing the set, the music and the faces; the theme stays.
+- **When unsure,** use `classic`: a wrong dark video is worse than a plain one.
+
 ## Steps
 
 1. **Script.** Its length is decided by what this topic needs to teach, not by a fixed number (see **Length** below). Write one idea per sentence and make every sentence
@@ -93,7 +114,7 @@ this look hand-animated and not just "drawn in code", are in `references/style.m
    agency page), never invent one, and drop what you cannot verify. Write `<project>-sources.md`: a table of claim, link, and how far you
    checked it (full text / abstract only / secondary report), plus a short "not claimed, on purpose" list. The YouTube sheet's Sources
    come from it.
-3. **Cast.** The channel is The Bean With Bad Ideas, so the cast is **beans**: use *different beans* to explain the topic, one
+3. **Cast.** (Choose the genre and theme first: see **Genre** above.) The channel is The Bean With Bad Ideas, so the cast is **beans**: use *different beans* to explain the topic, one
    bean per idea or role (the viewer, the thing being explained, the force pushing against it, the sceptic, the crowd).
    Make them different at thumbnail size: body shape (`bean`, `pear`, `tall`, `ball`, `box`, `wide`, `tiny`), colour (RED, BLUE,
    YEL, PAPER), accessory (hat, glasses, scarf, tuft) and a habit of expression. Two to four beans is the sweet spot; a crowd of
@@ -105,7 +126,7 @@ this look hand-animated and not just "drawn in code", are in `references/style.m
    narrator-in-frame, but is not required.
 4. **Show the plan.** Before animating, give the user the script plus a one-line cast list and a one-line visual per
    sentence. Wait for an OK unless they asked you to go straight through.
-5. **Project and voice.** Run `build.py new <project>` (just the slug; it lands in `C:\Users\praty\youtube\line-boil\<project>`), write `script.json`, then run `build.py voice <project>`.
+5. **Project and voice.** Run `build.py new <project>` (add `--theme noir` etc. for a non-classic genre; just the slug; it lands in `C:\Users\praty\youtube\line-boil\<project>`), write `script.json`, then run `build.py voice <project>`.
    It prints every word with its start time, grouped by sentence. Those times are your timeline.
 6. **Shots.** Write `web/cast.js` and `web/shots.js`. No shot runs longer than about 4 s, so plan about one shot per 3 to 4 s of
    voice (10 to 14 for a 40 s Short): split a long explainer sentence into two shots (a wide set-up, then a close-up on the prop or the

@@ -18,7 +18,7 @@ The worked example is `engine/example-wide` (three chapters, ten shots, a chapte
 `web/shots/ch01.js` before writing your first shots.
 
 ```
-python ~/.claude/skills/line-boil/engine/build.py new      <project> --wide        # project folder with web/shots/ and chapters.json
+python ~/.claude/skills/line-boil/engine/build.py new      <project> --wide [--theme noir]   # project folder with web/shots/ and chapters.json
 python ~/.claude/skills/line-boil/engine/build.py voice    <project> --target 420  # Kokoro voiceover (any length), word times, and whether the length hits the target
 python ~/.claude/skills/line-boil/engine/build.py voice    <project> --append      # voice only sentences added at the end; every earlier word time is kept
 python ~/.claude/skills/line-boil/engine/build.py chapters <project>               # YouTube chapters from chapters.json + the real word times -> <project>-chapters.txt
@@ -79,7 +79,7 @@ A 7-minute video renders in about 2.5 minutes on the user's computer (it is free
    Then `chapters.json`: `[{"title": "...", "line": N}, ...]`, N = the index of the sentence that opens the
    chapter (the first is 0). Titles follow yt-chapters: **3 to 5 words that promise what the section gives** ("Why the sky is blue"), not
    topic words; a section you cannot name in five words is two sections or filler. At least 3 chapters, each at least 10 seconds long.
-5. **Project and voice.** `build.py new <project> --wide`, write `script.json` and `chapters.json`, then
+5. **Project and voice.** Pick the genre and theme first (**Genre** in `~/.claude/skills/line-boil/SKILL.md`: a dark topic gets `--theme noir`, with deep sets, tense or mystery music and dry humour; a long video can move between moods by changing set, music and faces inside one theme). `build.py new <project> --wide [--theme noir]`, write `script.json` and `chapters.json`, then
    `build.py voice <project> --target <seconds>`. Rewrite and repeat until it prints `TARGET ...: OK` (within 4 seconds). It prints the
    start of every sentence; use `at('a few words')` in shots for exact word times. Then `build.py chapters <project>`; fix
    `NOT VALID FOR YOUTUBE` before moving on.

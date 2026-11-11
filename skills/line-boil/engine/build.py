@@ -38,6 +38,7 @@ def proj_path(name):
     return p.resolve()
 FPS = 24
 # the two formats. A project is 'short' (9:16) unless its project.json says {"format": "wide"} (16:9, long video).
+THEME_NAMES = ('classic', 'noir', 'sepia', 'soft', 'hype')   # keep in step with THEMES in web/ink.js
 FORMATS = {
     'short': dict(world=(540, 960), canvas=(1080, 1920), thumb=(1080, 1920), tile=(270, 480)),
     'wide': dict(world=(960, 540), canvas=(1920, 1080), thumb=(1280, 720), tile=(480, 270)),
@@ -49,6 +50,15 @@ def fmt_name(proj):
         return json.loads((Path(proj) / 'project.json').read_text(encoding='utf-8')).get('format', 'short')
     except Exception:
         return 'short'
+
+
+def theme_name(proj):
+    """the project's colour theme (project.json "theme"): classic, noir, sepia, soft or hype; anything else is classic"""
+    try:
+        t = json.loads((Path(proj) / 'project.json').read_text(encoding='utf-8')).get('theme', 'classic')
+    except Exception:
+        t = 'classic'
+    return t if t in THEME_NAMES else 'classic'
 
 
 def fmt(proj):
@@ -111,6 +121,9 @@ def write_pages(proj):
         html = html.replace('<script src="words.js"></script>', f'<script>window.WORLD = [{ww}, {wh}]; window.CANVAS = [{cw}, {ch}];</script>\n<script src="words.js"></script>')
         html = html.replace('canvas { height: 100vh; width: auto; aspect-ratio: 9 / 16; display: block; }',
                             'canvas { width: 100vw; max-height: 100vh; height: auto; aspect-ratio: 16 / 9; display: block; }')
+    theme = theme_name(proj)
+    if theme != 'classic':   # the palette is read when ink.js loads, so the theme goes in just before it
+        html = html.replace('<script src="engine/ink.js"></script>', f'<script>window.THEME = "{theme}";</script>\n<script src="engine/ink.js"></script>')
     thumb = html.replace('<script src="shots.js"></script>', '<script src="thumb.js"></script>')
     chapters = sorted((web / 'shots').glob('*.js')) if (web / 'shots').is_dir() else []
     html = html.replace('<script src="shots.js"></script>', '<script src="shots.js"></script>' + ''.join(f'\n<script src="shots/{f.name}"></script>' for f in chapters))
@@ -137,6 +150,7 @@ def cmd_new(a):
     if proj.exists() and any(proj.iterdir()):
         sys.exit(f'{proj} already exists and is not empty')
     wide = getattr(a, 'wide', False)
+    theme = getattr(a, 'theme', None) or 'classic'
     ex = ENGINE / ('example-wide' if wide else 'example')
     if wide:
         (proj / 'web' / 'shots').mkdir(parents=True, exist_ok=True)       # one chNN.js per chapter goes here
@@ -150,8 +164,13 @@ def cmd_new(a):
         shutil.copy(ex / 'web' / 'shots' / 'ch01.js' if wide else ex / 'web' / 'shots.js', proj / 'web' / 'shots.example.js')
         if wide:
             (proj / 'chapters.json').write_text(json.dumps([{'title': 'Intro', 'line': 0}], indent=2) + '\n', encoding='utf-8')
+    if theme != 'classic':
+        pj = proj / 'project.json'
+        meta = json.loads(pj.read_text(encoding='utf-8')) if pj.exists() else {}
+        meta['theme'] = theme
+        pj.parent.mkdir(parents=True, exist_ok=True); pj.write_text(json.dumps(meta) + '\n', encoding='utf-8')
     sync_engine(proj)
-    print(f'project ready: {proj}')
+    print(f'project ready: {proj}' + (f' (theme: {theme})' if theme != 'classic' else ''))
 
 
 def tts(proj, voice, speed, append=False):
@@ -557,7 +576,9 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest='cmd', required=True)
     p = sub.add_parser('new'); p.add_argument('project'); p.add_argument('--example', action='store_true')
-    p.add_argument('--wide', action='store_true', help='a long video: 16:9, 1920x1080'); p.set_defaults(f=cmd_new)
+    p.add_argument('--wide', action='store_true', help='a long video: 16:9, 1920x1080')
+    p.add_argument('--theme', choices=THEME_NAMES, default='classic', help='the colour theme and mood: classic (bright), noir (dark), sepia (old), soft (gentle), hype (loud). A dark topic wants noir')
+    p.set_defaults(f=cmd_new)
     p = sub.add_parser('chapters'); p.add_argument('project'); p.set_defaults(f=cmd_chapters)
     p = sub.add_parser('voice'); p.add_argument('project'); p.add_argument('--voice', default='af_heart')
     p.add_argument('--speed', type=float, default=1.0); p.add_argument('--file')

@@ -34,7 +34,7 @@ thumbnail?"** If not, fix the concept, not the polish.
    "TIME ZONES?", "INSTAGRAM HEARD ME?"). Use the title's core noun when that is what makes the topic clear (this overrides the
    "none repeated from the title" note in `references/youtube.md`). Reaction filler that would fit any video ("NOPE", "WOW",
    "WHO WINS?") fails.
-7. **On brand, and recognisable.** Keep the hand-drawn line-boil look and the channel palette, but never at the cost of
+7. **On brand, and recognisable.** Keep the hand-drawn line-boil look and the channel palette (the video's theme: a `noir` video's thumbnail renders in noir automatically, so write colours as `RED`/`BLUE`/`YEL`/`PAPER`/`INK`, never hex; a dark topic can use a dark background so long as the words stay high-contrast), but never at the cost of
    recognisability: a real brand, app, flag or warning keeps its own colours and symbol (an Instagram phone gets the Instagram
    purple-magenta-orange, never flat yellow). See **Mindful details** in `~/.claude/skills/line-boil/references/style.md`.
 8. **True to the video.** Use the objects and cast from the video's own key shot (write its time in the YouTube sheet's `Still:`
