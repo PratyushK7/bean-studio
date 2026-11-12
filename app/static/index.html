@@ -304,11 +304,13 @@ function plActions(p, s) {
     case 'script': return `<div class="row" style="flex-wrap:wrap;gap:8px"><input id="plt-${n}" placeholder="topic, e.g. jewellery shop economics" style="min-width:280px">${b('✍ Write the script (Opus)', `plScript('${n}')`)}</div>` +
       (s.state ? `<div class="muted" style="margin-top:6px">A script exists. Writing again replaces it, so only do that on purpose.</div>` : '');
     case 'prompts': return b('📋 Make the image prompts', `plMakePrompts('${n}')`) + ' ' + (s.state ? b('Show the prompts', `plPrompts('${n}')`, 'sec') : '');
-    case 'images': return `<ol style="margin:0 0 8px 18px;padding:0;line-height:2">
-      <li>In your ChatGPT extension, upload <b>one</b> prompt file from the prompts folder (start with <code>01-characters</code>), choose wide, delay 5 to 7 s, and run it until the pictures have downloaded.</li>
-      <li>${b('⬇ Get my pictures', `plBatch('${n}','collect')`)} <span class="muted">copies the new pictures from your Downloads folder into this video, numbered in order</span></li>
+    case 'images': setTimeout(plFiles, 0, p.name); return `<ol style="margin:0 0 8px 18px;padding:0;line-height:2">
+      <li>In your ChatGPT extension, upload <b>one</b> prompt file (start with <code>01-characters</code>), choose wide, delay 5 to 7 s, and run it until the pictures have downloaded.</li>
+      <li>Which file did you just run? <select id="plf-${n}" style="max-width:340px"></select></li>
+      <li>${b('⬇ Get my pictures', `plBatch('${n}','collect')`)} <span class="muted">files them under the right picture numbers; if some prompts failed it asks which</span></li>
       <li>${b('🖼 Check the sheet', `plContact('${n}',0)`, 'sec')} <span class="muted">all pictures on one numbered page</span></li></ol>
-      <div class="muted">Then repeat for the next file. ${b('📋 Show the prompts', `plPrompts('${n}')`, 'sec')} ${b('📂 Prompts folder', `plOpen('${n}','prompts')`, 'sec')}</div>`;
+      <div class="muted">Two pictures in the wrong places? Swap picture numbers <input id="pls1-${n}" size="3"> and <input id="pls2-${n}" size="3"> ${b('Swap', `plSwap('${n}')`, 'sec')}</div>
+      <div class="muted" style="margin-top:6px">${b('📋 Show the prompts', `plPrompts('${n}')`, 'sec')} ${b('📂 Prompts folder', `plOpen('${n}','prompts')`, 'sec')}</div>`;
     case 'voice': return b('🎙 Make the voice', `plVoice('${n}')`) + ' <span class="muted">runs in the background; follow it in the Activity tab</span>';
     case 'clips': return `<div class="muted">${p.hero} hero shots, about $${p.hero_cost} at xAI prices (rough: shot length from the narration). This step is not built into the studio yet.</div>`;
     case 'sound': return p.stages.find(x => x.key === 'voice').state ? b('🎚 Mix the sound', `plSound('${n}')`) + ' <span class="muted">music moods, ambience and effects come from the script; real tracks in <code>audio/music</code> and <code>audio/sfx</code> replace the placeholders</span>'
@@ -324,10 +326,36 @@ async function plVoice(n) { await api(`/api/pipeline/${n}/voice`, {method: 'POST
 async function plNew() { const slug = $('#plslug').value.trim(); if (!slug) return; await api('/api/pipeline', {method: 'POST', body: {slug}}); $('#plslug').value = ''; loadPipeline(); }
 async function plOpen(n, sub) { await api(`/api/pipeline/${n}/open`, {method: 'POST', body: {sub}}); }
 async function plScript(n) { const topic = $(`#plt-${n}`).value.trim(); const j = await api(`/api/pipeline/${n}/script`, {method: 'POST', body: {topic}}); toast('Script started on Opus: follow it in the Activity tab.'); show('jobs'); }
+async function plFiles(n) {
+  const sel = $(`#plf-${n}`); if (!sel) return;
+  const r = await api(`/api/pipeline/${n}/files`, {silent: true}); const next = r.files.find(f => !f.retry && f.done < f.slots) || r.files.find(f => f.retry);
+  sel.innerHTML = r.files.map(f => `<option value="${esc(f.file)}" ${next && next.file === f.file ? 'selected' : ''}>${esc(f.file)} · ${f.retry ? 'retry, ' + f.slots + ' prompts' : f.done + ' of ' + f.slots + ' pictures in'}</option>`).join('');
+}
 async function plBatch(n, action) {
-  const r = await api(`/api/pipeline/${n}/batch`, {method: 'POST', body: {action}});
-  if (action === 'start') toast('Batch started. Run one prompt file in ChatGPT now, then press Collect downloads.');
-  else { toast(r.collected ? r.collected + ' new picture' + (r.collected === 1 ? '' : 's') + ' added (' + r.total + ' in all)' : 'No new pictures yet: wait until the extension has finished downloading, then press again.'); loadPipeline(); }
+  const file = ($(`#plf-${n}`) || {}).value; if (!file) { toast('Make the image prompts first.'); return; }
+  plAfter(n, file, await api(`/api/pipeline/${n}/batch`, {method: 'POST', body: {action: 'collect', file}}));
+}
+function plAfter(n, file, r) {
+  if (r.state === 'none') { toast('No new pictures yet: wait until the extension has finished downloading, then press again.'); return; }
+  if (r.state === 'filed') {
+    $(`#plx-${n}`).innerHTML = '';
+    toast(r.collected + ' pictures filed (' + r.total + ' in all)' + (r.missing && r.missing.length ? '. ' + r.missing.length + ' failed: run prompts/' + r.retry + ' next.' : '.')); PL_OPEN[n] = 'images'; loadPipeline(); return;
+  }
+  const more = r.collected > r.expected;
+  $(`#plx-${n}`).innerHTML = `<div style="padding:10px;background:#fff3cd;border-radius:8px"><b>${r.collected} pictures found, but ${esc(file)} has ${r.expected} prompts.</b>
+    ${more ? '<div>More pictures than prompts: probably extra downloads. Delete the extras from your Downloads folder and press Get my pictures again.</div>'
+      : `<div>Some prompts probably failed. Look at the numbered sheet (the order they arrived), then type the <b>slot numbers that failed</b> from the list below, separated by commas. The rest are filed in order, and a retry file is made for the failed ones.</div>
+      <div style="margin:8px 0"><input id="plm-${n}" placeholder="e.g. 7, 19" style="width:160px"> <button class="act" onclick="plAssign('${n}','${esc(file)}')">Assign</button></div>`}
+    <img src="${r.sheet}?t=${Date.now()}" style="max-width:100%;border:1px solid #ddd;margin-top:6px">
+    <div class="muted" style="margin-top:6px;columns:2">${r.slots.map(sl => `<div><b>${sl.pos}</b> ${esc(sl.text)}…</div>`).join('')}</div></div>`;
+}
+async function plAssign(n, file) {
+  const missing = ($(`#plm-${n}`).value.match(/\d+/g) || []).map(Number);
+  plAfter(n, file, await api(`/api/pipeline/${n}/batch`, {method: 'POST', body: {action: 'assign', file, missing}}));
+}
+async function plSwap(n) {
+  const a = +$(`#pls1-${n}`).value, b = +$(`#pls2-${n}`).value; if (!a || !b) return;
+  await api(`/api/pipeline/${n}/batch`, {method: 'POST', body: {action: 'swap', a, b}}); toast(`Swapped pictures ${a} and ${b}.`); plContact(n, 0);
 }
 async function plContact(n, page) {
   const r = await api(`/api/pipeline/${n}/contact`, {method: 'POST', body: {page}});

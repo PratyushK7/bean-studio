@@ -52,6 +52,8 @@ def main():
     scenes = prompts[k:]; nb = (len(scenes) + a.batch - 1) // a.batch
     for b in range(nb):
         (pd / f"{b + 2:02d}-scenes-{b + 1}-of-{nb}.txt").write_text("\n".join(scenes[b * a.batch:(b + 1) * a.batch]) + "\n", encoding="utf-8")
+    for e in index[:k]: e["file"] = "01-characters.txt"; e["pos"] = e["n"]
+    for j, e in enumerate(index[k:]): e["file"] = f"{j // a.batch + 2:02d}-scenes-{j // a.batch + 1}-of-{nb}.txt"; e["pos"] = j % a.batch + 1
     (proj / "images-index.json").write_text(json.dumps(index, ensure_ascii=False, indent=1), encoding="utf-8")
     (pd / "README.txt").write_text(
         "Run the files in this order in the ChatGPT extension (Prefix and Suffix empty, wide aspect, delay 5 to 7 s):\n"

@@ -105,6 +105,16 @@ def register(app, ROOT, cfg, start_agent, JOBS, start_job):
         for sub in ("prompts", "images", "assets"): (p / sub).mkdir(parents=True)
         return jsonify(ok=True, name=slug)
 
+    @app.get("/api/pipeline/<name>/files")
+    def pipeline_files(name):
+        """the prompt files in run order with how many of their pictures are in (so the page can offer the next one)"""
+        p = pdir(name); have = _have(p); idx = _index(p); out = []
+        for f in _files(p, "prompts/0*.txt") + _files(p, "prompts/retry-*.txt"):
+            ns = [e["n"] for e in idx if e.get("file") == f.name or f.name == "retry-" + e.get("file", "")]
+            out.append({"file": f.name, "slots": len(ns) if not f.name.startswith("retry-") else len([l for l in f.read_text(encoding="utf-8").splitlines() if l.strip()]),
+                        "done": sum(1 for n in ns if n in have) if not f.name.startswith("retry-") else 0, "retry": f.name.startswith("retry-")})
+        return jsonify(files=out)
+
     @app.get("/api/pipeline/<name>/prompts")
     def pipeline_prompts(name):
         p = pdir(name)
@@ -145,35 +155,97 @@ def register(app, ROOT, cfg, start_agent, JOBS, start_job):
         if not (p / "voice.mp3").exists() or not (p / "voice-lines.json").exists(): abort(400, "make the voice first (the mix is timed from it)")
         return jsonify(start_job(f"sound · {name}", [cfg()["python"], str(ROOT / "tools" / "vyapaar_mix.py"), str(p)], str(ROOT), unique=True))
 
+    def _index(p):
+        f = p / "images-index.json"
+        return json.loads(f.read_text(encoding="utf-8")) if f.exists() else []
+
+    def _slots(p, fname):
+        if fname.startswith("retry-"):                       # a retry file: the slots of the original file whose picture is still missing
+            have = _have(p); return [e for e in _index(p) if e.get("file") == fname[6:] and e["n"] not in have]
+        return [e for e in _index(p) if e.get("file") == fname]
+
+    def _have(p):
+        return {int(f.stem) for f in (p / "images").iterdir() if f.stem.isdigit() and f.suffix.lower() in IMG} if (p / "images").is_dir() else set()
+
     @app.post("/api/pipeline/<name>/batch")
     def pipeline_batch(name):
-        """start: remember now. collect: copy every image that ChatGPT's extension downloaded since then into images/NNN.ext (copies; Downloads is left as it is)"""
+        """Pictures, matched per prompt file so a failed prompt cannot shift the rest.
+        collect {file}: picks up the new downloads (everything since the prompts were made or the last collect) into images/_pending, then
+            - the count equals the file's prompts: they are filed under the right picture numbers at once;
+            - fewer: nothing is filed yet, the answer lists the slots so the user says which ones failed (assign);
+            - more: the extra pictures are listed too (a double download): the user says which slots to skip, or removes files.
+        assign {file, missing:[slot numbers in that file]}: files the pending pictures in order into the other slots and writes retry-<file> with the missing prompts.
+        swap {a, b}: swaps two picture numbers (the extension finished two out of order)."""
         p = pdir(name)
-        act = (request.get_json(silent=True) or {}).get("action")
+        b = request.get_json(silent=True) or {}
+        act = b.get("action")
         m = meta(p)
-        if act == "start":
-            m["since"] = time.time(); save_meta(p, m)
-            return jsonify(ok=True, since=m["since"])
-        if act != "collect": abort(400, "bad action")
-        # no Start button needed: "mine" = images that arrived after the prompts were made or after the last collect, whichever is later
-        marker = p / "images-index.json"
-        since = max(m.get("since") or 0, marker.stat().st_mtime if marker.exists() else 0)
-        if not since: abort(400, "make the image prompts first")
-        dl = _downloads()
-        found = sorted((f for f in dl.iterdir() if f.is_file() and f.suffix.lower() in IMG and f.stat().st_mtime > since and f.stat().st_size > 60_000),
-                       key=lambda f: f.stat().st_mtime) if dl.is_dir() else []
-        (p / "images").mkdir(exist_ok=True)
-        have = [f for f in (p / "images").iterdir() if f.stem.isdigit()]
-        n = max([int(f.stem) for f in have], default=0)
-        names = []
-        for f in found:
-            n += 1
-            dest = p / "images" / f"{n:03d}{f.suffix.lower()}"
-            shutil.copy2(f, dest); names.append(dest.name)
-        if found: m["since"] = max(f.stat().st_mtime for f in found)          # the next collect continues from the newest picture taken
-        m.setdefault("batches", []).append({"at": time.time(), "from": str(dl), "files": names}); save_meta(p, m)
-        total = len([f for f in (p / "images").iterdir() if f.stem.isdigit()])
-        return jsonify(ok=True, collected=len(names), first=names[:1], last=names[-1:], downloads=str(dl), total=total)
+        (p / "images").mkdir(exist_ok=True); pend = p / "images" / "_pending"
+        if act == "swap":
+            x, y = int(b.get("a", 0)), int(b.get("b", 0))
+            fx = next((f for f in (p / "images").iterdir() if f.stem == f"{x:03d}"), None); fy = next((f for f in (p / "images").iterdir() if f.stem == f"{y:03d}"), None)
+            if not fx or not fy: abort(400, "both picture numbers must exist")
+            tmp = fx.with_name("_swap" + fx.suffix); fx.rename(tmp)
+            fx2 = fx.with_name(f"{y:03d}{fx.suffix}"); fy2 = fy.with_name(f"{x:03d}{fy.suffix}")
+            fy.rename(fy2); tmp.rename(fx2)
+            return jsonify(ok=True, swapped=[x, y])
+        fname = str(b.get("file") or "")
+        slots = _slots(p, fname)
+        if not slots: abort(400, "pick which prompt file you just ran (the list shows the files)")
+        if act == "collect":
+            marker = p / "images-index.json"
+            since = max(m.get("since") or 0, marker.stat().st_mtime if marker.exists() else 0)
+            if not since: abort(400, "make the image prompts first")
+            dl = _downloads()
+            found = sorted((f for f in dl.iterdir() if f.is_file() and f.suffix.lower() in IMG and f.stat().st_mtime > since and f.stat().st_size > 60_000),
+                           key=lambda f: f.stat().st_mtime) if dl.is_dir() else []
+            if not found: return jsonify(ok=True, state="none", collected=0, expected=len(slots), total=len(_have(p)))
+            pend.mkdir(exist_ok=True)
+            for old in pend.iterdir(): old.unlink()                      # a new collect replaces an unresolved earlier one (the downloads are still in Downloads)
+            for k, f in enumerate(found, 1): shutil.copy2(f, pend / f"p{k:03d}{f.suffix.lower()}")
+            m["pending_max"] = max(f.stat().st_mtime for f in found); save_meta(p, m)       # "since" only moves when the pictures are filed, so a mismatch can be retried
+            return _file_pending(p, name, fname, slots, m)
+        if act == "assign":
+            missing = {int(x) for x in b.get("missing", [])}
+            todo = [e for e in slots if e["pos"] not in missing]
+            pics = sorted(pend.iterdir()) if pend.is_dir() else []
+            if len(pics) != len(todo): abort(400, f"{len(pics)} pictures for {len(todo)} slots: check the slot numbers you marked as failed")
+            return _file_pending(p, name, fname, slots, m, [e["pos"] for e in slots if e["pos"] in missing], force=True)
+        abort(400, "bad action")
+
+    def _file_pending(p, name, fname, slots, m, missing=None, force=False):
+        pend = p / "images" / "_pending"
+        pics = sorted(pend.iterdir()) if pend.is_dir() else []
+        missing = missing or []
+        todo = [e for e in slots if e["pos"] not in missing]
+        if len(pics) != len(todo) and not force:
+            return jsonify(ok=True, state="mismatch", collected=len(pics), expected=len(slots), total=len(_have(p)),
+                           slots=[{"pos": e["pos"], "n": e["n"], "text": re.sub(r"\s+", " ", e["prompt"])[:70]} for e in slots],
+                           sheet=f"/media/{name}/{_pending_sheet(p, pics)}")
+        for e, f in zip(todo, pics):
+            for old in (p / "images").glob(f"{e['n']:03d}.*"): old.unlink()          # a redone picture replaces the earlier one
+            shutil.move(str(f), p / "images" / f"{e['n']:03d}{f.suffix.lower()}")
+        for f in pend.glob("*"): f.unlink()
+        if m.get("pending_max"): m["since"] = m.pop("pending_max")
+        retry = None
+        if missing:
+            retry = "retry-" + (fname[6:] if fname.startswith("retry-") else fname)
+            (p / "prompts" / retry).write_text("\n".join(e["prompt"] for e in slots if e["pos"] in missing) + "\n", encoding="utf-8")
+        m.setdefault("batches", []).append({"at": time.time(), "file": fname, "files": [f"{e['n']:03d}" for e in todo], "missing": missing}); save_meta(p, m)
+        return jsonify(ok=True, state="filed", collected=len(todo), expected=len(slots), missing=missing, retry=retry, total=len(_have(p)))
+
+    def _pending_sheet(p, pics):
+        cols, tw, th = 6, 320, 180
+        cmd = ["ffmpeg", "-y", "-v", "error"]
+        for f in pics: cmd += ["-i", str(f)]
+        filt = "".join(f"[{i}:v]scale={tw}:{th}:force_original_aspect_ratio=decrease,pad={tw}:{th}:(ow-iw)/2:(oh-ih)/2:color=white,"
+                       f"drawtext=fontfile='C\\:/Windows/Fonts/arialbd.ttf':text='{i + 1}':x=6:y=4:fontsize=26:fontcolor=red:box=1:boxcolor=white@0.85[v{i}];" for i, f in enumerate(pics))
+        layout = "|".join(f"{(i % cols) * tw}_{(i // cols) * th}" for i in range(len(pics)))
+        filt += ("[v0]null[o]" if len(pics) == 1 else "".join(f"[v{i}]" for i in range(len(pics))) + f"xstack=inputs={len(pics)}:layout={layout}:fill=white[o]")   # xstack needs two or more inputs
+        out = p / "_pending-sheet.jpg"
+        r = subprocess.run(cmd + ["-filter_complex", filt, "-map", "[o]", "-frames:v", "1", "-q:v", "3", str(out)], capture_output=True, text=True)
+        if r.returncode: abort(500, "ffmpeg could not build the sheet: " + r.stderr[-300:])
+        return out.name
 
     @app.post("/api/pipeline/<name>/contact")
     def pipeline_contact(name):
@@ -190,7 +262,7 @@ def register(app, ROOT, cfg, start_agent, JOBS, start_job):
         filt = "".join(f"[{i}:v]scale={tw}:{th}:force_original_aspect_ratio=decrease,pad={tw}:{th}:(ow-iw)/2:(oh-ih)/2:color=white,"
                        f"drawtext=fontfile='C\\:/Windows/Fonts/arialbd.ttf':text='{f.stem}':x=6:y=4:fontsize=22:fontcolor=red:box=1:boxcolor=white@0.8[v{i}];" for i, f in enumerate(chunk))
         layout = "|".join(f"{(i % cols) * tw}_{(i // cols) * th}" for i in range(len(chunk)))
-        filt += "".join(f"[v{i}]" for i in range(len(chunk))) + f"xstack=inputs={len(chunk)}:layout={layout}:fill=white[o]"
+        filt += ("[v0]null[o]" if len(chunk) == 1 else "".join(f"[v{i}]" for i in range(len(chunk))) + f"xstack=inputs={len(chunk)}:layout={layout}:fill=white[o]")   # xstack needs two or more inputs
         out = p / f"_contact-{page + 1}.jpg"       # in the project root: /media serves flat file names only
         r = subprocess.run(cmd + ["-filter_complex", filt, "-map", "[o]", "-frames:v", "1", "-q:v", "3", str(out)], capture_output=True, text=True)
         if r.returncode: abort(500, "ffmpeg could not build the sheet: " + r.stderr[-300:])

@@ -532,15 +532,32 @@ def test_pipeline_steps():
         assert c.post("/api/pipeline/demo/make-prompts", headers=hi, json={}).status_code == 200
         dl = TMP / "dl"; dl.mkdir(); server.CONFIG.write_text(json.dumps({"downloads_dir": str(dl)})); server._cfg.update(stamp="unset", val=None); time.sleep(0.02); os.utime(server.CONFIG, (time.time() + 3, time.time() + 3))
         t0 = (proj / "images-index.json").stat().st_mtime
+        import subprocess as _sp
+        base = TMP / "base.png"; _sp.run(["ffmpeg", "-y", "-v", "error", "-f", "lavfi", "-i", "nullsrc=s=640x360,geq=random(1)*255:random(2)*255:random(3)*255", "-frames:v", "1", str(base)], check=True)
+        assert base.stat().st_size > 60_000, "a real picture above the 60 KB floor"
         def pic(name, dt_s):
-            f = dl / name; f.write_bytes(b"x" * 70_000); os.utime(f, (t0 + dt_s, t0 + dt_s))
-        pic("old.png", -50); pic("a.png", 5); pic("b.png", 9); (dl / "tiny.png").write_bytes(b"x" * 100); os.utime(dl / "tiny.png", (t0 + 6, t0 + 6))
-        r = c.post("/api/pipeline/demo/batch", headers=hi, json={"action": "collect"}).json
-        assert r["collected"] == 2 and r["total"] == 2, r                       # no Start button: old and tiny files are ignored
-        assert c.post("/api/pipeline/demo/batch", headers=hi, json={"action": "collect"}).json["collected"] == 0, "a second press adds nothing"
-        pic("c.png", 20)
-        r = c.post("/api/pipeline/demo/batch", headers=hi, json={"action": "collect"}).json
-        assert r["collected"] == 1 and r["total"] == 3 and (proj / "images" / "003.png").exists(), r
+            f = dl / name; f.write_bytes(base.read_bytes()); os.utime(f, (t0 + dt_s, t0 + dt_s))
+        def go(file, **kw):
+            rr = c.post("/api/pipeline/demo/batch", headers=hi, json={"action": "collect", "file": file, **kw}); assert rr.status_code == 200, (rr.status_code, rr.get_data(as_text=True)[:300]); return rr.json
+        assert c.post("/api/pipeline/demo/batch", headers=hi, json={"action": "collect"}).status_code == 400, "say which prompt file was run"
+        fl = c.get("/api/pipeline/demo/files", headers=hi).json["files"]; assert [(f["file"], f["slots"], f["done"]) for f in fl] == [("01-characters.txt", 1, 0), ("02-scenes-1-of-1.txt", 2, 0)], fl
+        # 1. all pictures arrived: filed under the file's own picture numbers (characters = 001, scenes = 002 and 003); old and tiny files ignored
+        pic("old.png", -50); pic("a.png", 5); (dl / "tiny.png").write_bytes(b"x" * 100); os.utime(dl / "tiny.png", (t0 + 6, t0 + 6))
+        r = go("01-characters.txt"); assert r["state"] == "filed" and r["total"] == 1 and (proj / "images" / "001.png").exists(), r
+        assert go("01-characters.txt")["state"] == "none", "a second press adds nothing"
+        # 2. one of the two scene prompts failed: nothing is filed until the user says which; the failed one gets a retry file
+        pic("b.png", 20); r = go("02-scenes-1-of-1.txt")
+        assert r["state"] == "mismatch" and r["collected"] == 1 and r["expected"] == 2 and len(r["slots"]) == 2 and not (proj / "images" / "002.png").exists(), r
+        r = go("02-scenes-1-of-1.txt", action="assign", missing=[1]); assert r["state"] == "filed" and r["missing"] == [1] and r["retry"] == "retry-02-scenes-1-of-1.txt", r
+        assert (proj / "images" / "003.png").exists() and not (proj / "images" / "002.png").exists(), "the picture went to slot 2 (picture 003), not slot 1"
+        assert len([l for l in (proj / "prompts" / r["retry"]).read_text(encoding="utf-8").splitlines() if l.strip()]) == 1
+        # 3. the retry file's picture fills the gap (slot 1 = picture 002)
+        pic("c.png", 40); r = go("retry-02-scenes-1-of-1.txt"); assert r["state"] == "filed" and r["total"] == 3 and (proj / "images" / "002.png").exists(), r
+        # 4. two out of order: swap
+        before = (proj / "images" / "002.png").stat().st_mtime
+        assert c.post("/api/pipeline/demo/batch", headers=hi, json={"action": "swap", "a": 2, "b": 3}).json["swapped"] == [2, 3]
+        # 5. more pictures than prompts is reported, not guessed
+        pic("d.png", 60); pic("e.png", 61); pic("f.png", 62); r = go("02-scenes-1-of-1.txt"); assert r["state"] == "mismatch" and r["collected"] == 3, r
     finally:
         server.ROOT = old_root; server.CONFIG = old_cfg; server._cfg.update(stamp="unset", val=None)
     ok("pipeline: eight steps, image prompts from the script (characters first, shared pictures), sound waits for the voice")
