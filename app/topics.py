@@ -123,6 +123,15 @@ Now do the remaining steps in the list above: write web/cast.js and the shots ex
     return plan_note, build_note
 
 
+def resume_note(slug, long, planned):
+    """appended to the make prompt when a video that stopped is continued: keep every file, do only what is missing"""
+    return f"""
+
+CONTINUING A VIDEO THAT STOPPED (the Claude usage limit was reached, or the run crashed). Project {slug} already exists with the work done so far. Do NOT run build.py new again and do NOT start over or rewrite anything that is finished.
+First list the project folder and read what is there: script.json, audio/ (if words.json exists the voice is done: do not re-run build.py voice), {slug}-hooks.txt, {slug}-sources.md, {slug}-shotplan.md{', chapters.json, ' + slug + '-plan.md' if long else ''}, web/cast.js, web/shots.js{' and web/shots/ch*.js' if long else ''}, stills/, the mp4, the thumbnail and {slug}-youtube.txt.
+{'The plan is complete (script, voice and shot plan exist). Only the BUILD is left.' if planned else 'The plan is not finished: carry on from the last file that exists.'} A half-written shots or cast file may be cut off mid-way: re-read it, keep the finished shots, and finish or rewrite only the broken part. Then do every remaining step, skipping any whose output already exists and looks right, and finish as the original request says."""
+
+
 def register(app, ROOT, cfg, start_job, JOBS, start_agent=None, start_staged=None):
     class _Data:                      # this channel's data folder, looked up each time it is used
         def __truediv__(self, name): return channels.data_for(ROOT) / name
@@ -447,6 +456,13 @@ The project folder is {p} (it exists). Write script.json (with the per-line kind
     @app.post("/api/topics/make")
     def topics_make():
         b = request.get_json(silent=True) or {}
+        resume = re.sub(r"[^\w.-]", "", str(b.get("resume") or ""))[:80]        # continue a video that stopped (usage limit, a crash): same project, same answers
+        if resume:
+            if hindi(): abort(400, "continuing is for the line-boil videos")
+            saved = load_json(DATA / "make" / f"{resume}.json", None)
+            if not saved or not (Path(cfg()["projects_dir"]) / resume).is_dir(): abort(404, "nothing to continue: that video was not started from the studio")
+            if any(j["label"] == f"make · {resume}" and not j["done"] for j in JOBS.values()): abort(409, "that video is still being made")
+            b = {"kind": saved.get("kind"), "topic": saved.get("topic"), "answers": saved.get("answers")}
         t, a, c = b.get("topic") or {}, b.get("answers") or {}, cfg()
         kind = KIND(b.get("kind"))
         title = clean(t.get("title"), 120)
@@ -455,7 +471,7 @@ The project folder is {p} (it exists). Write script.json (with the per-line kind
         voice = a.get("voice") if a.get("voice") in VOICE_IDS else "af_heart"
         speed = round(number(a.get("speed"), 1.0, 0.9, 1.15), 2)
         dur = int(number(a.get("minutes"), 7, 4, 15) * 60) if kind == "long" else (int(number(a.get("duration"), 40, 25, 60)) if a.get("duration") else None)      # a Short with no duration: the agent decides
-        slug = slug_for(title)
+        slug = resume or slug_for(title)
         (Path(c["projects_dir"]) / slug).mkdir(parents=True, exist_ok=True)     # reserve the name: a second click can't pick it too
         src = t.get("inspired_by") or {}
         brief = ""
@@ -518,19 +534,20 @@ The user has already approved this topic and these settings, so do NOT stop to a
 5. build.py video {slug}{'' if a.get('music', True) else ' --no-music'}{'' if a.get('outro', True) else ' --no-outro'}, then build.py sheet {slug} and look at the sheet once.
 6. {step6}
 Do not upload anything and do not touch other projects. Finish by printing the project folder, the real length, the chapters, the title, and anything you could not verify (the thumbnail is made afterwards from the Better thumbnail button)."""
+        proj = Path(c["projects_dir"]) / slug
+        planned = bool(resume) and (proj / "script.json").exists() and (proj / f"{slug}-shotplan.md").exists() and (proj / "audio" / "words.json").exists()
+        if resume: prompt += resume_note(slug, kind == "long", planned)
         (DATA / "make").mkdir(parents=True, exist_ok=True)
         save_json(DATA / "make" / f"{slug}.json", {"kind": kind, "topic": t, "answers": a, "when": dt.datetime.now().isoformat(timespec="seconds")})
         mode = "window" if (a.get("window") or c.get("agent_window")) else "feed"      # watch it live, or in its own Claude window
         model = a.get("model") if a.get("model") in ("opus", "sonnet", "haiku") else (c.get("plan_model") or None)      # one run (own window, or staging off): the polished model
-        proj = Path(c["projects_dir"]) / slug
         staged = bool(start_staged) and bool(c.get("staged_make", True)) and mode != "window" and not a.get("model")      # a model picked in the form means one run on that model
         if staged:
             plan_note, build_note = stage_notes(slug, kind == "long")
-            j = start_staged(f"make · {slug}", [
-                {"name": "Plan: script, hook and shot plan", "model": c.get("plan_model") or None, "prompt": prompt + plan_note,
-                 "expect": [str(proj / "script.json"), str(proj / f"{slug}-shotplan.md")]},
-                {"name": "Build: code, render and sheet", "model": c.get("build_model") or None, "prompt": prompt + build_note, "expect": []},
-            ])
+            stages = [{"name": "Plan: script, hook and shot plan", "model": c.get("plan_model") or None, "prompt": prompt + plan_note,
+                       "expect": [str(proj / "script.json"), str(proj / f"{slug}-shotplan.md")]},
+                      {"name": "Build: code, render and sheet", "model": c.get("build_model") or None, "prompt": prompt + build_note, "expect": []}]
+            j = start_staged(f"make · {slug}", stages[1:] if planned else stages)       # the plan is finished and saved: only the build is left, so the paid plan does not run twice
         else:
             j = run_agent(f"make · {slug}", prompt, model, mode)
         return jsonify(job=j["id"], project=slug, title=title, kind=kind, mode=mode, staged=staged)

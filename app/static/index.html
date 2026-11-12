@@ -175,7 +175,7 @@
     <button class="act sec" onclick="run({action:'auth'})">YouTube sign-in</button>
   </div>
   <div class="jobs" id="joblist"></div>
-  <div class="row" style="margin-bottom:6px"><b id="jobtitle" style="font-size:13px"></b><span style="flex:1"></span><button class="act red" id="stopbtn" onclick="stopJob()" style="display:none">Stop</button></div>
+  <div class="row" style="margin-bottom:6px"><b id="jobtitle" style="font-size:13px"></b><span style="flex:1"></span><button class="act red" id="stopbtn" onclick="stopJob()" style="display:none">Stop</button><button class="act blue" id="contbtn" onclick="continueJob()" style="display:none" title="Carry on from the files already made">▶ Continue from where it stopped</button></div>
   <div class="log" id="joblog"></div>
   <h4>Agent runs <span class="muted" id="runsum"></span></h4>
   <p class="muted" style="margin:0 0 6px">The video itself (voice, drawing, rendering) runs on your computer for free. Only the agent that writes and checks it uses Claude. The cost is Claude's own estimate at API prices: on a subscription it counts against your plan's usage instead of being billed.</p>
@@ -324,12 +324,16 @@ async function loadProjects() {
       <h3>${esc(p.title || p.name)}</h3>
       <div class="slug">${p.kind === 'long' ? '🎞 long · ' : ''}${p.name} · ${p.words} words</div>
       <div style="margin-top:6px">${p.yt ? ytBadge(p.yt) : p.steps.uploaded ? '<span class="badge up">UPLOADED</span>' : p.ready ? `<span class="badge ok">READY</span>` : '<span class="badge">IN PROGRESS</span>'}
-        <button class="del" style="float:right" title="Delete from disk" onclick="event.stopPropagation(); deleteProject('${p.name}', ${p.yt ? "'" + p.yt.state + "'" : 'null'})">🗑 Delete</button></div>
+        ${p.resumable ? `<button class="act blue" title="The run stopped part-way (usage limit or a crash). Carry on from the files already made, without redoing them." onclick="event.stopPropagation(); continueMake('${p.name}')">▶ Continue</button> ` : ''}<button class="del" style="float:right" title="Delete from disk" onclick="event.stopPropagation(); deleteProject('${p.name}', ${p.yt ? "'" + p.yt.state + "'" : 'null'})">🗑 Delete</button></div>
       <div class="chips">${stepChips(p)}</div>
     </div>`).join('');
-  const sig = JSON.stringify([making.map(j => [j.id, j.progress && j.progress.pct, j.activity, j.elapsed]), ps.map(p => [p.name, p.modified, p.title, p.yt && p.yt.state + p.yt.when, p.steps])]);
+  const sig = JSON.stringify([making.map(j => [j.id, j.progress && j.progress.pct, j.activity, j.elapsed]), ps.map(p => [p.name, p.modified, p.title, p.yt && p.yt.state + p.yt.when, p.steps, p.resumable])]);
   if (sig !== GRIDSIG) { GRIDSIG = sig; $('#grid').innerHTML = html; }       // only redraw when something changed (no flicker while a video is being made)
   clearInterval(MAKEPOLL); if (making.length) MAKEPOLL = setInterval(() => { if ($('#projects').classList.contains('on') && $('#detail').style.display === 'none') loadProjects(); else clearInterval(MAKEPOLL); }, 4000);
+}
+async function continueMake(slug) {
+  try { await api('/api/topics/make', {method: 'POST', body: {resume: slug}}); } catch (e) { return; }
+  toast('Continuing ' + slug + ' from where it stopped'); show('projects'); loadProjects();
 }
 async function deleteProject(name, ytState) {
   const live = ytState ? `\n\nIt is ${ytState.toUpperCase()} on YouTube. Deleting here does NOT remove it from YouTube.` : '';
@@ -451,13 +455,21 @@ function watch(id, target = '#joblog', onDone) {       // each log pane has its 
     try { j = await api(`/api/jobs/${id}?since=${n}`, {silent: true}); }
     catch (e) { clearInterval(POLLS[target]); $(target).textContent += '\n(that job is no longer known: the studio was restarted)'; if (onDone) onDone({code: -1}); return; }
     n = j.n;
-    if (target === '#joblog') { $('#jobtitle').textContent = j.label; $('#stopbtn').style.display = j.done ? 'none' : ''; }
+    if (target === '#joblog') { $('#jobtitle').textContent = j.label; $('#stopbtn').style.display = j.done ? 'none' : ''; if (!j.done) $('#contbtn').style.display = 'none'; }
     if (j.log.length) { const el = $(target); el.textContent += j.log.join('\n') + '\n'; el.scrollTop = el.scrollHeight; }
-    if (j.done) { clearInterval(POLLS[target]); $(target).textContent += j.code === 0 ? '\n✓ finished' : `\n✗ exited with ${j.code}`; if (onDone) onDone(j); }
+    if (j.done) { clearInterval(POLLS[target]); $(target).textContent += j.code === 0 ? '\n✓ finished' : `\n✗ exited with ${j.code}`; if (target === '#joblog') showContinue(j.label); if (onDone) onDone(j); }
     if (target === '#joblog' || j.done) loadJobs().catch(() => {});
   };
   tick(); POLLS[target] = setInterval(tick, 1000);
 }
+async function showContinue(label) {       // a make run that ended: offer to carry on if it left work unfinished
+  const b = $('#contbtn'); if (!b) return; b.style.display = 'none';
+  if (!label.startsWith('make · ')) return;
+  const js = await api('/api/jobs', {silent: true}).catch(() => []);
+  const me = js.find(x => x.id === CUR);
+  if (me && me.resumable) { b.dataset.slug = label.slice(7); b.style.display = ''; }
+}
+function continueJob() { const b = $('#contbtn'); if (b && b.dataset.slug) continueMake(b.dataset.slug); }
 async function stopJob() { if (CUR) await api(`/api/jobs/${CUR}/stop`, {method: 'POST'}); }
 
 // ---------- agent ----------

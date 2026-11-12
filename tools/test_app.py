@@ -96,8 +96,15 @@ def test_channels():
         r = c.get("/api/channels", headers=H).json
         assert r["home"] == "bean" and [x["id"] for x in r["channels"]][:2] == ["bean", "hindi"] and r["current"] == "bean"
         hi = {"X-Channel": "hindi", **H}
-        assert "topics" in next(x for x in r["channels"] if x["id"] == "bean")["tools"] and "topics" not in next(x for x in r["channels"] if x["id"] == "hindi")["tools"]
+        bean_row, hindi_row = (next(x for x in r["channels"] if x["id"] == i) for i in ("bean", "hindi"))
+        assert "topics" in bean_row["tools"] and "topics" in hindi_row["tools"]          # the Hindi channel has the Topics tab (and its analyzer) ...
+        assert bean_row["kinds"] == ["short", "long"] and hindi_row["kinds"] == ["long"]     # ... but makes long videos only, so no Shorts button
         assert c.get("/api/channels", headers=hi).json["current"] == "hindi"
+        assert c.get("/api/topics?kind=short", headers=hi).json["kind"] == "long", "the Hindi channel is asked for Shorts and gets long videos"
+        assert c.get("/api/topics?kind=short", headers=H).json["kind"] == "short"
+        assert c.post("/api/topics/analyze", headers=H, json={"topic": "x"}).status_code == 400, "the topic analyzer is for the Hindi channel"
+        assert c.post("/api/topics/analyze", headers=hi, json={"topic": ""}).status_code == 400
+        assert c.get("/api/topics/analyses", headers=hi).json["analyses"] == []
         assert c.get("/api/channels", headers={"X-Channel": "nope", **H}).json["current"] == "bean", "unknown channel falls back to home"
         # folders: home keeps data/ and line-boil; the other lives under channels/<id>/
         assert channels.data_dir(root, server.cfg_raw(), "bean") == root / "data" and channels.data_dir(root, server.cfg_raw(), "hindi") == root / "channels" / "hindi" / "data"
@@ -284,6 +291,15 @@ def test_long_topics():
     assert "Theme: AUTO" in sp and "noir" in sp, "no theme chosen: the planner picks it from the genre"
     c3.post("/api/topics/make", json={"kind": "short", "topic": {"title": "Dark idea"}, "answers": {"theme": "noir"}})
     assert "--theme noir" in launched[-1][-1] and "Theme: AUTO" not in launched[-1][-1], "a chosen theme is passed to build.py new"
+    # a video that stopped (usage limit) can be continued: same project and answers, no second "build.py new", and a finished plan is not paid for again
+    slug0 = s["project"]; pr0 = root / "proj" / slug0
+    (pr0 / "audio").mkdir(parents=True, exist_ok=True); (pr0 / "script.json").write_text(json.dumps(["word " * 40])); (pr0 / "audio" / "words.json").write_text("[]"); (pr0 / f"{slug0}-shotplan.md").write_text("plan")
+    n_before = len(launched)
+    JOBS[s["job"]]["done"] = True
+    r0 = c3.post("/api/topics/make", json={"resume": slug0}); assert r0.status_code == 200 and r0.json["project"] == slug0, r0.data
+    rp = launched[-1][-1] if len(launched) > n_before else ""
+    assert c3.post("/api/topics/make", json={"resume": "no-such-video"}).status_code == 404
+    assert "CONTINUING A VIDEO THAT STOPPED" in rp and "Do NOT run build.py new again" in rp and "Only the BUILD is left" in rp, "the resume note tells the agent to keep finished files"
     assert json.loads((root / "data" / "make" / f"{m['project']}.json").read_text())["kind"] == "long"
     D = server.DEFAULTS
     assert D["plan_model"] == "opus" and D["build_model"] == "sonnet" and D["options_model"] == "opus" and D["thumbnail_ideas_model"] == "opus" and D["thumbnail_draw_model"] == "sonnet" and D["agent_model"] == "sonnet", "every run names its model: Opus decides, Sonnet codes"

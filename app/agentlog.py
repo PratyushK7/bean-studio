@@ -6,7 +6,7 @@ make_progress()   works out a percentage and the current stage from the FILES a 
                   honest (it only moves when something real exists), and works the same whether the agent runs in the
                   background or in its own window.
 """
-import json, os, time
+import json, os, re, time
 from pathlib import Path
 
 import store
@@ -66,6 +66,8 @@ def parse(raw, job):
         cost = f", about ${ev['total_cost_usd']:.2f} at API prices" if isinstance(ev.get("total_cost_usd"), (int, float)) else ""
         out.append(f"{'✗' if ev.get('is_error') else '✓'} {'Failed' if ev.get('is_error') else 'Finished'} after {secs // 60} min {secs % 60} s and {ev.get('num_turns', '?')} turns{cost}")
         if ev.get("result"): out.append(str(ev["result"]).strip())
+        if ev.get("is_error") and re.search(r"limit|quota|usage", str(ev.get("result") or ""), re.I):
+            out.append("⏸ The Claude usage limit was reached. Nothing is lost: when it resets, press Continue and it carries on from the files already made.")
     return out
 
 

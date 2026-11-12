@@ -253,7 +253,17 @@ def job_view(j):
         slug = j["label"][7:]
         kind = (store.read(DATA() / "make" / f"{slug}.json", {}) or {}).get("kind", "short")
         v.update(progress=agentlog.make_progress(Path(cfg()["projects_dir"]) / slug, kind), elapsed=agentlog.clock((time.time() if not j["done"] else j.get("ended", time.time())) - j["started"]), kind=kind)
+        v["resumable"] = bool(j["done"] and (j.get("code") != 0 or v["progress"]["pct"] < 100) and can_resume(slug))
     return v
+
+
+def can_resume(slug):
+    """a video started from the studio and not finished, with no run going on it: shows the Continue button"""
+    p = Path(cfg()["projects_dir"]) / slug
+    if not p.is_dir() or not (DATA() / "make" / f"{slug}.json").exists(): return False
+    if any(j["label"] == f"make · {slug}" and not j["done"] for j in JOBS.values()): return False
+    return not ((p / f"{slug}.mp4").exists() and (p / f"{slug}-youtube.txt").exists() and (p / f"{slug}.srt").exists())
+
 
 @app.get("/api/jobs")
 def jobs():
@@ -299,7 +309,7 @@ def summary(p):
                  "sheet": has("-youtube.txt"), "uploaded": bool(upinfo)}
     ready = all(steps[k] for k in ("video", "srt", "thumbnail", "sheet"))
     return {"name": n, "kind": kind, "title": sheet_title(p), "words": words, "steps": steps, "upload": upinfo, "yt": ytstate.badge_for(p),
-            "ready": ready,
+            "ready": ready, "resumable": (not ready) and can_resume(n),
             "modified": max((f.stat().st_mtime for f in p.iterdir()), default=0)}
 
 @app.get("/api/projects")
