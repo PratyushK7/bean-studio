@@ -504,6 +504,37 @@ def test_delete_and_media():
     ok("delete: read-only files removed, bad names refused")
 
 
+def test_pipeline_steps():
+    """the Pipeline tab: eight steps read from files, image prompts made from a script (characters first, then scenes), sound needs the voice first"""
+    import channels, shutil
+    old_root, old_cfg = server.ROOT, server.CONFIG
+    root = TMP / "plroot"; (root / "data").mkdir(parents=True); (root / "tools").mkdir()
+    shutil.copy(HERE / "vyapaar_prompts.py", root / "tools" / "vyapaar_prompts.py"); shutil.copy(HERE / "vyapaar_mix.py", root / "tools" / "vyapaar_mix.py")
+    server.ROOT = root; server.CONFIG = TMP / "cfg-pl.json"; server.CONFIG.write_text("{}"); server._cfg.update(stamp="unset", val=None)
+    hi = {"X-Channel": "hindi", **H}
+    try:
+        proj = root / "channels" / "hindi" / "videos" / "demo"; proj.mkdir(parents=True)
+        R = "Ramesh (a 52-year-old Indian jeweller with grey hair, grey moustache and round spectacles, cream kurta and brown Nehru jacket)"
+        lines = [{"hi": "एक दो तीन चार पांच छह सात आठ नौ दस ग्यारह बारह तेरह चौदह पंद्रह सोलह सत्रह अठारह उन्नीस बीस इक्कीस", "kind": "hero", "visual": f"{R} at his shop counter", "chapter": "Start"},
+                 {"hi": "दूसरी लाइन", "kind": "card", "visual": "Card: a number"}, {"hi": "तीसरी लाइन", "kind": "still", "visual": "A narrow bazaar at noon"},
+                 {"hi": "चौथी लाइन", "kind": "hero", "visual": f"{R} at his shop counter"}]
+        store.write(proj / "script.json", {"title": "t", "format": "economics", "lines": lines})
+        row = next(r for r in c.get("/api/pipeline", headers=hi).json["projects"] if r["name"] == "demo")
+        assert [s["key"] for s in row["stages"]] == ["script", "prompts", "images", "voice", "clips", "sound", "render", "sheet"] and row["hero"] == 2
+        assert row["stages"][0]["state"] and row["next_key"] == "prompts", "a written script moves the next step to the image prompts"
+        assert c.post("/api/pipeline/demo/sound", headers=hi, json={}).status_code == 400, "no sound without the voice"
+        r = c.post("/api/pipeline/demo/make-prompts", headers=hi, json={}); assert r.status_code == 200, r.json
+        files = sorted(f.name for f in (proj / "prompts").glob("0*.txt"))
+        assert files == ["01-characters.txt", "02-scenes-1-of-1.txt"], files
+        idx = json.loads((proj / "images-index.json").read_text(encoding="utf-8"))
+        assert [x["type"] for x in idx] == ["character", "scene", "scene"] and idx[1]["lines"] == [1, 4], "the repeated shot shares one picture; the card line needs none"
+        assert "Ramesh" in (proj / "prompts" / "01-characters.txt").read_text(encoding="utf-8")
+        assert c.post("/api/pipeline/demo/make-prompts", headers=hi, json={}).status_code == 200
+    finally:
+        server.ROOT = old_root; server.CONFIG = old_cfg; server._cfg.update(stamp="unset", val=None)
+    ok("pipeline: eight steps, image prompts from the script (characters first, shared pictures), sound waits for the voice")
+
+
 if __name__ == "__main__":
     for name, fn in list(globals().items()):
         if name.startswith("test_"): fn()

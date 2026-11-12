@@ -18,15 +18,16 @@ SLUG = re.compile(r"^[a-z0-9][a-z0-9-]{0,60}$")
 IMG = {".png", ".jpg", ".jpeg", ".webp"}
 MODELS = {"topic": "opus", "research": "opus", "script": "opus", "packaging": "opus", "prompts": "sonnet", "shots": "sonnet",
           "build": "sonnet", "render": "sonnet", "checks": "haiku"}
-STAGES = [("script", "Script"), ("check", "Checked"), ("prompts", "Prompts"), ("images", "Images"), ("assets", "Assets"),
-          ("voice", "Voice"), ("render", "Video"), ("sheet", "Upload sheet")]
-NEXT = {"script": "Write the script (the Script button runs it on Opus).",
-        "check": "Run the script checker and fix every FAIL.",
-        "prompts": "Make the ChatGPT prompt files (prompts/*.txt, one self-contained prompt per line).",
-        "images": "Run the prompt files in your ChatGPT extension, then press Collect downloads.",
-        "assets": "Cut the images apart and colour-match them into assets/.",
-        "voice": "Make the Hindi voice with word timings.",
-        "render": "Render the video.",
+STAGES = [("script", "Script"), ("prompts", "Image prompts"), ("images", "Pictures"), ("voice", "Voice"), ("clips", "Clips"),
+          ("sound", "Sound"), ("render", "Video"), ("sheet", "Upload sheet")]
+BUILT = {"script", "prompts", "images", "voice", "sound"}        # steps with a working button; the rest say "coming next" instead of pretending
+NEXT = {"script": "Write the script (Opus does it from your topic).",
+        "prompts": "Make the image prompts from the script.",
+        "images": "Run the prompt files in your ChatGPT extension, then collect the downloads.",
+        "voice": "Make the Hindi voice (Sarvam, about 2 minutes, a few rupees).",
+        "clips": "Animate the key shots (coming next: needs the xAI video step).",
+        "sound": "Mix the music and sound effects under the voice.",
+        "render": "Build the video (coming next).",
         "sheet": "Write the title, description and chapters, then upload from the Videos tab."}
 
 
@@ -43,20 +44,18 @@ def status(p):
     if sj.exists():
         try: words = sum(len(str(l.get("hi", "")).split()) for l in json.loads(sj.read_text(encoding="utf-8")).get("lines", []))
         except Exception: words = 0
-    out["script"] = f"{words} words" if words > 20 else None
     chk = next(iter(_files(p, "*-check.txt")), None)
-    if chk:
-        t = chk.read_text(encoding="utf-8", errors="replace")
-        fails = len(re.findall(r"^\s*FAIL\b", t, re.M))
-        out["check"] = "clean" if not fails else f"{fails} FAIL"
-    else: out["check"] = None
-    prompts = len({l.strip() for f in _files(p, "prompts/*.txt") for l in f.read_text(encoding="utf-8").splitlines() if l.strip()})   # distinct: an all-in-one file repeats the others
+    fails = len(re.findall(r"^\s*FAIL\b", chk.read_text(encoding="utf-8", errors="replace"), re.M)) if chk else 0
+    out["script"] = (f"{words} words" + (f" · {fails} FAIL" if fails else (" · checked" if chk else ""))) if words > 20 else None
+    prompts = len({l.strip() for f in _files(p, "prompts/0*.txt") for l in f.read_text(encoding="utf-8").splitlines() if l.strip()})   # distinct: an all-in-one file repeats the others
     out["prompts"] = f"{prompts} prompts" if prompts else None
     imgs = [f for f in (p / "images").glob("*") if f.suffix.lower() in IMG and not f.name.startswith("_")] if (p / "images").is_dir() else []
     out["images"] = (f"{len(imgs)} of {prompts}" if prompts else f"{len(imgs)}") if imgs else None
     assets = [f for f in (p / "assets").rglob("*") if f.is_file()] if (p / "assets").is_dir() else []
-    out["assets"] = f"{len(assets)} files" if assets else None
-    out["voice"] = ("ready · .srt" if any(_files(p, "*.srt")) else "ready") if any(_files(p, "voice.*")) or any(_files(p, "*.wav")) else None
+    clips = [f for f in (p / "clips").glob("*.mp4")] if (p / "clips").is_dir() else []
+    out["clips"] = f"{len(clips)} clips" if clips else None
+    out["sound"] = "mixed" if any(_files(p, "mix*.mp3")) else None
+    out["voice"] = ("ready · .srt" if any(_files(p, "*.srt")) else "ready") if (p / "voice.mp3").exists() else None
     out["render"] = "ready" if any(_files(p, "*.mp4")) else None
     out["sheet"] = "ready" if (p / f"{n}-youtube.txt").exists() else None
     return out
@@ -64,9 +63,14 @@ def status(p):
 
 def summary(p):
     st = status(p)
-    nxt = next((k for k, _ in STAGES if not st[k] or (k == "check" and "FAIL" in st[k])), None)
-    return {"name": p.name, "stages": [{"key": k, "label": lab, "state": st[k]} for k, lab in STAGES], "next": NEXT.get(nxt, "Everything is ready: upload it."),
-            "next_key": nxt, "modified": max((f.stat().st_mtime for f in p.rglob("*") if f.is_file()), default=p.stat().st_mtime)}
+    nxt = next((k for k, _ in STAGES if not st[k] or (k == "script" and "FAIL" in st[k])), None)
+    hero = []
+    try: hero = [l for l in json.loads((p / "script.json").read_text(encoding="utf-8")).get("lines", []) if l.get("kind") == "hero"]
+    except Exception: pass
+    secs = sum(max(2.0, min(5.0, len(str(l.get("hi", "")).split()) * 60 / 155 + 0.4)) for l in hero)
+    return {"name": p.name, "stages": [{"key": k, "label": lab, "state": st[k], "built": k in BUILT} for k, lab in STAGES],
+            "next": NEXT.get(nxt, "Everything is ready: upload it."), "next_key": nxt, "hero": len(hero), "hero_cost": round(secs * 0.032, 2),
+            "modified": max((f.stat().st_mtime for f in p.rglob("*") if f.is_file()), default=p.stat().st_mtime)}
 
 
 def register(app, ROOT, cfg, start_agent, JOBS, start_job):
@@ -104,7 +108,7 @@ def register(app, ROOT, cfg, start_agent, JOBS, start_job):
     @app.get("/api/pipeline/<name>/prompts")
     def pipeline_prompts(name):
         p = pdir(name)
-        files = [{"file": f.name, "path": str(f), "lines": [l for l in f.read_text(encoding="utf-8").splitlines() if l.strip()]} for f in _files(p, "prompts/*.txt")]
+        files = [{"file": f.name, "path": str(f), "lines": [l for l in f.read_text(encoding="utf-8").splitlines() if l.strip()]} for f in _files(p, "prompts/0*.txt")]
         return jsonify(files=files, folder=str(p / "prompts"))
 
     @app.post("/api/pipeline/<name>/script")
@@ -124,6 +128,22 @@ def register(app, ROOT, cfg, start_agent, JOBS, start_job):
         p = pdir(name)
         if not (p / "script.json").exists(): abort(400, "this video has no script.json yet")
         return jsonify(start_job(f"voice · {name}", [cfg()["python"], str(ROOT / "tools" / "vyapaar_voice.py"), str(p)], str(ROOT), unique=True))
+
+    @app.post("/api/pipeline/<name>/make-prompts")
+    def pipeline_make_prompts(name):
+        """script.json -> prompts/*.txt and images-index.json (tools/vyapaar_prompts.py); quick, so it runs here and returns its summary"""
+        p = pdir(name)
+        if not (p / "script.json").exists(): abort(400, "this video has no script.json yet")
+        r = subprocess.run([cfg()["python"], str(ROOT / "tools" / "vyapaar_prompts.py"), str(p)], capture_output=True, text=True, encoding="utf-8", errors="replace", env={**os.environ, "PYTHONUTF8": "1"})
+        if r.returncode: abort(500, (r.stderr or r.stdout)[-300:])
+        return jsonify(ok=True, summary=r.stdout.strip())
+
+    @app.post("/api/pipeline/<name>/sound")
+    def pipeline_sound(name):
+        """voice + music moods + ambience + sound effects -> mix.mp3 (tools/vyapaar_mix.py; synthesised placeholders unless real tracks are in audio/)"""
+        p = pdir(name)
+        if not (p / "voice.mp3").exists() or not (p / "voice-lines.json").exists(): abort(400, "make the voice first (the mix is timed from it)")
+        return jsonify(start_job(f"sound · {name}", [cfg()["python"], str(ROOT / "tools" / "vyapaar_mix.py"), str(p)], str(ROOT), unique=True))
 
     @app.post("/api/pipeline/<name>/batch")
     def pipeline_batch(name):
