@@ -279,6 +279,17 @@ sign-off from `voice-hindi.md`. No ask anywhere before this.
 
 Aim for 2,200 to 2,800 Hindi words (14 to 18 minutes at 155 words a minute); for a 10 to 15 minute video, 1,600 to 2,300.
 
+### The sound plan (optional fields, filled from the beat sheet's feeling column)
+
+- `"music"` on the line where a mood starts (it holds until the next one): `tense`, `warm`, `curious`, `sad`, `hopeful`. One mood per
+  chapter, plus changes at the big turns (the reveal that flips the story, the countdown, the last image).
+- `"amb"` a quiet looping bed (`crowd`, `fan`, `tv`, `flame`, or `none` to end it) where a place's sound matters.
+- `"sfx"` a name or a list at a line's start (`"coin@1.0"` = one second later): `whoosh`, `whoosh_soft`, `thud`, `coin`, `page`, `tick`,
+  `scale_ping`, `door`, `shutter`, `riser`, `stinger`. Use them on money moments (a coin per share-taker), reveals (a low thud and a held
+  silence), and scene changes; never under every line.
+- Mix with `python tools/vyapaar_mix.py <project>` (the music ducks under the voice, the sum is levelled to -14 LUFS). Real tracks go in
+  `<project>/audio/music/<mood>.mp3` and `<project>/audio/sfx/<name>.wav`; without them it uses thin synthesised placeholders.
+
 ### The shot plan (every line carries `kind`)
 
 The pictures follow how the reference channels edit, measured on their real clips (HinExp, ABFinDoc, Finance In Minutes
