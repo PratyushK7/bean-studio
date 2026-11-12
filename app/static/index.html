@@ -266,7 +266,7 @@ const PL_OPEN = {};                                          // which step the u
 const PL_INFO = {
   script:  ['Write the script', 'Opus writes it from your topic (research, hook, chapters, shot plan) and checks it. You can also start it from the Topics tab.'],
   prompts: ['Make the image prompts', 'Turns the script into prompt files for your ChatGPT extension: first the character sheets, then the scene pictures in batches of 30.'],
-  images:  ['Make the pictures', 'Four small moves, in order. The studio never touches ChatGPT: you run the prompt files in your own extension.'],
+  images:  ['Make the pictures', 'Two moves per file. The studio never touches ChatGPT: you run the prompt files in your own extension, then it picks up what was downloaded.'],
   voice:   ['Make the voice', 'The locked voice (Sarvam, aditya) reads the whole script. It also gives exact timings and the .srt subtitle file (never burned in).'],
   clips:   ['Animate the key shots', 'The shots marked hero become 2 to 5 second video clips (xAI), smoothed to 48 fps. Not built into the studio yet.'],
   sound:   ['Mix music and effects', 'Puts music, ambience and sound effects under the voice. Uses your own tracks from the audio folder, or thin placeholders if there are none.'],
@@ -304,12 +304,11 @@ function plActions(p, s) {
     case 'script': return `<div class="row" style="flex-wrap:wrap;gap:8px"><input id="plt-${n}" placeholder="topic, e.g. jewellery shop economics" style="min-width:280px">${b('✍ Write the script (Opus)', `plScript('${n}')`)}</div>` +
       (s.state ? `<div class="muted" style="margin-top:6px">A script exists. Writing again replaces it, so only do that on purpose.</div>` : '');
     case 'prompts': return b('📋 Make the image prompts', `plMakePrompts('${n}')`) + ' ' + (s.state ? b('Show the prompts', `plPrompts('${n}')`, 'sec') : '');
-    case 'images': return `<ol style="margin:0 0 8px 18px;padding:0;line-height:1.9">
-      <li>${b('▶ Start batch', `plBatch('${n}','start')`, 'sec')} <span class="muted">press this just before you run a file</span></li>
-      <li>Open the extension, upload <b>one</b> prompt file from the prompts folder (characters first), choose wide, delay 5 to 7 s, run it.</li>
-      <li>${b('⬇ Collect downloads', `plBatch('${n}','collect')`, 'sec')} <span class="muted">when the extension has finished</span></li>
-      <li>${b('🖼 Check the sheet', `plContact('${n}',0)`, 'sec')} <span class="muted">numbered pictures; a wrong one is easier to spot now than later</span></li></ol>
-      <div class="muted">Repeat for each file. ${b('📋 Show the prompts', `plPrompts('${n}')`, 'sec')} ${b('📂 Prompts folder', `plOpen('${n}','prompts')`, 'sec')}</div>`;
+    case 'images': return `<ol style="margin:0 0 8px 18px;padding:0;line-height:2">
+      <li>In your ChatGPT extension, upload <b>one</b> prompt file from the prompts folder (start with <code>01-characters</code>), choose wide, delay 5 to 7 s, and run it until the pictures have downloaded.</li>
+      <li>${b('⬇ Get my pictures', `plBatch('${n}','collect')`)} <span class="muted">copies the new pictures from your Downloads folder into this video, numbered in order</span></li>
+      <li>${b('🖼 Check the sheet', `plContact('${n}',0)`, 'sec')} <span class="muted">all pictures on one numbered page</span></li></ol>
+      <div class="muted">Then repeat for the next file. ${b('📋 Show the prompts', `plPrompts('${n}')`, 'sec')} ${b('📂 Prompts folder', `plOpen('${n}','prompts')`, 'sec')}</div>`;
     case 'voice': return b('🎙 Make the voice', `plVoice('${n}')`) + ' <span class="muted">runs in the background; follow it in the Activity tab</span>';
     case 'clips': return `<div class="muted">${p.hero} hero shots, about $${p.hero_cost} at xAI prices (rough: shot length from the narration). This step is not built into the studio yet.</div>`;
     case 'sound': return p.stages.find(x => x.key === 'voice').state ? b('🎚 Mix the sound', `plSound('${n}')`) + ' <span class="muted">music moods, ambience and effects come from the script; real tracks in <code>audio/music</code> and <code>audio/sfx</code> replace the placeholders</span>'
@@ -328,7 +327,7 @@ async function plScript(n) { const topic = $(`#plt-${n}`).value.trim(); const j 
 async function plBatch(n, action) {
   const r = await api(`/api/pipeline/${n}/batch`, {method: 'POST', body: {action}});
   if (action === 'start') toast('Batch started. Run one prompt file in ChatGPT now, then press Collect downloads.');
-  else { toast(r.collected + ' image' + (r.collected === 1 ? '' : 's') + ' collected from ' + r.downloads + (r.collected ? ' (' + r.first + ' to ' + r.last + ')' : '. Nothing new yet.')); loadPipeline(); }
+  else { toast(r.collected ? r.collected + ' new picture' + (r.collected === 1 ? '' : 's') + ' added (' + r.total + ' in all)' : 'No new pictures yet: wait until the extension has finished downloading, then press again.'); loadPipeline(); }
 }
 async function plContact(n, page) {
   const r = await api(`/api/pipeline/${n}/contact`, {method: 'POST', body: {page}});

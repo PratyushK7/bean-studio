@@ -155,9 +155,12 @@ def register(app, ROOT, cfg, start_agent, JOBS, start_job):
             m["since"] = time.time(); save_meta(p, m)
             return jsonify(ok=True, since=m["since"])
         if act != "collect": abort(400, "bad action")
-        if not m.get("since"): abort(400, "press Start batch before you run the prompts in ChatGPT")
+        # no Start button needed: "mine" = images that arrived after the prompts were made or after the last collect, whichever is later
+        marker = p / "images-index.json"
+        since = max(m.get("since") or 0, marker.stat().st_mtime if marker.exists() else 0)
+        if not since: abort(400, "make the image prompts first")
         dl = _downloads()
-        found = sorted((f for f in dl.iterdir() if f.is_file() and f.suffix.lower() in IMG and f.stat().st_mtime >= m["since"] and f.stat().st_size > 60_000),
+        found = sorted((f for f in dl.iterdir() if f.is_file() and f.suffix.lower() in IMG and f.stat().st_mtime > since and f.stat().st_size > 60_000),
                        key=lambda f: f.stat().st_mtime) if dl.is_dir() else []
         (p / "images").mkdir(exist_ok=True)
         have = [f for f in (p / "images").iterdir() if f.stem.isdigit()]
@@ -167,8 +170,10 @@ def register(app, ROOT, cfg, start_agent, JOBS, start_job):
             n += 1
             dest = p / "images" / f"{n:03d}{f.suffix.lower()}"
             shutil.copy2(f, dest); names.append(dest.name)
+        if found: m["since"] = max(f.stat().st_mtime for f in found)          # the next collect continues from the newest picture taken
         m.setdefault("batches", []).append({"at": time.time(), "from": str(dl), "files": names}); save_meta(p, m)
-        return jsonify(ok=True, collected=len(names), first=names[:1], last=names[-1:], downloads=str(dl))
+        total = len([f for f in (p / "images").iterdir() if f.stem.isdigit()])
+        return jsonify(ok=True, collected=len(names), first=names[:1], last=names[-1:], downloads=str(dl), total=total)
 
     @app.post("/api/pipeline/<name>/contact")
     def pipeline_contact(name):

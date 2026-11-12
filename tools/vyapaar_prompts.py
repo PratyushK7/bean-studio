@@ -57,7 +57,7 @@ def main():
         "Run the files in this order in the ChatGPT extension (Prefix and Suffix empty, wide aspect, delay 5 to 7 s):\n"
         "  01-characters.txt first. Check the sheets, then attach each person's sheet with '+ Images' for the scene files that show them.\n"
         "  02-... onwards: one file per sitting (about 30 pictures each, so plan limits are not hit).\n"
-        "Press Start batch in the studio before each file and Collect downloads after it. Image numbers follow this order (see images-index.json).\n", encoding="utf-8")
+        "Run one file, then press Get my pictures in the studio (no Start button). Image numbers follow this order (see images-index.json).\n", encoding="utf-8")
     cards = sum(1 for l in lines if l.get("kind") == "card")
     print(f"{len(lines)} script lines: {k} character sheets + {len(scenes)} scene pictures ({sum(len(x['lines']) for x in index[k:])} lines served; {cards} card lines are drawn by code)")
     print(f"wrote {nb + 1} files in {pd}: 01-characters.txt, {nb} scene file(s) of up to {a.batch}; images-index.json")

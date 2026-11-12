@@ -530,6 +530,17 @@ def test_pipeline_steps():
         assert [x["type"] for x in idx] == ["character", "scene", "scene"] and idx[1]["lines"] == [1, 4], "the repeated shot shares one picture; the card line needs none"
         assert "Ramesh" in (proj / "prompts" / "01-characters.txt").read_text(encoding="utf-8")
         assert c.post("/api/pipeline/demo/make-prompts", headers=hi, json={}).status_code == 200
+        dl = TMP / "dl"; dl.mkdir(); server.CONFIG.write_text(json.dumps({"downloads_dir": str(dl)})); server._cfg.update(stamp="unset", val=None); time.sleep(0.02); os.utime(server.CONFIG, (time.time() + 3, time.time() + 3))
+        t0 = (proj / "images-index.json").stat().st_mtime
+        def pic(name, dt_s):
+            f = dl / name; f.write_bytes(b"x" * 70_000); os.utime(f, (t0 + dt_s, t0 + dt_s))
+        pic("old.png", -50); pic("a.png", 5); pic("b.png", 9); (dl / "tiny.png").write_bytes(b"x" * 100); os.utime(dl / "tiny.png", (t0 + 6, t0 + 6))
+        r = c.post("/api/pipeline/demo/batch", headers=hi, json={"action": "collect"}).json
+        assert r["collected"] == 2 and r["total"] == 2, r                       # no Start button: old and tiny files are ignored
+        assert c.post("/api/pipeline/demo/batch", headers=hi, json={"action": "collect"}).json["collected"] == 0, "a second press adds nothing"
+        pic("c.png", 20)
+        r = c.post("/api/pipeline/demo/batch", headers=hi, json={"action": "collect"}).json
+        assert r["collected"] == 1 and r["total"] == 3 and (proj / "images" / "003.png").exists(), r
     finally:
         server.ROOT = old_root; server.CONFIG = old_cfg; server._cfg.update(stamp="unset", val=None)
     ok("pipeline: eight steps, image prompts from the script (characters first, shared pictures), sound waits for the voice")
