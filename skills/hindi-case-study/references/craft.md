@@ -104,6 +104,10 @@ f) **The money guess plus personal stakes plus one thing**: "पूरा या
 g) **The hidden number**: "जवाब पूरी रिपोर्ट में नहीं था। जवाब उसमें छुपे एक छोटे से नंबर में था।"
 h) **A big fight made personal**: "जिसका असर सिर्फ अडानी और बिड़ला पर नहीं, बल्कि आपके घर की दीवारों तक पड़ सकता है।"
 
+**The gain.** The winners also tell the viewer what they will be able to do: the turf video says "हो सकता है अगला टर्फ तुम खोलो अपनी
+सेविंग से... मैं तुम्हें वो एक चीज बताऊंगा"; the dhaba video says "इतने में तो मैं भी ढाबा खोल लूं" then "नहीं खोलना". Curiosity and dread make a
+viewer start; a promised personal gain keeps them to the end. A hook with only a mystery and a person in danger is half a hook.
+
 **Every winning hook has**: a concrete scene in sentence one (time, place, a person, a thing you could photograph); a
 contradiction between what is seen and what is true; rupees or a life at stake; a question the viewer now needs answered; and the
 promise of ONE specific reveal (a small thing, one number, one mistake, one share-taker), often "जवाब आखिर में". No greeting, no

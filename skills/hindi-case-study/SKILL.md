@@ -130,6 +130,10 @@ English notes, short, before any Hindi:
 1. **The question.** The one question the hook asks and the last minute answers. Its exact answer (from the research file, with the
    arithmetic shown), two or three wrong guesses the viewer will make, and why the true answer surprises. If it does not surprise,
    the angle is wrong: stop and find a sharper one before writing.
+1b. **The viewer's gain.** Fear and curiosity make people start; a gain makes them stay. Write the one thing the viewer will be able
+   to DO or SEE for themselves by the end, concrete and checkable (read a bill, spot a trick, run a number on their own shop, know
+   what to ask). It must be promised inside the first 60 seconds (section 6) and paid in the close. HinExp: "हो सकता है अगला टर्फ तुम
+   खोलो अपनी सेविंग से"; Paisa Decode: "उसके बाद मैं तुम्हें वो एक चीज बताऊंगा".
 2. **The shape** from craft section 3 (A-story, A-explainer, B rise/fall, C thriller, mystery, list, compare), and one line on why.
    For format A prefer **A-story** (an owner's story: HiddenOps' sleeper bus beat HinExp's explainer 3.8M to 2.1M).
 3. **The person we follow.** For A-story, invented characters (one, or two whose interests clash, like the buyer and the seller);
@@ -170,6 +174,10 @@ beat (short names), **plant / payoff**. Rules:
 - Each chapter opens with a re-hook from craft section 5 that **promises something specific** or **raises the danger to someone we
   care about**, in fresh words.
 - The biggest reveal sits in the middle third.
+- **Tension ledger**: in a 60-second window with no turn, the beat sheet names which mechanism from craft section 5 fills it (a
+  prediction invited, a countable promise, a mentor's riddle, a foreshadow, a share-taker walking in). A stretch of two or more
+  explaining beats gets one in the middle. Never more than about 75 seconds without a turn, never more than 2.5 minutes without a
+  real re-hook that names the specific thing coming.
 
 ## 6. The hook (the first 20 to 60 seconds): `<slug>-hooks.md`
 
@@ -183,6 +191,10 @@ stake; the engine's question, as a guess with wrong options where there is money
 - A-story and C: the cold open at the dread event, then the jump back ("यह कहानी उस रात से 11 महीने पहले शुरू होती है").
 - Invented characters: no disclaimer, no line about them being made up. The hook goes straight on with the story.
 - No greeting, no channel intro, no ask.
+
+Every hook also promises **the viewer's gain** in one plain line inside the first 60 seconds, in the viewer's terms ("आखिर में आप किसी भी
+बिल पर ये दो चीजें खुद चेक कर पाएंगे", "और ये हिसाब आप अपनी दुकान पर खुद लगा पाएंगे"). Not a roadmap of chapters: one thing they walk
+away able to do.
 
 Pick with two tests and write the result under the hooks: the **scroll test** (read sentence one alone, then the first 15 seconds
 alone: would a stranger stop scrolling for each?) and the **title test** (the hook confirms the title within 15 seconds).
@@ -225,6 +237,7 @@ sign-off from `voice-hindi.md`. No ask anywhere before this.
 
 ## 9. Revision passes (all of them; write what each one changed into `<slug>-check.txt`)
 
+0. **Gain test**: say the viewer's gain in one sentence; it appears in the first 60 seconds and is paid in the close, or add it.
 1. **Scroll test, every 30 seconds**: name the open question, the feeling and the new picture in that window. A window with no
    open question or no feeling is rewritten.
 2. **Lecture test**: three or more lines in a row that only inform become a scene, a line of dialogue, a guess, or are cut.

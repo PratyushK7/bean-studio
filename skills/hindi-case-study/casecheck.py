@@ -36,8 +36,11 @@ STRONG = [rx(p) for p in [
     # what the hits use in the long stretches between the big twists: a setback, a callback, the overlooked part
     r"झटका", r"अनदेखा", r"(शुरुआत|शुरू) में (की|बताया|देखा)|जिसकी बात हमने", r"(यहां|वहां) भी (निराशा|बात)", r"बात नहीं बनी", r"रिजेक्ट|ठुकरा",
     r"(वो|वह) (पल|दिन|फैसला|गलती|रात) (जिस|जो)", r"हैरान", r"बदला|अपमान|हमला|जंग|युद्ध|धोखा",
+    # story re-hooks of the craft study (references/craft.md section 5): a prediction invited, a countable promise, a riddle, a foreshadow
+    r"आपको क्या लगता|(आप|तुम) भी (यही )?सोच रहे|याद (है|रखिए|रखो)|(पहली|दूसरी|तीसरी|चौथी|पांचवीं) बार (चुप|खामोश)|(चार|तीन|दो|पांच|छह) नाम (आ|बाकी)|नाम बाकी|नाम सबसे|(चौथी|तीसरी|पांचवीं|आखिरी) वाली[^।]{0,30}(चुभ|हिला|चौंका)|असली चोट|दांव था|दिमाग में भी यही|(लिख|काट) (लीजिए|दीजिए)|सीखने जा रहा हूं|जिसने[^।]{0,30}छीन|असली दुकान|सबसे बड़े जुआरी|जवाब आखिर",
 ]]
 # a turn: a contrast word, a question, or the narrator talking straight to the viewer (समझो, सोचिए, मान लो)
+GAIN = rx(r"(आप|तुम)[^।?]{0,40}(खुद|अपने)[^।?]{0,40}(चेक|पता|लगा|देख|पकड़|समझ|जान|बता|कर) (पाओ|पाएंगे|सकते|सकोगे|लोगे|लेंगे|पाओगे|पाएगा)|(मैं|हम) (तुम्हें|आपको)[^।?]{0,40}(बताऊंगा|बताएंगे|दिखाऊंगा|दिखाएंगे)|आखिर में (आप|तुम)|काम आएगा|जान जाएंगे|जान जाओगे|सीख जाएंगे")
 TURN = rx(r"(^|[।?!,]\s*)(पर|फिर भी)\s|(^|\s)(लेकिन|मगर|तभी|हालांकि)\s|(^|\s)(समझो|समझिए|सुनो|सुनिए|देखो|देखिए|सोचो|सोचिए|मान लो|मान लीजिए)(\s|[।,])")
 START = rx(r"चलिए (शुरू|देखते)|चलो शुरू|आइए (देखते|शुरू|समझते|जानते)|शुरू करते हैं|(कहानी|सब|ये सब|यह सब)[^।?]{0,40}(पहले|में|से) शुरू (होती|होता|हुई|हुआ)|(ये|यह) कहानी (शुरू|शुरु) होती|यह कहानी है")
 # craft rules (references/craft.md): lines that promise nothing, feelings told instead of caused, research read aloud, category chapters
@@ -118,6 +121,7 @@ def check(doc):
 
     # 4. hook contents
     if GREET.search(" ".join(txt[:3])): say("FAIL", "a greeting or channel intro in the first lines (the channel's rule; of 38 hits studied only Think School opens with 'दोस्तों')")
+    if not GAIN.search(" ".join(txt[:min(len(txt), 25)])): say("WARN", "no viewer-gain promise in the first minute (what will the viewer be able to do or see for themselves? e.g. 'आखिर में आप खुद चेक कर पाएंगे'); the hits give one (SKILL.md section 6)")
     if "?" not in hook and not QWORD.search(hook): say("WARN", "the hook asks no question; the hits end the hook on 1 to 3 open questions")
     if not TURN.search(hook) and not any(p.search(hook) for p in STRONG): say("WARN", "the hook has no turn (लेकिन/पर/the twist); it should break the belief it sets up")
     if CTA.search(hook): say("FAIL", "a like/subscribe/comment ask inside the hook (the channel's rule; Money Code asks early and still hits, the strongest channels never do)")
