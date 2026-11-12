@@ -106,9 +106,12 @@ ministry data, and established business press (Economic Times, Mint, Business St
 Real people: their documented words only. Dramatise with the scene (place, time, the phone ringing, the silence), not
 with invented quotes. A reconstruction is marked ("उस दिन कुछ ऐसा माहौल रहा होगा"). Allegations are attributed and the
 other side is given. For format A, a made-up model business with a made-up owner is fine and helps (study: "हाईवे फ्यूल
-पॉइंट"); say it is a model. Best of all is **the owner's story** (HiddenOps' sleeper bus, 3.6M, beat HinExp's 2.0M on the
-same topic): invented recurring characters, real numbers, and one plain line saying so ("ये किरदार सिर्फ इस कहानी में हैं; पैसा
-असली है, एक-एक रुपया"). Invented characters suit this channel's illustrated stills too.
+पॉइंट"). Say a MODEL NUMBER is a model number ("मान लीजिए", "हमारे हिसाब में"): that is about the money, which is the one
+thing the viewer acts on. Never say the story or its people are fictional (see the rule below). Best of all is **the owner's story** (HiddenOps' sleeper bus, 3.6M, beat HinExp's 2.0M on the
+same topic): invented recurring characters and real numbers, told as a plain story. **Never write a line that says the characters are
+fictional, made up, "सिर्फ इस कहानी के किरदार", or that the story is imagined** (the channel rule; the hits that do it, HiddenOps, spend
+the seconds on a disclaimer, ours never do). Tell it like it happened and keep every number honest. Invented characters suit this
+channel's illustrated stills too.
 
 ## 3. Packaging first
 
@@ -178,8 +181,7 @@ stake; the engine's question, as a guess with wrong options where there is money
 - Format B: the short hook (20 to 40 s): year, place, a humble act or the peak, dramatic irony or "ऐसा क्या हुआ कि...", "यह कहानी
   है X की". Then straight into the origin.
 - A-story and C: the cold open at the dread event, then the jump back ("यह कहानी उस रात से 11 महीने पहले शुरू होती है").
-- Invented characters: one line that turns the disclaimer into a promise, in your own words (the idea of "इन किरदारों को ढूंढने
-  मत निकलिएगा, पर पैसा ढूंढेंगे तो एक-एक रुपया मिलेगा").
+- Invented characters: no disclaimer, no line about them being made up. The hook goes straight on with the story.
 - No greeting, no channel intro, no ask.
 
 Pick with two tests and write the result under the hooks: the **scroll test** (read sentence one alone, then the first 15 seconds
@@ -203,7 +205,13 @@ warmth in the explaining beats, "आप").
 - **Talk to the viewer** throughout in A-explainer; in story shapes at the guess, the challenge ("आप भी यही सोच रहे हैं ना?"), the
   predictions ("आपको क्या लगता है?") and the close.
 - **Humour once a chapter**, from a character's mistake or a sharp observation. **One image a chapter** that sticks.
-- Spoken Hindi with the business words people really use (मार्जिन, स्टॉक, EMI, GST), numbers as spoken.
+- **Everyday spoken Hindi, not textbook Hindi.** Write the way a young Indian talks today: Hindi grammar with the English and
+  Hinglish words everyone actually says. Use the word people use at the counter and on the phone: jewellery or ज्वेलर (not सर्राफ),
+  ज्वेलरी मार्केट (not सर्राफा बाजार), नेकलेस (not हार), मेकिंग चार्ज (not बनवाई), प्रॉफिट (not मुनाफा), कस्टमर (not ग्राहक), सेल
+  (not बिक्री), इंटरेस्ट (not ब्याज), रेट (not भाव), लेबर चार्ज (not मजदूरी), ऑर्गनाइज्ड, प्योरिटी, स्टॉक, EMI, GST, बैंक लिमिट.
+  Keep the Hindi words that are still everyday (तिजोरी, दुकान, कमाई, हिसाब, भरोसा, कारीगर, गहना). The test: would a friend say it
+  in a voice note? If it sounds like a newspaper or a school book, swap it. Mind the verbs: do not swap "हार" the noun and break
+  "हार गया" the verb. Numbers as spoken (डेढ़ लाख, ढाई सौ).
 - **Banned, because they promise nothing**: "लेकिन कहानी यहीं खत्म नहीं होती", "आगे जो हुआ वो चौंकाने वाला था", "ये तो बस शुरुआत थी"
   (unless the same sentence names the thing), "आइए जानते हैं", "इस वीडियो में हम जानेंगे", "दोस्तों" as an opener.
 

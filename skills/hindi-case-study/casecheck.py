@@ -43,6 +43,9 @@ START = rx(r"चलिए (शुरू|देखते)|चलो शुरू|
 # craft rules (references/craft.md): lines that promise nothing, feelings told instead of caused, research read aloud, category chapters
 BANNED = rx(r"कहानी यहीं (खत्म|ख़त्म) नहीं|आगे जो हुआ (वो|वह) (चौंकाने|हैरान)|(ये|यह) तो (बस|सिर्फ) शुरुआत (थी|है)[।?]|आइए जानते हैं|इस वीडियो में (हम )?(जानेंगे|बताएंगे|देखेंगे)")
 TOLD = rx(r"सांस (एक पल को )?(रुक|थम)|चेहरे पर (एक )?(मुस्कान|चमक|खुशी) (आ|छा|दौड)|दिल (जोर से )?(धड़क|बैठ) (उठा|गया|जाता)|आंखें (चमक|भर) (उठीं|आईं|गईं)")
+DISCLAIM = rx(r"किरदार|काल्पनिक|फिक्शन|कहानी (सच्ची|काल्पनिक) नहीं|ढूंढने मत निकल|(हमारी|ये|यह) (कहानी|किरदार)[^।]{0,30}(मनगढ़ंत|गढ़ी)")
+# textbook Hindi words people do not say today; each has the everyday word in SKILL.md section 7
+BOOKISH = rx(r"सर्राफ|बनवाई|ग्राहक|बिक्री|मुनाफा|ब्याज|मजदूरी|संगठित|शुद्धता|उपभोक्ता|व्यापारी|लेन-देन|पूंजी|आमदनी|विक्रेता|क्रेता|अनुमान")
 SOURCED = rx(r"के मुताबिक|के अनुसार|रिपोर्ट (कहती|बताती)|का कहना है")
 CATEGORY = re.compile(r"^\s*(intro(duction)?|investment|revenue|expenses?|costs?|profit|income|conclusion|summary|overview|background|basics|the business model)\b", re.I)
 GREET = rx(r"नमस्ते|नमस्कार|स्वागत|हेलो|हैलो|दोस्तों|welcome")
@@ -179,6 +182,10 @@ def check(doc):
     if told: say("WARN", f"feelings told instead of caused at lines {told[:8]}; show the cause (an action, a silence, a line of dialogue)")
     srcd = [i + 1 for i, s in enumerate(txt) if SOURCED.search(s)]
     if len(srcd) > 3: say("WARN", f"sources read aloud {len(srcd)} times (lines {srcd[:8]}); keep them in the research file, at most 2 or 3 authority lines where a number must be believed")
+    dis = [i + 1 for i, s in enumerate(txt) if DISCLAIM.search(s)]
+    if dis: say("FAIL", f"a line saying the characters or story are made up (lines {dis[:6]}); the channel never says it, tell the story straight (SKILL.md section 2)")
+    book = [i + 1 for i, s in enumerate(txt) if BOOKISH.search(s)]
+    if len(book) > 3: say("WARN", f"textbook Hindi words in {len(book)} lines (lines {book[:8]}); use the everyday word (SKILL.md section 7: ज्वेलर, मेकिंग चार्ज, प्रॉफिट, कस्टमर, सेल, इंटरेस्ट, रेट...)")
     chaps = [ln.get("chapter") for ln in lines if ln.get("chapter")]
     cat = [c for c in chaps if CATEGORY.match(c)]
     if cat: say("FAIL", f"chapters named for a category, not for what happens: {cat[:4]}; name each for its event ('The Night the Duty Fell', 'Gurmeet's Dustbin')")

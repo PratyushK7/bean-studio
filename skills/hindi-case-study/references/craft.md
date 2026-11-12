@@ -48,8 +48,7 @@ The quotes below are for studying the mechanism. Never reuse their lines, their 
 ## 3. Story shapes (beat skeletons, as % of runtime)
 
 **A. Economics told as an owner's story** (sleeper bus 3.8M, dhaba 2.2M; the strongest shape for "economics of owning X").
-0-3% cold open at the disaster or the paradox, with the money question as a guess and "जवाब आखिर में" · 3-4% the fiction
-line turned into a promise ("इन किरदारों को ढूंढने मत निकलिएगा... पैसा ढूंढेंगे तो एक-एक रुपया मिलेगा") · 4-10% the person: pain,
+0-3% cold open at the disaster or the paradox, with the money question as a guess and "जवाब आखिर में" · 3-4% straight on with the story (HiddenOps stops here for a fiction disclaimer; we never do) · 4-10% the person: pain,
 humiliation or a dead-end job, the naive math ("आप भी यही सोच रहे हैं ना? याद रखिए, यह हिसाब आखिर में पलटेगा") · 10-25% the leap:
 stakes laid on the table one sacrifice at a time, the first share-takers born in scenes (the lender, the seller), a temptation ·
 25-60% running it: each cost arrives as an event (a tyre bursts, the pump, the agent's cut, the permit officer), a false high, the
