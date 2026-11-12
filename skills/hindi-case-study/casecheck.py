@@ -10,6 +10,11 @@ references/study.md): every one of those passes the FAIL rules here. Hindi narra
 minute, the middle of the 145 to 183 the ten were measured at.
 
 FAIL means the script breaks something all ten hits do. WARN means look again and decide; a WARN can be right.
+
+Passing is necessary, not sufficient. The 2026-11-12 craft study (references/craft.md) found that hits and flops have the
+same per-minute counts of every surface device; a script built straight from research passed every rule here and was dead.
+So the craft rules below only catch the known ways to fail (no engine or beat sheet, chapters named for categories, stock
+re-hooks that promise nothing, told feelings, sources read aloud); the real test is the revision passes in SKILL.md section 9.
 """
 import json, re, sys, unicodedata
 
@@ -24,8 +29,8 @@ def rx(p): return re.compile(norm(p))
 STRONG = [rx(p) for p in [
     r"मोड", r"ध्यान से (सुनिए|सुनो|देखिए)", r"बहुत कम लोग", r"कोई (खुलकर )?नहीं (बताता|करता)", r"(किसी|लोगों) को (भी )?नहीं पता",
     r"किसे पता था", r"अंदाजा (भी )?नहीं (था|लगा)", r"सिक्के का दूसरा पहलू", r"असली (खेल|कहानी|झटका|वजह|सवाल|पिक्चर|कारण|गणित|ताकत)",
-    r"सबसे (बडा|बडी|चौंकाने|दिलचस्प|खतरनाक|गहरा|गहरी|दर्दनाक|अहम|नाटकीय)", r"यहीं (से|इस)", r"ट्विस्ट", r"जगह (रखकर|रख कर|खुद को)",
-    r"जरा (सोचिए|सोचो|इस|देखिए|सुनिए|गौर)", r"सवाल (यह|ये) (है|उठता)", r"सिर्फ शुरुआत", r"कहानी यहीं", r"छिपा|छिपी|छुपा|छुपी",
+    r"सबसे (बडा|बडी|बडे|चौंकाने|दिलचस्प|खतरनाक|गहरा|गहरी|दर्दनाक|अहम|नाटकीय)", r"यहीं (से|इस)", r"ट्विस्ट", r"जगह (रखकर|रख कर|खुद को)",
+    r"जरा (सोचिए|सोचो|इस|देखिए|सुनिए|गौर)", r"सवाल (यह|ये) (है|उठता)", r"छिपा|छिपी|छुपा|छुपी",
     r"(पहली|दूसरी|तीसरी|चौथी|पांचवीं|आखिरी) (दरार|वजह|गलती|चाल|बात|शर्त|चोट|वार)", r"लेकिन असल में", r"चौंकाने वाली",
     r"कहानी (का|की) (सबसे|एक और|दूसरा)", r"(वापस|लौटते) (चलते|आते) हैं", r"जिससे (हमने|यह) .{0,20}शुरु", r"विडंबना", r"परत",
     # what the hits use in the long stretches between the big twists: a setback, a callback, the overlooked part
@@ -34,7 +39,12 @@ STRONG = [rx(p) for p in [
 ]]
 # a turn: a contrast word, a question, or the narrator talking straight to the viewer (समझो, सोचिए, मान लो)
 TURN = rx(r"(^|[।?!,]\s*)(पर|फिर भी)\s|(^|\s)(लेकिन|मगर|तभी|हालांकि)\s|(^|\s)(समझो|समझिए|सुनो|सुनिए|देखो|देखिए|सोचो|सोचिए|मान लो|मान लीजिए)(\s|[।,])")
-START = rx(r"चलिए (शुरू|देखते)|चलो शुरू|आइए (देखते|शुरू|समझते|जानते)|शुरू करते हैं")
+START = rx(r"चलिए (शुरू|देखते)|चलो शुरू|आइए (देखते|शुरू|समझते|जानते)|शुरू करते हैं|(कहानी|सब|ये सब|यह सब)[^।?]{0,40}(पहले|में|से) शुरू (होती|होता|हुई|हुआ)|(ये|यह) कहानी (शुरू|शुरु) होती|यह कहानी है")
+# craft rules (references/craft.md): lines that promise nothing, feelings told instead of caused, research read aloud, category chapters
+BANNED = rx(r"कहानी यहीं (खत्म|ख़त्म) नहीं|आगे जो हुआ (वो|वह) (चौंकाने|हैरान)|(ये|यह) तो (बस|सिर्फ) शुरुआत (थी|है)[।?]|आइए जानते हैं|इस वीडियो में (हम )?(जानेंगे|बताएंगे|देखेंगे)")
+TOLD = rx(r"सांस (एक पल को )?(रुक|थम)|चेहरे पर (एक )?(मुस्कान|चमक|खुशी) (आ|छा|दौड)|दिल (जोर से )?(धड़क|बैठ) (उठा|गया|जाता)|आंखें (चमक|भर) (उठीं|आईं|गईं)")
+SOURCED = rx(r"के मुताबिक|के अनुसार|रिपोर्ट (कहती|बताती)|का कहना है")
+CATEGORY = re.compile(r"^\s*(intro(duction)?|investment|revenue|expenses?|costs?|profit|income|conclusion|summary|overview|background|basics|the business model)\b", re.I)
 GREET = rx(r"नमस्ते|नमस्कार|स्वागत|हेलो|हैलो|दोस्तों|welcome")
 CTA = rx(r"लाइक (जरूर|करें|करो|कीजिए|कर दो|कर दीजिए)|चैनल को सब्सक्राइब|सब्सक्राइब (करना|कर लीजिए|कर लो|करें|करो|कीजिए)|बेल आइकन|नोटिफिकेशन|कमेंट में|शेयर (करें|करो|कीजिए)|(दोस्तों|दोस्त) (को|तक) .{0,30}भेज")
 NEXT = rx(r"अगली (वीडियो|कहानी|डॉक्यूमेंट्री|बार|एपिसोड)")
@@ -162,6 +172,17 @@ def check(doc):
         for ln in lines:
             run = 0 if ln.get("visual") else run + 1; worst = max(worst, run)
         if worst > 3: say("WARN", f"{worst} lines in a row with no visual; a new picture every 1 to 3 lines (5 to 10 s) keeps the screen alive")
+    # 9. craft rules (catch the known ways to be dead; they do not prove the script is alive)
+    ban = [i + 1 for i, s in enumerate(txt) if BANNED.search(s)]
+    if ban: say("FAIL", f"stock re-hook lines that promise nothing, at lines {ban[:8]}; replace each with a line that names the specific thing coming or raises the danger to someone (craft.md section 5)")
+    told = [i + 1 for i, s in enumerate(txt) if TOLD.search(s)]
+    if told: say("WARN", f"feelings told instead of caused at lines {told[:8]}; show the cause (an action, a silence, a line of dialogue)")
+    srcd = [i + 1 for i, s in enumerate(txt) if SOURCED.search(s)]
+    if len(srcd) > 3: say("WARN", f"sources read aloud {len(srcd)} times (lines {srcd[:8]}); keep them in the research file, at most 2 or 3 authority lines where a number must be believed")
+    chaps = [ln.get("chapter") for ln in lines if ln.get("chapter")]
+    cat = [c for c in chaps if CATEGORY.match(c)]
+    if cat: say("FAIL", f"chapters named for a category, not for what happens: {cat[:4]}; name each for its event ('The Night the Duty Fell', 'Gurmeet's Dustbin')")
+    if chaps and not cat: say("PASS", f"{len(chaps)} chapters, named for events")
     stats = {"minutes": round(mins, 1), "strong": [(mmss(p), i + 1) for p, i in strong]}
     return out, stats
 
@@ -177,6 +198,11 @@ def main():
     if "--voice" in a:
         print("\n".join(ln.get("hi", "") for ln in doc["lines"])); return
     out, stats = check(doc)
+    if not tr:                              # a project script: the engine and the beat sheet come first (SKILL.md sections 4 and 5)
+        from pathlib import Path
+        proj = Path(path).resolve().parent
+        for kind, sec in (("engine", 4), ("beats", 5)):
+            if not list(proj.glob(f"*-{kind}.md")): out.insert(0, ("FAIL", f"no <slug>-{kind}.md: write the {kind} before the lines (SKILL.md section {sec})"))
     print(f"\n  {doc.get('title', path)}  [{doc.get('format', '?')}]")
     for lvl, msg in out: print(f"  {lvl:4}  {msg}")
     if stats.get("strong"): print("  re-hooks at: " + "  ".join(f"{m}(l{i})" for m, i in stats["strong"][:40]))

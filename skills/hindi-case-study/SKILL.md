@@ -1,30 +1,40 @@
 ---
 name: hindi-case-study
 description: >-
-  Writes the script for a long Hindi business case-study video (14 to 20 minutes) for the Hindi channel Decoding Vyapaar, using the hooks,
-  re-hooks, chapter shapes and closes of the top Hindi business-documentary channels, studied from the transcripts of 38
-  hits across 12 channels (Shivanshu Agrawal, HiddenOps, HinExp, ABFinDoc, Paisa Decode, Think School Hindi and more). Four formats: the economics of owning a business (bus, petrol pump, jewellery
-  shop), a company's rise, split or fall, a person's rivalry/revenge/rise story, and two people making one money decision.
-  Output is a researched, sourced script.json (Devanagari narration, sparse Hinglish on-screen text, a visual note per
-  beat) checked by casecheck.py, plus the research file and three hook options. Use whenever the user asks for a Hindi
-  script, a Hindi case study, a "business case study" or "economics of owning X" video, a Hindi documentary about a
-  company or a businessman, or a script for Decoding Vyapaar or the Hindi channel, including from the Bean Studio Agent tab.
+  Writes the script for a long Hindi business case-study video (10 to 20 minutes) for the Hindi channel Decoding Vyapaar, the way
+  the top Hindi business-documentary channels write theirs, learned from 45 transcripts (Shivanshu Agrawal, HiddenOps, Money Code,
+  HinExp, ABFinDoc, Paisa Decode, Truth Finance and more, hits against flops). It builds a story engine first (one question with a
+  surprising exact answer, a person with a wound and a want, physical stakes, costs as characters, reversals, plants and payoffs),
+  then a beat sheet, three hooks, the spoken draft and eight revision passes, so the script has emotion, suspense and real
+  re-hooks instead of a fact list. Formats: the economics of owning a business (told as an owner's story or to "you"), a company's
+  rise or fall, a person's story as a thriller, a mystery, a list, a comparison. Output: a sourced script.json with a shot plan,
+  checked by casecheck.py, and a free local preview. Use whenever the user asks for a Hindi script, a Hindi case study, a
+  "business case study" or "economics of owning X" video, a Hindi documentary about a company or a businessman, or a script for
+  Decoding Vyapaar or the Hindi channel, including from the Bean Studio Agent tab or Topics tab.
 ---
 
 # hindi-case-study
 
-A topic in, a script a Hindi viewer stays with for 15 minutes out. This skill stops at the script: the voice and the
-visuals are a later step (each line already carries a visual note so either pipeline can use it).
+A topic in, a script a Hindi viewer stays with to the end out. This skill stops at the script: the voice and the
+visuals are a later step (each line already carries a visual note and a shot kind).
+
+The order matters, and it is the lesson of the study: **engine, beats, hooks, lines, revision**. Writing lines straight from
+the research produces a lecture with re-hooks sprinkled on (our first jewellery script: it passed every count and was dead).
 
 ```bash
 python ~/.claude/skills/hindi-case-study/casecheck.py <project>/script.json           # the report: FAIL / WARN / PASS
 python ~/.claude/skills/hindi-case-study/casecheck.py <project>/script.json --voice   # plain Devanagari narration
+python ~/.claude/skills/hindi-case-study/preview.py <project>                         # free local listen (flat voice)
 ```
+
+The checker catches broken rules (no engine, category chapters, stock re-hooks, an ask in the hook). Passing it is necessary
+and nowhere near enough: the craft is judged by the revision passes in section 9.
 
 ## Before you write
 
-1. Read `~/.claude/youtube/voice-hindi.md` (the channel voice) and `references/study.md` (the study: the section for
-   the format you pick, the re-hook toolkit, and **What not to copy**). Do not write from memory of the study.
+1. Read `references/craft.md` in full (how the hits make a viewer feel, wonder and stay: the engine, the shapes, hooks,
+   re-hooks, scene texture, closes, and the anti-example), then `~/.claude/youtube/voice-hindi.md` (the channel voice) and
+   the section of `references/study.md` for your format plus its **What not to copy**. Do not write from memory of them.
 2. Never invent a number, a date, a quote or a source. If a figure would help and you cannot source it, write the line
    without it or say it as an estimate with who estimates it.
 
@@ -61,6 +71,30 @@ HiddenOps (336K), tell one company's or one person's story from a humble start t
 | C. A person's story | `person` | rivalry, revenge, rags to riches, a big bet | Ambani 1.4M, Rolls-Royce 1.2M, Jhunjhunwala 976K |
 | D. Two people, one decision | `compare` | rent vs buy, SIP vs plot, job vs business | rent vs buy 1.1M |
 
+## 1a. What decides a topic (measured 2026-11-12 on 10 channels' full catalogs, about 450 long videos, plus their thumbnails)
+
+Packaging is not the filter: the flops have thumbnails as polished as the hits (Money Code's 2.2M dhaba and its 2.4K UPI video use the same
+cut-away art). **The topic is.** Read this before picking one.
+
+- **Winners are things the viewer can touch or has eaten, in their own street**: dhaba 2.2M, cement-steel dealer 1.2M, petrol pump 1.0M,
+  mall, gym, kirana, tea stall, biryani, clothes shop, turf 1.1M, PS5 café 743K, sleeper bus 3.8M, bus 2.1M; household brands with a
+  nostalgia or a fight: Haldiram's 12M, Nirma 9.2M, Hero vs Honda 1.5M, Tavera 1M, Big Bazaar, "Indian chips company destroyed Lay's" 2.8M.
+- **Losers are institutions and abstractions**: UPI, bank, IPL, coaching industry, dark patterns, a private island, beauty parlour (all under
+  4K at Money Code); personal-finance dilemmas (credit card, health claim, home loan: about 300 views each at Paisa Decode);
+  geopolitics and current-news films (HiddenOps' Dhurandhar, Operation Sindoor: 0.1x its median); obscure brands (Pulse Candy,
+  Old Monk, Royal Enfield, Groww). Copy-cat chasing kills: Rapido (777K once, then 560 / 5.8K / 11K), Ola, Zepto, Zee.
+- **A small channel can still hit 1M**: Money Code (median 13K) and Paisa Decode (median 2.4K) did, on "economics of owning X" and a price in
+  the title ("₹1,200/Hour Turf Business: Weekend Full, Phir Bhi Profit Kahan Gaya?" 1.1M). But the format is now swarmed by tiny copies
+  (medical store, multiplex, wedding hall, school: 100 to 1K views each), so **the plain "economics of owning X" is no longer enough on its own**.
+- **A covered topic repeats well**: DMart-in-trouble 1.9M, 3.3M, 551K, 212K on four channels; sleeper bus 3.8M and 207K; "Indian
+  brand beats Lay's" 2.8M and 2.1M. The topic is shared; the channel's angle and execution decide the size.
+- **Best new idea shape**: a household brand or product in a fight (Indian vs multinational, small vs big), told through the money in the thing
+  the viewer holds (the 5-rupee packet: who gets what), with a ₹ number in the title. Check: can I name the object in the viewer's hand? Is there a
+  villain or a rival? Is there a number that surprises?
+- **Thumbnail pattern of the hits** (not a rule for what to draw, a pattern to match): one giant business or brand object, 2 to 4 huge
+  words, a ₹ number or a rising/falling arrow, one emotional face (worried, hand on chin) for the story videos; a cut-away infographic with
+  floating ₹ callouts for the economics videos; "11:30 PM, last flight" style time stamps on scam and downfall stories.
+
 ## 2. Research: `<slug>-research.md`
 
 A facts table: claim, number, source (link or document), status: **verified** (official record, annual report, court
@@ -84,77 +118,122 @@ the customer's price first: "₹1,200/Hour Turf Business: Weekend Full, Phir Bhi
 Hinglish that add the stakes ("असली कमाई?", "भाई vs भाई"). The hook has to confirm whichever title wins. Lint them with
 **yt-package** if time allows.
 
-## 4. The hook: short (25 to 40 s) or long (60 to 110 s)
+## 4. The engine, before a single line: `<slug>-engine.md`
 
-**The short hook** is what the niche's strongest channel uses on every video (Shivanshu Agrawal: Haldiram's, Byju's, Nirma,
-Oberoi, Big Bazaar, 6.5M to 12M each). Use it for formats B and C. Three beats, then straight into the origin:
+The study's main finding (`references/craft.md`, read sections 1 to 3 now): a gripping script is not a fact list with re-hooks
+sprinkled on. Every hit is built on six parts, and the facts arrive as consequences of what happens to someone. Write these in plain
+English notes, short, before any Hindi:
 
-1. **Year, place, a humble act or the peak moment**: "साल 1969, गुजरात। एक 24 साल का लड़का साइकिल पर घर-घर जाकर पीला
-   पाउडर बेचना शुरू करता है।" / "26 जनवरी 2001, सुबह 5 बजे, हजारों लोग बिग बाजार की दीवार फांद रहे थे।"
-2. **Dramatic irony or the fall**: "उस वक्त किसी ने सपने में भी नहीं सोचा होगा कि..." / "लेकिन अगले 20 सालों में ऐसा क्या हुआ
-   कि इसी बिग बाजार के हर स्टोर पर ताला लग गया?"
-3. **Name it**: "यह कहानी है ... की।" Then the birth, the family, the first job. No roadmap.
+1. **The question.** The one question the hook asks and the last minute answers. Its exact answer (from the research file, with the
+   arithmetic shown), two or three wrong guesses the viewer will make, and why the true answer surprises. If it does not surprise,
+   the angle is wrong: stop and find a sharper one before writing.
+2. **The shape** from craft section 3 (A-story, A-explainer, B rise/fall, C thriller, mystery, list, compare), and one line on why.
+   For format A prefer **A-story** (an owner's story: HiddenOps' sleeper bus beat HinExp's explainer 3.8M to 2.1M).
+3. **The person we follow.** For A-story, invented characters (one, or two whose interests clash, like the buyer and the seller);
+   for B and C, the real person; for A-explainer, *you*. Write: the **want** (one line of their own dialogue), the **wound** (a pain
+   from the viewer's own life: a salary gone by the 25th, a boss who mocks, a debt, a humiliation in public), the **naive belief**
+   (the viewer's belief, with the naive math), the **mistake** they will make that the viewer sees coming, and one habit or line
+   that makes them specific. A real person's wound and want must be documented (research file); never invent them.
+4. **The stakes**: two to four physical things put on the table, each with the moment it is put down (years of savings, a
+   father's land, a wife's jewellery, house papers in a lender's safe, a friend who signs as guarantor, a daughter's wedding).
+5. **The opposition with faces**: every share of the money as a character with a place and one line (the lender, the supplier,
+   the tax, the landlord, the karigar, the agent), plus the rival or villain, plus the system (duty, permits, the bank).
+6. **The dread**: the cold-open event (a disaster, a deadline, a humiliation, the peak before a fall) and the point where the
+   story catches up with it (60 to 75% in A-story and C).
+7. **The turns**: five to eight reversals, each marked up or down, each revealing one money fact. The line changes direction at
+   least four times; the lowest point falls between 45% and 70%.
+8. **The plants**: three to five small things put down early (an object, a line of dialogue, a number, a promise) and where
+   each pays off.
+9. **The payoff**: how the exact answer is staged (a countdown the viewer can follow), the irony that calls back the wound, the
+   last turn, the final image back in the opening scene.
+10. **The feeling map**: the six to eight feelings the viewer should feel, in order (curiosity, dread, pity, anger, laughter,
+    hope, shock, pride), with the beat that causes each.
 
-**The long hook** (HinExp, ABFinDoc, HiddenOps) suits format A, D and a mystery ("X is in trouble"). Every second works.
-Its parts, in order:
+If the user is present and asked to see the plan, show these ten lines and wait. Otherwise go on.
 
-1. **The scene (first 15 s).** One of: *you are there* ("एक सीन इमेजिन कीजिए। आप...", format A); *the stamped moment*
-   ("साल 1982, 18 मार्च, दोपहर के डेढ़ बजे...", format C); *nostalgia* ("आपके पापा ने जिंदगी में एक बाइक जरूर चलाई होगी...",
-   format B); *the accusation* (a trusted brand did something unforgivable, format B); *two people* (format D); *the
-   paradox* ("स्टोर में पैर रखने की जगह नहीं, फिर भी शेयर महीनों से गिर रहा है", a mystery); *you are the owner* ("मान लो यह
-   कैफे तुम खोल रहे हो। तुम 26 साल के हो, ₹35,000 की नौकरी है", format A); *the story scene* (invented characters at the
-   worst moment, then "यह कहानी उस रात से 11 महीने पहले शुरू होती है", format A told as a story).
-2. **The belief** the viewer holds, said in their voice, with the naive math if there is money ("36 बर्थ, हर एक बारह सौ की...").
-3. **The break**: the shock number, the reveal ("...वो अलवर के महाराजा थे"), or the reframe ("यह सिर्फ X नहीं था, यह Y था").
-4. **One to three questions** the video will answer, ending on the big one. The strongest version **defers one exact
-   answer to the end and says so**: "उस टिकट में 10 हिस्सेदार हैं, मालिक की बारी 11वीं। जवाब आखिर में।" / "और आखिर में बताऊंगा
-   कि अगर मुझे कल यह कैफे खोलना हो तो मैं सबसे उल्टा क्या करूंगा।" Then pay it off, exactly, at the end.
-5. **The roadmap as promises**: three to five things the video will open, each phrased as a secret or a stake ("वो खर्च
-   जिसकी बात कोई नहीं करता", "वो फैसला जिसने..."). Then the start line, in this channel's own words.
+## 5. The beat sheet: `<slug>-beats.md`
 
-Write **three complete hooks** (at least one short, one long, with different scene types) into `<slug>-hooks.md`, pick
-one, and say in one line why it fits this topic. Never a greeting, a channel intro or an ask in the hook.
+One row per beat (a beat is 15 to 40 seconds; 25 to 45 beats for 10 to 15 minutes), as a table with: time, **event** (what
+happens, to whom, where), **feeling** (one word), **fact** (the number this event reveals, or a dash), **open questions** after this
+beat (short names), **plant / payoff**. Rules:
 
-## 5. The body
+- **Every beat is an event.** "Explain making charges" is not a beat; "the father reads the bill, puts his finger on 'making 12%'
+  and asks: ये क्या है?" is. No fact without an event; at most two facts in a beat.
+- **The question relay**: after every beat at least one named question is open, and a new one opens before an old one closes.
+  The engine's big question stays open until the last 5%.
+- **The feeling changes** at least every two beats; never three beats in a row with the same feeling.
+- **Chapters (5 to 9) are named for what happens** ("The Night the Duty Fell", "Gurmeet's Dustbin"), never for a category
+  ("Investment", "Revenue", "Expenses", "Profit", "Introduction", "Conclusion").
+- Each chapter opens with a re-hook from craft section 5 that **promises something specific** or **raises the danger to someone we
+  care about**, in fresh words.
+- The biggest reveal sits in the middle third.
 
-Chapter order comes from the format's section in `references/study.md`. Through every chapter:
+## 6. The hook (the first 20 to 60 seconds): `<slug>-hooks.md`
 
-- **A turn every 20 to 40 seconds**: लेकिन, a question answered at once ("यह पैसा जाता कहां है? ..."), or talking straight
-  to the viewer ("समझो...", "मान लीजिए...").
-- **A strong re-hook every 60 to 90 seconds**, never more than about 2.5 minutes without one: a twist marker, a secret, the
-  other side of the coin, putting the viewer in someone's place, dramatic irony ("उन्हें अंदाजा भी नहीं था कि..."), a setback
-  chain and reversal, an escalating numbered list ("पहली वजह... चौथी और सबसे बड़ी"). Use the moves in the toolkit, in fresh
-  words every time.
-- **In a company or person story, explain every win as a named strategy with its mechanism and a number** (Shivanshu's
-  method): Nirma hired women to ask shopkeepers for Nirma until the shops stocked it; 65% soda ash; three stages to the
-  customer instead of Surf's four; a 15% excise rebate. Give the rival's counter-move its own scene (HLL's secret "STING"
-  mission, then Wheel). Foreshadow every fall: "सब अच्छा चल रहा था, कि तभी कुछ ऐसा हुआ जिसने...", "लेकिन ये कामयाबी
-  ज्यादा देर टिकने वाली नहीं थी", "लेकिन फिर कहानी में एंट्री होती है एक ऐसे खिलाड़ी की जो...". In a fall, say what they should
-  have done, then "लेकिन उन्होंने इनमें से कुछ भी नहीं किया".
-- **In an owner's story, plant the naive math early and promise it will flip** ("याद रखिए, यह हिसाब आखिर में पलटेगा"), then
-  let the real costs arrive as events in the character's life (the bank refuses, a tyre bursts, the agent takes 15%).
-- **The biggest twist in the middle third.** In format C, **return to the cold-open scene at 60 to 75%**, then give one
-  more twist after the loop closes.
-- **Numbers carry the trust** (rupees, percentages, years): format A at least 3.5 a minute, D at least 6, B 2.5, C 1, with the source in the research file. Say an
-  estimate as an estimate inside the same sentence.
-- **Balance** anything contested: "कुछ लोग इसे... मानते हैं, तो कुछ... सच शायद बीच में कहीं है।"
-- **One picture per sentence, at most 25 words a line** (one line is one breath of the voice). Explain each English
-  business word once in plain Hindi. One image that sticks per chapter ("एक खड़ी बस, एक घाव जो हर दिन गहरा होता है").
+Write **three** hooks in different shapes from craft section 4. Every one must have: a concrete scene in sentence one (time,
+place, a person, a thing you could photograph); a contradiction between what is seen and what is true; rupees or a life at
+stake; the engine's question, as a guess with wrong options where there is money; and the promise of ONE specific reveal ("जवाब
+आखिर में", "एक छोटी सी चीज...", "एक नंबर...").
 
-## 6. The close: the last 60 to 90 seconds
+- Format B: the short hook (20 to 40 s): year, place, a humble act or the peak, dramatic irony or "ऐसा क्या हुआ कि...", "यह कहानी
+  है X की". Then straight into the origin.
+- A-story and C: the cold open at the dread event, then the jump back ("यह कहानी उस रात से 11 महीने पहले शुरू होती है").
+- Invented characters: one line that turns the disclaimer into a promise, in your own words (the idea of "इन किरदारों को ढूंढने
+  मत निकलिएगा, पर पैसा ढूंढेंगे तो एक-एक रुपया मिलेगा").
+- No greeting, no channel intro, no ask.
 
-1. **The verdict**, a judgment, not a recap of the chapters ("हां भी और ना भी, और फर्क इस बात से पड़ता है कि...").
-2. **The maxim**: one line the viewer could repeat ("अपने धंधे की सबसे जरूरी चाबी कभी किसी और के हाथ में मत दो").
-3. **The callback as an observation test**: back to the opening scene, with one thing to go and look at (used by four
-   channels): "अगली बार संडे शाम टर्फ के ₹75 दो, तो एक बार सुबह 6 बजे भी उस टर्फ के पास से गुजरना। वहां जो दिखेगा, वही
-   बता देगा..." / "अगली बार DMart की लाइन में खड़े हों, तो देखिएगा कितने लोग सामान गिन रहे हैं और कितने फोन।"
-4. **One ask block**: send it to a specific friend ("उस दोस्त को भेजिए जो सोचता है कि..."), a personal or two-sided comment
-   question ("आपके घर की पहली गाड़ी कौन सी थी?", "हक पद का बनता है या हिस्से का?"), while the channel is small the Hype
-   button ("नीचे Hype का बटन दिखे तो एक Hype दे दीजिए, छोटे चैनल के लिए वो एक लाइक से कहीं ज्यादा काम करता है"), or let them pick the next topic, subscribe for the next video named with two
-   questions about it. No ask anywhere before this.
-5. **The sign-off line** from `voice-hindi.md`.
+Pick with two tests and write the result under the hooks: the **scroll test** (read sentence one alone, then the first 15 seconds
+alone: would a stranger stop scrolling for each?) and the **title test** (the hook confirms the title within 15 seconds).
 
-## 7. `script.json`
+## 7. Writing the lines
+
+Write from the beat sheet, beat by beat, in the channel voice (craft section 6: HiddenOps' cinema in story beats, Money Code's
+warmth in the explaining beats, "आप").
+
+- **Scenes**: present tense; time, place, a sound, a light, one object; sentences of 4 to 12 words. Explaining: up to 25 words,
+  one idea a line.
+- **Show feelings through a cause**: an action, a silence, a reaction, a line of dialogue ("अड्डे पर सन्नाटा छा गया", "सरला कुछ नहीं
+  बोली। पर देर रात तक लोहे की अलमारी के पास बैठी रही"). Never tell them ("उसकी सांस रुक गई", "चेहरे पर मुस्कान आ गई").
+- **Dialogue** is short and does work: it humiliates, threatens, teaches or reveals. A mentor speaks in riddles and aphorisms.
+  Real people say only their documented words; dramatise them with the scene, not invented quotes.
+- **Every cost walks in** as a share-taker in a scene, with a face and one line, and the running count of what is left.
+- **Sources stay in the research file and `sources`**, not read aloud. At most two or three authority lines a video, only where a
+  number must be believed ("सरकारी रिकॉर्ड कहता है..."). Estimates are said as estimates inside the sentence ("मान लीजिए", "हमारे
+  हिसाब में").
+- **Talk to the viewer** throughout in A-explainer; in story shapes at the guess, the challenge ("आप भी यही सोच रहे हैं ना?"), the
+  predictions ("आपको क्या लगता है?") and the close.
+- **Humour once a chapter**, from a character's mistake or a sharp observation. **One image a chapter** that sticks.
+- Spoken Hindi with the business words people really use (मार्जिन, स्टॉक, EMI, GST), numbers as spoken.
+- **Banned, because they promise nothing**: "लेकिन कहानी यहीं खत्म नहीं होती", "आगे जो हुआ वो चौंकाने वाला था", "ये तो बस शुरुआत थी"
+  (unless the same sentence names the thing), "आइए जानते हैं", "इस वीडियो में हम जानेंगे", "दोस्तों" as an opener.
+
+## 8. The close (the last 60 to 90 seconds)
+
+In this order (craft section 7): **the answer, staged** as a countdown the viewer can follow; **the irony** that calls back the
+wound; **one last turn**; **a last image back in the opening scene**; **the maxim** (one line the viewer could repeat) and **the
+observation test** (one thing to go and look at next time); **one specific comment question** (two-sided or personal); the ask
+(send it to a friend who believes the naive math, the Hype button while the channel is small); the next video named; the
+sign-off from `voice-hindi.md`. No ask anywhere before this.
+
+## 9. Revision passes (all of them; write what each one changed into `<slug>-check.txt`)
+
+1. **Scroll test, every 30 seconds**: name the open question, the feeling and the new picture in that window. A window with no
+   open question or no feeling is rewritten.
+2. **Lecture test**: three or more lines in a row that only inform become a scene, a line of dialogue, a guess, or are cut.
+3. **Puppet test**: does every person want something, lose something and change? Do we learn the person's pain within their
+   first 20 seconds on screen?
+4. **Specificity test**: every scene has a time, a place and an object; every share-taker a face and a line; every number the
+   event behind it.
+5. **Payoff ledger**: list every plant and promise with the line that pays it; the hook's question is answered with the exact
+   number, and that number matches the research arithmetic.
+6. **Sweeps**: the banned lines, told feelings, sources read aloud.
+7. **Side by side**: read our first 90 seconds next to the first 90 seconds of the closest hit in craft.md (same shape), then one
+   middle stretch next to theirs. If a stranger would pick theirs, rewrite ours and say what changed.
+8. **The free listen**: `python ~/.claude/skills/hindi-case-study/preview.py <project>` renders the whole script with a local
+   voice (free, flat, no emotion) so the user can hear the flow before the paid voice. It judges the story and the pacing, not
+   the delivery.
+
+## 10. `script.json`
 
 ```json
 {
@@ -204,11 +283,15 @@ Timing rules (a shot is not the same as a line: one `kind` marks the picture tha
 Also add `"shot": "<what moves>"` for `hero` lines (the motion prompt: one action, camera almost still). Count the kinds in
 the hand-back (shots, `hero` seconds, estimated xAI cost at $0.032 per `hero` second and $0.055 per distinct image).
 
-## 8. Check, then hand back
+## 11. Check, then hand back
 
-Run `casecheck.py` and save its output to `<slug>-check.txt`. Fix every FAIL. For each WARN, fix it or write one line in
-the check file saying why it is right for this script. Save `--voice` output to `<slug>-script.txt` for reading aloud.
+Run `casecheck.py` and save its output to `<slug>-check.txt`, under the notes from the revision passes. Fix every FAIL. For each
+WARN, fix it or write one line saying why it is right for this script. Save `--voice` output to `<slug>-script.txt`.
 
-Hand back: the winning title and thumbnail words, the chosen hook in full plus one line on each alternative, the chapter
-list with timings, the runtime, the checker summary, and any facts marked estimate or legend. Nothing here publishes.
-The last line of every run is the question: **ship it, or change it?**
+Files in the project: `<slug>-research.md`, `<slug>-engine.md`, `<slug>-beats.md`, `<slug>-hooks.md`, `script.json`,
+`<slug>-check.txt`, `<slug>-script.txt`, and (after section 9.8) `preview-local.mp3`.
+
+Hand back: the winning title and thumbnail words; the engine in five lines (the question and its exact answer, the person and
+their wound, the stakes, the lowest point, the payoff); the chosen hook in full plus one line on each alternative; the chapter
+list with timings; the runtime; what the revision passes changed; the checker summary; the shot counts and estimated cost; and
+any facts marked estimate or legend. Nothing here publishes. The last line of every run is the question: **ship it, or change it?**
