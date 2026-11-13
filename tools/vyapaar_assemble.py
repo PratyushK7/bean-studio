@@ -1,4 +1,4 @@
-"""Decoding Vyapaar assembler v2: pictures + hero clips + code cards + audio -> video.mp4 (1920x1080, 48 fps). No subtitles are burned in.
+"""Decoding Vyapaar assembler v3 (v2 + pro edit): pictures + hero clips + code cards + audio -> video.mp4 (1920x1080, 48 fps). No subtitles are burned in.
 
     python tools/vyapaar_assemble.py <project> [--limit 20] [--workers 4] [--audio voice.mp3]
 
@@ -9,9 +9,12 @@ Now every frame is computed here (Pillow, sub-pixel crop, eased camera) and pipe
   * a hero line plays its clip once at native speed, then continues from the clip's LAST frame (zoom starts at 1.0, so the join is invisible);
   * cards are drawn here and pushed in slowly;
   * the picture is never cropped tighter than 1.3x, so it stays sharp; a light unsharp mask is applied to every frame.
+Pro edit (v3), from the reference study: shot length varies (about 1.8 s in the first 45 s, 2 to 3.4 s after) instead of a fixed 3 s; every cut snaps to the
+nearest pause in the voice (ffmpeg silencedetect) so the picture changes on a breath, not mid-word; one grade (contrast, saturation, soft vignette, light
+grain) is applied to stills, clips and cards alike so the AI clips and the pictures look like one film; cards fade their text in instead of popping.
 Frame counts come from cumulative times, so the picture cannot drift from the voice. The file is rendered in parallel chunks and joined with a stream copy.
 """
-import argparse, json, os, random, subprocess
+import argparse, json, os, random, re, subprocess
 from multiprocessing import Pool
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
@@ -20,11 +23,13 @@ W, H, FPS = 1920, 1080, 48
 FONT, SYMFONT = "C:/Windows/Fonts/Nirmala.ttc", "C:/Windows/Fonts/seguisym.ttf"
 SHOT_S = 3.0                                                     # target shot length in seconds
 FRAME_BYTES = W * H * 3
+GRADE = "eq=contrast=1.04:saturation=1.06:gamma=0.98,vignette=angle=PI/9:mode=forward,noise=alls=2:allf=t"
 
 
 def card(text, out):
     im = Image.new("RGB", (W, H), (244, 235, 217)); d = ImageDraw.Draw(im)
     d.rectangle([0, 0, W, 18], fill=(201, 150, 43)); d.rectangle([0, H - 18, W, H], fill=(201, 150, 43))
+    im.save(out.replace(".png", "-bg.png"))
     size = 150
     while True:
         f = ImageFont.truetype(FONT, size, index=1); sym = ImageFont.truetype(SYMFONT, size)       # Nirmala has no arrow glyph
@@ -65,28 +70,35 @@ def crop_frame(src, z, cx, cy):
     return im.filter(ImageFilter.UnsharpMask(radius=1.4, percent=35, threshold=2)) if z > 1.001 else im
 
 
-def shots(src, F, rng, enc):
-    """write F frames of `src`, cut into shots of about SHOT_S seconds"""
-    parts = max(1, round(F / (SHOT_S * FPS)))
-    bounds = [round(F * i / parts) for i in range(parts + 1)]
-    for k in range(parts):
+def shots(src, F, rng, enc, t0=0.0, pauses=()):
+    """write F frames of `src` as several shots; t0 = the line's start time in seconds (hook = faster cuts), pauses = voice pause times to snap cuts to"""
+    bounds, f = [0], 0
+    while F - f > 0:
+        tgt = rng.uniform(1.5, 2.1) if t0 + f / FPS < 45 else rng.uniform(2.0, 3.4)
+        nxt = f + round(tgt * FPS)
+        if F - nxt < 1.2 * FPS: nxt = F                                  # never leave a sliver of a shot
+        else:
+            near = [p for p in pauses if abs((p - t0) * FPS - nxt) < 0.5 * FPS and 1.0 * FPS < (p - t0) * FPS - f < F - 1.0 * FPS]
+            if near: nxt = round((min(near, key=lambda p: abs((p - t0) * FPS - nxt)) - t0) * FPS)
+        bounds.append(min(nxt, F)); f = bounds[-1]
+    for k in range(len(bounds) - 1):
         m = bounds[k + 1] - bounds[k]
         z0, z1, a, b, cy = framing(rng, k)
-        for f in range(m):
-            t = ease(f / max(m - 1, 1))
+        for i in range(m):
+            t = ease(i / max(m - 1, 1))
             enc.stdin.write(crop_frame(src, z0 + (z1 - z0) * t, a + (b - a) * t, cy).tobytes())
 
 
 def render_chunk(job):
-    items, out = job
-    enc = subprocess.Popen(["ffmpeg", "-loglevel", "error", "-y", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{W}x{H}", "-r", str(FPS), "-i", "-",
+    items, out, pauses = job
+    enc = subprocess.Popen(["ffmpeg", "-loglevel", "error", "-y", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{W}x{H}", "-r", str(FPS), "-i", "-", "-vf", GRADE,
                             "-c:v", "libx264", "-preset", "medium", "-crf", "17", "-pix_fmt", "yuv420p", "-g", "96", "-threads", "2", out], stdin=subprocess.PIPE)
     cache = {}
     def load(p):
         if p not in cache:
             cache.clear(); cache[p] = Image.open(p).convert("RGB")
         return cache[p]
-    for n, kind, F, pic, clip in items:
+    for n, kind, F, pic, clip, t0 in items:
         rng = random.Random(n)
         if kind == "hero" and clip:
             dec = subprocess.Popen(["ffmpeg", "-loglevel", "error", "-i", clip, "-vf", f"scale={W}:{H}:flags=lanczos,unsharp=5:5:0.4", "-f", "rawvideo", "-pix_fmt", "rgb24", "-"], stdout=subprocess.PIPE)
@@ -96,12 +108,15 @@ def render_chunk(job):
                 if len(b) < FRAME_BYTES: break
                 enc.stdin.write(b); last = b; got += 1
             dec.kill()
-            if got < F and last: shots(Image.frombytes("RGB", (W, H), last), F - got, rng, enc)      # continue from the clip's last frame
+            if got < F and last: shots(Image.frombytes("RGB", (W, H), last), F - got, rng, enc, t0 + got / FPS, pauses)      # continue from the clip's last frame
         elif kind == "card":
-            src = load(pic)
-            for f in range(F): enc.stdin.write(crop_frame(src, 1 + 0.04 * ease(f / max(F - 1, 1)), 0.5, 0.5).tobytes())
+            src = load(pic); bg = load(pic.replace(".png", "-bg.png"))
+            for f in range(F):
+                fr = crop_frame(src, 1 + 0.04 * ease(f / max(F - 1, 1)), 0.5, 0.5)
+                if f < 10: fr = Image.blend(crop_frame(bg, 1 + 0.04 * ease(f / max(F - 1, 1)), 0.5, 0.5), fr, ease((f + 1) / 10))      # the text fades in
+                enc.stdin.write(fr.tobytes())
         else:
-            shots(load(pic), F, rng, enc)
+            shots(load(pic), F, rng, enc, t0, pauses)
     enc.stdin.close(); enc.wait()
     return out
 
@@ -128,9 +143,12 @@ def main():
                 k = "card"; pic = str(proj / "cards" / f"{n:03d}.png"); card(L[i]["screen"] or "...", pic); print(f"line {n}: no picture, drew a card")
             c = proj / "clips" / f"{n:03d}-48.mp4"
             if k == "hero" and c.exists(): clip = str(c)
-        items.append((n, k, f1 - f0, pic, clip))
+        items.append((n, k, f1 - f0, pic, clip, T[i]["start"]))
+    sil = subprocess.run(["ffmpeg", "-hide_banner", "-i", str(proj / a.audio), "-af", "silencedetect=n=-34dB:d=0.14", "-f", "null", "-"], capture_output=True, text=True).stderr
+    st = [float(x) for x in re.findall(r"silence_start: ([\d.]+)", sil)]; en = [float(x) for x in re.findall(r"silence_end: ([\d.]+)", sil)]
+    pauses = [(x + y) / 2 for x, y in zip(st, en)]
     per = -(-len(items) // a.workers)
-    jobs = [(items[c * per:(c + 1) * per], str(proj / "chunks" / f"{c}.mp4")) for c in range(a.workers) if items[c * per:(c + 1) * per]]
+    jobs = [(items[c * per:(c + 1) * per], str(proj / "chunks" / f"{c}.mp4"), pauses) for c in range(a.workers) if items[c * per:(c + 1) * per]]
     with Pool(len(jobs)) as p: outs = p.map(render_chunk, jobs)
     lst = proj / "chunks.txt"; lst.write_text("".join(f"file 'chunks/{Path(o).name}'\n" for o in outs), encoding="utf-8")
     out = proj / ("preview.mp4" if a.limit else "video.mp4")

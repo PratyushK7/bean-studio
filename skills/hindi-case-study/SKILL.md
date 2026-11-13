@@ -334,7 +334,11 @@ placeholder music and effects. The assembler (`tools/vyapaar_assemble.py`) now e
 5. **Sound**: synthetic music and effects sound cheap and degrade the video. Ship the voice alone until real tracks are in
    `<project>/audio/music` and `<project>/audio/sfx`; the mixer's placeholders are for timing tests only, never for a delivered cut.
    Effects sparingly (a thud on the reveal), never a whoosh on every cut.
-6. **Source quality**: xAI clips are 720p (1264x720); they are upscaled and lightly sharpened, so keep them for moments that
+6. **Pro edit (v3, from four downloaded winners: HinExp Dhaba and Dumper, AB FinDoc Big Bull, Money Code Biryani)**: HinExp's average shot was
+   1.7 s (Dhaba) and 4.1 s (Dumper); all four had 0% near-still time. So: shots about 1.5 to 2.1 s in the first 45 s and 2 to 3.4 s after,
+   every cut snapped to a pause in the voice (silencedetect), one grade over stills, clips and cards (they look like one film), card text
+   fading in. Verify a finished cut with `freezedetect`, `blackframe` and the 6 fps frame-difference method (ours 5.4 vs HinExp 6.9 to 8.3).
+7. **Source quality**: xAI clips are 720p (1264x720); they are upscaled and lightly sharpened, so keep them for moments that
    move. Judge the clips on a contact sheet before they go in, and redo a clip that warps a face.
 
 ## 11. Check, then hand back
