@@ -34,3 +34,7 @@ data/youtube-videos.json
 data/analytics-meta.json
 data/make/
 research/long-form-topic/search-*.json
+
+# browser profile with the ChatGPT login (never commit)
+tools/.browser-profile/
+tools/video/node_modules/
