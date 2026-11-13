@@ -315,6 +315,28 @@ Timing rules (a shot is not the same as a line: one `kind` marks the picture tha
 Also add `"shot": "<what moves>"` for `hero` lines (the motion prompt: one action, camera almost still). Count the kinds in
 the hand-back (shots, `hero` seconds, estimated xAI cost at $0.032 per `hero` second and $0.055 per distinct image).
 
+### Edit and render rules (learned from the first jewellery render, which the owner rejected as jerky, frozen and amateur)
+
+What went wrong, measured: one picture per line averaged 6.5 s on screen (the references cut every 1 to 4 s); 3 s clips sat on
+lines of 4 to 12 s and were held frozen (266 frozen stretches); ffmpeg `zoompan` and per-line segment files; synthetic
+placeholder music and effects. The assembler (`tools/vyapaar_assemble.py`) now enforces the fixes; do not go back to the old way:
+
+1. **No shot over about 4 s.** A line is cut into shots of about 3 s, each a different framing of the picture (push-in, pan,
+   tighter push, pull-out). A still is never held on one framing. Never freeze a clip: after the clip ends, continue from its last
+   frame with a camera move that starts at zoom 1.0 so the join is invisible.
+2. **Match the clip to the line.** A `hero` line should be 3 to 5 s. If a line is longer, either make the clip longer (5 s costs
+   $0.16) or accept clip + moving continuation. Do not put a 3 s clip on a 10 s line without a continuation.
+3. **Never `zoompan`.** It rounds to whole pixels and jitters. Compute every frame with a sub-pixel crop and eased motion (smoothstep),
+   pipe the frames into one encoder (no per-line segment files, no concat seams, so no black or duplicated frames), and never crop
+   tighter than 1.3x so the picture stays sharp.
+4. **Test before the full render**: render the first 14 lines (`--limit 14`), then run `freezedetect`, `blackframe` and a
+   per-frame difference check (no zero or spiking differences inside a shot). Fix before spending 15 minutes on the whole.
+5. **Sound**: synthetic music and effects sound cheap and degrade the video. Ship the voice alone until real tracks are in
+   `<project>/audio/music` and `<project>/audio/sfx`; the mixer's placeholders are for timing tests only, never for a delivered cut.
+   Effects sparingly (a thud on the reveal), never a whoosh on every cut.
+6. **Source quality**: xAI clips are 720p (1264x720); they are upscaled and lightly sharpened, so keep them for moments that
+   move. Judge the clips on a contact sheet before they go in, and redo a clip that warps a face.
+
 ## 11. Check, then hand back
 
 Run `casecheck.py` and save its output to `<slug>-check.txt`, under the notes from the revision passes. Fix every FAIL. For each
