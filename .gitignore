@@ -39,3 +39,4 @@ research/long-form-topic/search-*.json
 tools/.browser-profile/
 tools/video/node_modules/
 channels/hindi/videos/*/styles/edge-profile/
+tools/video/ws/

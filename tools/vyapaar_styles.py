@@ -106,7 +106,10 @@ def prep():
 
 # ---------- pictures ----------
 @functools.lru_cache(maxsize=None)
-def picture(n): return Image.open(pic_path(n)).convert("RGB")
+def picture(n, hd=False):
+    """the picture; hd = the ESRGAN 2x upscale from images-hd/ (WaveSpeed's local upscaler, tools/video/ws_upscale.js) when it exists"""
+    h = PROJ / "images-hd" / f"{int(str(n).rstrip('c')):03d}.png"
+    return Image.open(h if hd and h.exists() else pic_path(n)).convert("RGB")
 
 
 @functools.lru_cache(maxsize=None)
@@ -228,11 +231,33 @@ def shots_for(style):
                 kind = "close" if str(s).endswith("c") else ["in", "pan_r", "out", "pan_l"][(i + j) % 4]
                 out.append((a + (b - a) * j / k, a + (b - a) * (j + 1) / k,
                             lambda t, d, s=s, kind=kind: crop(picture(int(str(s).rstrip("c"))), *move(kind, t / d, s, 0.6)), False))
+        elif style == "K":
+            out.append((a, b, lambda t, d, n=n, pl=KB_PLAN[i]: crop(picture(n, True), *lerp3(pl[0], pl[1], t / d)), False))
         elif style == "B" and n in PARALLAX and i in PARALLAX_LINES:
             out.append((a, b, lambda t, d, n=n, kind=MOVES_A[i]: parallax_frame(n, t / d, kind), False))
         else:
             out.append((a, b, lambda t, d, n=n, kind=MOVES_A[i]: crop(picture(n), *move(kind, t / d, n, min(1.2, d / 5))), False))
     return out
+
+
+# K: Ken Burns v2. Every move planned by hand from the picture and the words: (zoom, cx, cy) at the start -> at the end, constant speed.
+KB_PLAN = {1: ((1.00, .50, .50), (1.10, .47, .45)),     # the bazaar: settle into the street
+           2: ((1.18, .36, .50), (1.18, .66, .45)),     # pan along the shops to Ramesh watching the TV
+           4: ((1.30, .55, .40), (1.04, .50, .50)),     # pull out from the sweets: the whole market celebrating
+           5: ((1.02, .50, .50), (1.20, .43, .33)),     # creep in on Gupta ji's face as he talks
+           6: ((1.04, .50, .50), (1.16, .47, .32)),     # in on Ramesh
+           7: ((1.30, .30, .45), (1.30, .80, .55)),     # from Ramesh across to the safe ("नजर कोने वाली तिजोरी पर")
+           8: ((1.05, .50, .50), (1.20, .42, .45)),     # into the gold on the shelves
+           10: ((1.00, .50, .50), (1.22, .46, .30)),    # slow push to his face: two years' earnings gone
+           11: ((1.15, .38, .48), (1.15, .62, .50)),    # the question: drift from Ramesh to the safe
+           12: ((1.30, .25, .40), (1.00, .50, .50))}    # pull out to the closing bazaar
+GRADE_K = ("eq=contrast=1.07:brightness=-0.03:saturation=0.9:gamma=0.97,"
+           "colorbalance=rs=0.03:gs=0.005:bs=-0.035:rh=-0.015:bh=0.02,vignette=angle=PI/6:mode=forward,noise=alls=2:allf=t")
+VOICE_SOFT = "equalizer=f=220:t=q:w=1:g=1.5,equalizer=f=3400:t=q:w=1.5:g=-2,equalizer=f=7200:t=q:w=1:g=-2.5,aecho=0.8:0.85:20:0.06"
+MUSIC = [("Comfortable Mystery 4.mp3", 0.0, 27.5), ("Lightless Dawn.mp3", 26.0, None)]   # (file in audio/music, start s, end s): the turn at line 6
+
+
+def lerp3(a, b, p): return tuple(x + (y - x) * p for x, y in zip(a, b))
 
 
 PARALLAX_LINES = {5, 6, 7, 10}
@@ -255,11 +280,11 @@ def d_mask():
 
 def render(style):
     sh = shots_for(style)
-    dis = {"A": 0.5, "B": 0.5, "C": 0.0, "D": 0.35}[style]
+    dis = {"A": 0.5, "B": 0.5, "C": 0.0, "D": 0.35, "K": 0.6}[style]
     total = UNTIL + 0.7; nf = round(total * FPS)
     out = OUT / f"style-{style}-video.mp4"
     enc = subprocess.Popen(["ffmpeg", "-loglevel", "error", "-y", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{W}x{H}", "-r", str(FPS), "-i", "-",
-                            "-c:v", "libx264", "-preset", "slow", "-crf", "16", "-pix_fmt", "yuv420p", str(out)], stdin=subprocess.PIPE)
+                            *(["-vf", GRADE_K] if style == "K" else []), "-c:v", "libx264", "-preset", "slow", "-crf", "16", "-pix_fmt", "yuv420p", str(out)], stdin=subprocess.PIPE)
 
     def shot_img(k, t):
         a, b, f, is_card = sh[k]; lo, hi = a - dis / 2, b + dis / 2
@@ -288,8 +313,20 @@ def render(style):
         enc.stdin.write(img.convert("RGB").tobytes())
     enc.stdin.close(); enc.wait()
     final = OUT / f"style-{style}.mp4"
-    subprocess.run(["ffmpeg", "-loglevel", "error", "-y", "-i", str(out), "-i", str(PROJ / "voice.mp3"), "-map", "0:v", "-map", "1:a", "-c:v", "copy",
-                    "-af", f"afade=t=out:st={UNTIL - 0.2}:d=0.8", "-c:a", "aac", "-b:a", "192k", "-t", f"{total}", str(final)], check=True)
+    if style == "K":                                       # soft voice + music that turns at line 6, ducked under the voice
+        ins, fc = ["-i", str(out), "-i", str(PROJ / "voice.mp3")], f"[1:a]{VOICE_SOFT},asplit[v][sc];"
+        for j, (f, a, b) in enumerate(MUSIC):
+            ins += ["-i", str(PROJ / "audio/music" / f)]
+            fade = f",afade=t=out:st={b - 2.5}:d=2.5" if b else ""
+            fc += f"[{j + 2}:a]aformat=sample_rates=44100:channel_layouts=stereo,volume=0.32,afade=t=in:d={0.8 if a == 0 else 2.5}{fade},adelay={int(a * 1000)}:all=1[m{j}];"
+        fc += "".join(f"[m{j}]" for j in range(len(MUSIC))) + f"amix=inputs={len(MUSIC)}:normalize=0[m];"
+        fc += "[m][sc]sidechaincompress=threshold=0.03:ratio=5:attack=30:release=450[md];"
+        fc += f"[v][md]amix=inputs=2:normalize=0,loudnorm=I=-14:TP=-1.5:LRA=9,afade=t=out:st={UNTIL - 0.2}:d=0.8[a]"
+        subprocess.run(["ffmpeg", "-loglevel", "error", "-y", *ins, "-filter_complex", fc, "-map", "0:v", "-map", "[a]", "-c:v", "copy",
+                        "-c:a", "aac", "-b:a", "192k", "-t", f"{total}", str(final)], check=True)
+    else:
+        subprocess.run(["ffmpeg", "-loglevel", "error", "-y", "-i", str(out), "-i", str(PROJ / "voice.mp3"), "-map", "0:v", "-map", "1:a", "-c:v", "copy",
+                        "-af", f"afade=t=out:st={UNTIL - 0.2}:d=0.8", "-c:a", "aac", "-b:a", "192k", "-t", f"{total}", str(final)], check=True)
     out.unlink(); print("wrote", final)
 
 
