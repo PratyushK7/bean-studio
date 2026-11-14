@@ -38,3 +38,4 @@ research/long-form-topic/search-*.json
 # browser profile with the ChatGPT login (never commit)
 tools/.browser-profile/
 tools/video/node_modules/
+channels/hindi/videos/*/styles/edge-profile/
