@@ -280,6 +280,12 @@ topic).
 
 Real people: use their documented words only. Dramatise with the scene, not with invented quotes.
 
+Two checks that v3 of the jewellery script failed:
+- **The window.** Every percent change has a window. Match it to the scene's date. A quarterly-average year-on-year figure
+  is not "since last Dhanteras". In v3, the +45% was a July–September average; Dhanteras to Dhanteras was +6 to 9%.
+- **The law.** What a character does on screen is legal, or the script says it is not. For example, cash receipts of ₹2 lakh
+  or more are barred (Income-tax Act, section 269ST), so a ₹2.6 lakh restock is paid by bank transfer, not in notes.
+
 ## 3. Packaging and the promise list
 
 - **Titles**: write three, in English or the Hinglish price-first shape, at most 70 characters, with the known thing in the first
@@ -449,14 +455,70 @@ Then run `casecheck.py script.json --md`. It writes **`<slug>-script.md`**, the 
 title and alternatives, the thumbnail words, the central question and answer, the gain, the loop ledger with open and close
 times, then every chapter with timestamps, each line with its re-hook, loop and interrupt marks and its visual.
 
-## 10. Check, then hand back
+## 10. The editor's score: `<slug>-score.md`
+
+Before handing back, change roles. You are now an independent senior script editor who did not write this script and owes
+its writer nothing. Score the script, fix only what is weak, then score it again.
+
+**Step 1: score.** Score ten dimensions, equal weight, each 0 to 10. Give each score one line of evidence quoted from the
+script, with its timestamp.
+
+| Dimension | What a 9 looks like |
+|---|---|
+| Opening hook | a picture, a price and a contradiction in 15 seconds; the title's promise is restated by 0:30 |
+| Storytelling | a person who wants something, makes choices and pays for them; concrete details; one time line |
+| Curiosity and open loops | 2 to 3 loops open at every moment; each closes with something worth the wait |
+| Retention and re-hooks | a reason to stay every 60 to 120 s; no stock re-hooks; no stretch where the narrator lectures |
+| Natural Hinglish and dialogue | every line passes the friend test; speakers named; nobody talks like a serial or a slogan |
+| Emotional connection | we feel what the person feels, shown in gestures, never told |
+| Pacing | no stretch drags; the information is spread out; the back third does not stall before the payoff |
+| Educational value and clarity | the viewer can explain the mechanism afterwards; no logic gap a smart viewer would catch |
+| Factual accuracy and research | every number traces to a row; windows, dates, arithmetic and the law all check |
+| Ending and payoff | L1 answered with the exact number; the promises kept; a last image, not a summary |
+
+The overall score is the mean of the ten. A dimension scoring 8 or more is good: leave it alone. A dimension below 8 is
+weak.
+
+**Step 2: the weak areas.** For each weak dimension, say what is wrong, quoting the line with its timestamp. Mark each fault:
+- **critical**: a wrong fact, number or date window, the law, or a logic error a viewer would catch
+- **minor**: craft
+
+Never invent a weakness to have something to fix.
+
+**Always run the fact audit, whatever the scores.**
+- Re-verify every number that carries the story against a current source.
+- Check every window against the scene's date.
+- Redo every piece of arithmetic.
+- Check what the characters do against the law.
+- Hunt for metaphors a viewer could take literally. An example: "the machine is in your pocket", when the app checks a
+  hallmark record and does not test the gold.
+
+**Step 3: targeted fixes.**
+- Rewrite only the weak lines and paragraphs.
+- Keep the strong hooks, characters, transitions and loops, and keep the order.
+- Keep the runtime within 5%.
+- Verify a fact before changing it, and add the new research rows.
+- Where retention is weak because the narrator explains, play the explanation as a scene with a person.
+- Cut stock re-hooks, artificial drama and AI phrasing.
+- Do not tune every sentence for retention. Natural storytelling matters more. Do not change good content just to make it
+  different.
+
+Back up the old version (`v3/`, `v4/`...) before editing, and rebuild with the same builder.
+
+**Step 4: score again.** Use the same rubric. Show a table of the original score against the revised score. Say which
+weaknesses were fixed, and name the remaining issues honestly. The target is 8.5 or more. If the script falls short, say what
+blocks it; never inflate a score. A score reflects the script, not the effort.
+
+Write steps 1 to 4 into `<slug>-score.md`.
+
+## 11. Check, then hand back
 
 Run `casecheck.py` and save its output to `<slug>-check.txt`, under the notes from the revision passes. Fix every FAIL. For each
 WARN, either fix it or write one line saying why it is right for this script. **Never add a line only to satisfy a rule.** Save
 the `--voice` output to `<slug>-script.txt`, and write `<slug>-script.md` with `--md`.
 
 The project folder ends up holding: `<slug>-research.md`, `<slug>-engine.md`, `<slug>-beats.md`, `<slug>-hooks.md`,
-`script.json`, `<slug>-script.md`, `<slug>-check.txt`, `<slug>-script.txt` and `preview-local.mp3`.
+`script.json`, `<slug>-script.md`, `<slug>-check.txt`, `<slug>-score.md`, `<slug>-script.txt` and `preview-local.mp3`.
 
 Hand back:
 - the winning title and thumbnail words
@@ -465,6 +527,7 @@ Hand back:
 - the chapter list with timings, and the runtime
 - the loop ledger in one line each
 - what the revision passes changed
+- the editor's score table (original against revised) and the remaining issues
 - the checker summary
 - any facts marked estimate or legend
 - the full path of `<slug>-script.md`

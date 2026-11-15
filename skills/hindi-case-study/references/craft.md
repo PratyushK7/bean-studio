@@ -227,4 +227,21 @@ These are illustrations of the move. Never reuse the lines.
 
 **A spoken connector, not a written one.**
 - Before: "इसके अलावा, शोरूम गोल्ड मेटल लोन का उपयोग करता है, जो एक महत्वपूर्ण अंतर है।"
-- After: "और शोरूम एक चाल और चलता है। वो सोना खरीदता ही नहीं। बैंक से किराए पर लेता है।"
+- After: "और शोरूम एक चाल और चलता है। वो सारा सोना खरीदता ही नहीं। काफी सोना बैंक से किराए पर लेता है।"
+
+## 11. What the editor's audit caught in v3 (and the checker could not)
+
+v3 passed the checker with 0 FAIL. The independent editor's pass (SKILL.md step 10) scored it 7.85 and found these faults.
+
+| Fault in v3 | Kind | Fix in v4 |
+|---|---|---|
+| "पिछले एक साल में सोना करीब पैंतालीस परसेंट महंगा": the 45% was a Jul–Sep average year on year. Dhanteras to Dhanteras was +6 to 9%, so "₹80 lakh, nine years" was wrong | critical (window) | two Dhanteras on the IBJA series, 1.75 to 1.80x: "एक करोड़ से ज्यादा, करीब बारह साल की कमाई" |
+| "नोट गिनते हुए": ₹2.6 lakh paid in cash, which section 269ST bars | critical (law) | a bank payment slip |
+| "वो भी इस बार दस परसेंट। रमेश जी हमेशा बारह लेते थे": but the year's ledger is at 10% | critical (model) | "सामने शोरूम खुलने से पहले, बारह" |
+| plan point 1, "उसी दिन वापस खरीद लो, तिजोरी हल्की": same-day restock does not lighten the safe, and Goyal ji already came the next morning | critical (logic) | "तिजोरी में बस उतना सोना, जितना शोकेस को चाहिए; बाकी से लिमिट चुकाओ" |
+| "जो मशीन शोरूम में थी, आज हर जेब में": the app checks a hallmark record and does not test the gold | minor (a metaphor taken literally) | "जो भरोसा मशीन देती थी, उसका सबूत जेब में"; a hallmarking centre tests the piece |
+| the showroom chapter: 90 s of narrator lecture (metal loans, Titan, karat meters, hallmarking) | minor (retention) | played as scenes: Ankit asks the manager; an aunty's bangles on the karat meter |
+| "एक और झटका आता है", "एक बात अब भी चुभती है" | minor (stock re-hooks) | "सड़क पार करने वालों में शर्मा परिवार अकेला नहीं था"; the question becomes Ramesh's |
+
+The lesson: the checker and the revision passes check craft. Only a fresh read against current sources catches a wrong window,
+a legal slip or a plan that does not add up.

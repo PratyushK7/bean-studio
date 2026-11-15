@@ -447,7 +447,7 @@ Format: {fmt} ({HI_FORMATS[fmt]}). Target runtime: {mins} minutes (about {int(mi
 {('Already covered by: ' + covered + '. Take the different angle above; never retell their script.') if covered else ''}
 {('Chapters suggested: ' + ', '.join(strings(t.get('chapters'), 9, 80))) if t.get('chapters') else ''}
 {('Extra notes from the user: ' + clean(a.get('notes'), 800)) if a.get('notes') else ''}
-The project folder is {p} (it exists). Write the research, engine, beats and hooks files, script.json (with the loop ledger, the fact ids and the per-line kind from the skill), the check output, the voice text and the readable <slug>-script.md (casecheck.py --md) there. Run casecheck.py, fix every FAIL, never add a line only to satisfy the checker, and finish with the hand-back. Do not generate images, video or voice and do not touch other projects."""
+The project folder is {p} (it exists). Write the research, engine, beats and hooks files, script.json (with the loop ledger, the fact ids and the per-line kind from the skill), the check output, the voice text and the readable <slug>-script.md (casecheck.py --md) there. Run casecheck.py, fix every FAIL, never add a line only to satisfy the checker, run the independent editor's score (step 10, <slug>-score.md) and fix only the weak areas, and finish with the hand-back. Do not generate images, video or voice and do not touch other projects."""
         j = run_agent(f"script · {slug}", prompt, "opus", "feed")
         (DATA / "make").mkdir(parents=True, exist_ok=True)
         save_json(DATA / "make" / f"{slug}.json", {"kind": "long", "topic": t, "answers": a, "when": dt.datetime.now().isoformat(timespec="seconds")})

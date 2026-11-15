@@ -130,7 +130,8 @@ def register(app, ROOT, cfg, start_agent, JOBS, start_job):
         prompt = (f'Use the hindi-case-study skill (read ~/.claude/skills/hindi-case-study/SKILL.md) for the channel "{c["channel"]}". Topic: {topic}. '
                   f"The project folder is {p} (it exists; write the research, engine, beats and hooks files, script.json with its loop ledger and fact ids, the check output, "
                   "the voice text and the readable <slug>-script.md (casecheck.py --md) there). "
-                  "Run casecheck.py, fix every FAIL, never add a line only to satisfy the checker, and finish with the hand-back. Do not render anything and do not touch other projects.")
+                  "Run casecheck.py, fix every FAIL, never add a line only to satisfy the checker, run the independent editor's score (step 10, <slug>-score.md) "
+                  "and fix only the weak areas, and finish with the hand-back. Do not render anything and do not touch other projects.")
         return jsonify(start_agent(f"script · {name}", prompt, MODELS["script"], "feed"))
 
     @app.post("/api/pipeline/<name>/voice")
