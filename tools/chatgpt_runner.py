@@ -142,7 +142,8 @@ def main():
                 files = [next(img.glob(f"{chars[nm]:03d}.*")) for nm in used]
             if files:
                 chat.attach(files)
-            pre = "Create an image: " + ("Use the attached character sheet(s) so each person looks exactly the same (same face, hair, clothes). " if used else "")
+            same = used and e["type"] != "character"                  # a sheet's attachment is a style reference only: its prompt says so
+            pre = "Create an image: " + ("Use the attached character sheet(s) so each person looks exactly the same (same face, hair, clothes). " if same else "")
             chat.send(pre + e["prompt"])
             r = chat.wait_image()
             if r == "nosend":                                         # one automatic retry in a fresh chat

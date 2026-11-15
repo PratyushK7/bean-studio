@@ -6,7 +6,7 @@ _Generated from `visual-bible.json` by `python tools/vyapaar_visual.py bible`. E
 
 Premium semi-realistic digital illustration for serious Hindi business documentaries: a painted film still, not a photo, not a cartoon.
 
-Prompt words: Premium semi-realistic digital illustration, like a painted documentary film still: realistic proportions and anatomy, natural textures (wood, glass, metal, brass, gold, fabric, paper), refined soft shading with controlled highlights, rich but restrained colour.
+Prompt words: Semi-realistic digital illustration with a hand-painted finish, an illustration and not a photograph: realistic proportions and anatomy, clean confident forms under soft painterly shading, gentle cel-like faces, natural textures (wood, glass, metal, brass, gold, fabric, paper), controlled highlights, rich but restrained colour.
 
 Never: photorealistic photograph; cartoon or anime; plastic 3D render or waxy skin; oversaturated advertising colour; stock-photo grins; fantasy glow or lens-flare spectacle; mixed art styles within one video.
 

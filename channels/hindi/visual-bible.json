@@ -4,7 +4,7 @@
  "about": "The channel's one source of truth for pictures, motion, graphics, grade and render settings. Every tool reads this file (tools/vyapaar_visual.py, vyapaar_review.py, vyapaar_graphics.py, vyapaar_render.py, vyapaar_clips.py, vyapaar_qa.py). A project may override any key in <project>/visual-bible.json. The readable copy, visual-bible.md, is generated: python tools/vyapaar_visual.py bible",
  "style": {
   "summary": "Premium semi-realistic digital illustration for serious Hindi business documentaries: a painted film still, not a photo, not a cartoon.",
-  "prompt": "Premium semi-realistic digital illustration, like a painted documentary film still: realistic proportions and anatomy, natural textures (wood, glass, metal, brass, gold, fabric, paper), refined soft shading with controlled highlights, rich but restrained colour.",
+  "prompt": "Semi-realistic digital illustration with a hand-painted finish, an illustration and not a photograph: realistic proportions and anatomy, clean confident forms under soft painterly shading, gentle cel-like faces, natural textures (wood, glass, metal, brass, gold, fabric, paper), controlled highlights, rich but restrained colour.",
   "never": [
    "photorealistic photograph",
    "cartoon or anime",
@@ -13,7 +13,8 @@
    "stock-photo grins",
    "fantasy glow or lens-flare spectacle",
    "mixed art styles within one video"
-  ]
+  ],
+  "why": "15 Nov 2026: 'like a painted documentary film still' made ChatGPT return near-photographs (sheets 121-125, rejected). The approved channel look is illustrated with cel-like faces (sheets 1-5)."
  },
  "palette": {
   "summary": "Rich but restrained. Warm wood, brass and cream carry the old world; cool teal-grey and white LED carry the new. Gold is a highlight, never a flood.",
@@ -316,7 +317,7 @@
  "negative": {
   "always": "No readable text, logos or watermarks; signs, screens and papers are blank or illegible. Natural anatomy, five fingers per hand, no duplicate people, no distorted faces, no floating objects, plausible jewellery and tools, straight consistent architecture.",
   "people": "Each named person appears once.",
-  "crowd": "Background people are varied and natural, none of them looks like a main character."
+  "crowd": "Background people are varied, ordinary passers-by: none of them resembles any attached reference sheet or any named character (no green saree with glasses on a chain, no grey-suited man with a lanyard, unless planned)."
  },
  "aspect": {
   "ratio": "16:9",
@@ -330,7 +331,8 @@
    "Clothes change only when the story says so (a showroom uniform), and the plan says so on that shot.",
    "Expressions come from the shot, never a default smile."
   ],
-  "sheet_prompt": "Character reference sheet of {who}: front view and three-quarter view, standing relaxed, full body, plus one head-and-shoulders close-up, on a plain warm grey background, even soft studio light."
+  "sheet_prompt": "Character reference sheet of {who}: front view and three-quarter view, standing relaxed, full body, plus one head-and-shoulders close-up, on a plain warm grey background, even soft studio light.",
+  "style_ref_prompt": "Use the attached picture only as the style reference: match its illustrated rendering, line and colour, not the person in it."
  },
  "graphics": {
   "summary": "Numbers, ledgers, comparisons and timelines are drawn as motion graphics, never generated as pictures. One design system for every video.",

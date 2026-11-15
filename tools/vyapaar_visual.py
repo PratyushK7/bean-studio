@@ -128,7 +128,9 @@ def shot_prompt(shot, plan, bible):
         parts.append(f"Use the attached reference sheet only for {' and '.join(part)}'s skin tone and clothing; the face is not in the frame.")
     parts.append(bible["style"]["prompt"])
     avoid = [bible["negative"]["always"]]
-    if shot.get("crowd"): avoid.append(bible["negative"]["crowd"])
+    extras = re.search(r"(crowd|families|customers|shoppers|passers-by|salesm[ae]n|people|jewellers|staff)", " ".join(str(shot.get(k, "")) for k in ("action", "fg", "mg", "bg")), re.I)
+    roomy = shot.get("size") in ("establishing", "wide", "medium", "medium_close", "two_shot", "ots", "pov")      # backgrounds where extras appear
+    if shot.get("crowd") or extras or (roomy and shot.get("look") != "street_night"): avoid.append(bible["negative"]["crowd"])   # extras never look like the story's people
     avoid += [cap(a.rstrip(".")) + "." for a in shot.get("avoid", [])]
     parts.append(" ".join(avoid))
     return " ".join(cap(p.strip()) for p in parts if p.strip())
@@ -169,9 +171,12 @@ def build(proj, batch=30, write=True):
 
     index, problems = [], []
     # characters first (reference sheets)
+    sref = plan.get("style_ref")                                    # an approved sheet whose rendering every new sheet must match
     for cid, c in plan["characters"].items():
         p = sheet_prompt(c, bible); n = alloc("char:" + cid, c.get("sheet"))
-        e = {"n": n, "type": "character", "name": c["name"], "id": cid, "lines": [], "kind": "ref", "category": "sheets", "prompt": p}
+        refs = [sref] if (sref is not None and c.get("sheet") is None) else []
+        if refs: p = bible["characters"]["style_ref_prompt"] + " " + p
+        e = {"n": n, "type": "character", "name": c["name"], "id": cid, "lines": [], "kind": "ref", "category": "sheets", "prompt": p, "refs": refs}
         e["status"] = state(proj, n, p, slots.get("char:" + cid), review, have, reused=c.get("sheet") is not None)
         slots["char:" + cid] = {"n": n, "hash": phash(p) if e["status"] != "reused" else slots.get("char:" + cid, {}).get("hash", "")}
         index.append(e)
@@ -204,6 +209,7 @@ def build(proj, batch=30, write=True):
 def state(proj, n, prompt, prev, review, have, reused=False):
     r = (review.get(str(n)) or {}).get("status")
     if r == "rejected": return "rejected"
+    if r == "approved" and n in have: return "have"            # a person approved this picture: a later prompt edit does not queue it again
     if reused: return "reused" if n in have else "needed"
     if n not in have: return "needed"
     if prev and prev.get("hash") and prev["hash"] != phash(prompt): return "stale"

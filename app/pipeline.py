@@ -6,7 +6,7 @@ A project is a folder in the channel's projects_dir:
 Stage status is read from which files exist, never stored, so it cannot go stale. pipeline.json only remembers when the
 current ChatGPT batch started (the "since" time used to collect downloads).
 
-Who does what (shown on the page, and the model a stage's agent run uses): Opus for the judgment steps, Sonnet for the
+Who does what (shown on the page, and the model a stage's agent run uses): Opus for the judgment steps, Haiku for the
 mechanical ones. Images come from the user's own ChatGPT extension; the studio only collects the finished downloads.
 register(app, ROOT, cfg, start_agent, JOBS, start_job) adds /api/pipeline*.
 """
@@ -16,8 +16,9 @@ from flask import abort, jsonify, request
 
 SLUG = re.compile(r"^[a-z0-9][a-z0-9-]{0,60}$")
 IMG = {".png", ".jpg", ".jpeg", ".webp"}
-MODELS = {"topic": "opus", "research": "opus", "script": "opus", "packaging": "opus", "prompts": "sonnet", "shots": "sonnet",
-          "build": "sonnet", "render": "sonnet", "checks": "haiku"}
+# Opus only where the decision matters (the story, the visual plan, judging pictures and the sample); Haiku runs the mechanical steps
+MODELS = {"topic": "opus", "research": "opus", "script": "opus", "packaging": "opus", "visual_plan": "opus", "review": "opus",
+          "prompts": "haiku", "images": "haiku", "upscale": "haiku", "shots": "haiku", "build": "haiku", "render": "haiku", "checks": "haiku"}
 STAGES = [("script", "Script"), ("prompts", "Image prompts"), ("images", "Pictures"), ("voice", "Voice"), ("clips", "Clips"),
           ("sound", "Sound"), ("render", "Video"), ("sheet", "Upload sheet")]
 BUILT = {"script", "prompts", "images", "voice", "sound"}        # steps with a working button; the rest say "coming next" instead of pretending

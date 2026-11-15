@@ -25,6 +25,30 @@ project may override any key in `<project>/visual-bible.json`.
 | 10. Gate 2 | `vyapaar_render.py <p> sample`, then `vyapaar_qa.py <p> sample.mp4`, then `vyapaar_qa.py <p> approve sample.mp4` | `sample.mp4`, `qa/`, `gate2.json` | free |
 | 11. Full render | `vyapaar_render.py <p> full`, then `vyapaar_qa.py <p> video.mp4` | `video.mp4`, `video-plan.json`, `qa/` | free |
 
+**Which model runs what.** Opus only where a decision matters; everything mechanical goes to Haiku (low effort), started as
+a background child task with an exact command list.
+
+| Opus (judgment) | Haiku (mechanical) |
+|---|---|
+| script, research, packaging | running `chatgpt_runner.py` through BrowserOS neo, file by file |
+| writing and fixing `visual-plan.json` | `vyapaar_review.py analyze` / `sheets` / `report` (the measuring) |
+| approving the character sheets | `vyapaar_review.py upscale` (WaveSpeed's local ESRGAN, approved pictures only) |
+| Gate 1: approve, reject, pick, by looking at the contact sheets | graphics, `vyapaar_render.py sample\|full`, `vyapaar_qa.py` (the measuring) |
+| Gate 2: judging the sample, approving it | re-running a failed or limited batch |
+
+A Haiku child never approves, rejects or rewrites anything: it reports, and the decision comes back to Opus.
+
+Learned on the first run (16 Nov 2026):
+- **Fully automatic jobs need no model at all.** The runner, the upscale and the render cost nothing while they run, so
+  run them as background processes and spend no tokens waiting. A child that ends its turn while its job runs can wake
+  later and act on stale assumptions; it closed a tab it believed was its own.
+- **Haiku is for short multi-step chores** that need light judgment, such as re-running a failed file or tidying tabs.
+- **Pilot before the batch.** Make the character sheets first and approve them. Then make about 6 deliberately
+  different scenes (no people, night, sun, cool showroom light) and judge them before releasing the full batch.
+- **Style drift.** "Like a painted documentary film still" produced near-photographs, all rejected. The bible's style words
+  now say "an illustration and not a photograph, gentle cel-like faces". New sheets attach an approved sheet as a style
+  reference only (`style_ref` in the plan), and the runner does not tell ChatGPT to copy that person.
+
 Legacy, kept for old projects and for rollback:
 - `vyapaar_prompts.py --legacy` (the one-style-string prompts)
 - `vyapaar_assemble.py` (the 48 fps cutter with random reframing)

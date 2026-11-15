@@ -276,7 +276,7 @@ const PL_INFO = {
 async function loadPipeline() {
   const d = await api('/api/pipeline');
   $('#plcount').textContent = d.projects.length + ' video' + (d.projects.length === 1 ? '' : 's');
-  $('#plmodels').innerHTML = 'Opus writes the script · Sonnet builds · images come from your ChatGPT extension (collected from <code>' + esc(d.downloads) + '</code>) · clips from xAI.';
+  $('#plmodels').innerHTML = 'Opus writes the script, the visual plan and judges pictures and the sample · Haiku runs ChatGPT (BrowserOS neo), the WaveSpeed upscale and the render · images can also come from your ChatGPT extension (collected from <code>' + esc(d.downloads) + '</code>) · clips from xAI (paid, only when you OK the cost).';
   $('#plgrid').innerHTML = d.projects.map(plCard).join('') || '<p class="muted">No videos yet. Type a name above and press + New video.</p>';
 }
 function plCard(p) {
