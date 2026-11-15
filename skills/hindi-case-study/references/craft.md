@@ -173,3 +173,58 @@ explained. The hook asked a question but put no one in danger and nothing in the
 कहानी यहीं खत्म नहीं होती"). Feelings were told ("चेहरे पर मुस्कान आ जाती है", "अंकित की सांस एक पल को रुक जाती है") instead of
 caused. Sources were read aloud ("World Gold Council के मुताबिक", "CRISIL के मुताबिक") like a research note. It passed every count
 in the old checker, which is the clearest proof that the counts were never the craft.
+
+## 9. The second anti-example: the checklist script (jewellery v2)
+
+v2 fixed everything in section 8: event chapters, a hero with a wound, share-takers with faces, a mentor, a countdown payoff. It
+scored 0 FAIL and 0 WARN, and the owner said it "feels so off". It failed differently. Every device in this file had been added
+where the checker could count it, so the script sounded assembled, not told. The faults, with what fixes each:
+
+| Fault in v2 | Why it sounds off | The fix |
+|---|---|---|
+| Two cold opens stacked: Budget Day 2024, then "इस धनतेरस" and a bill of ₹2,94,580 | two central questions (why cheap gold hurts him, and how much of the bill is his) split the viewer's attention, and neither owns the video | one throughline and one L1; the other question becomes a step on the way |
+| Time anchors in the first 10 minutes: July 2024, "इस धनतेरस", "इस साल", "पिछले साल", "तेरह मई", "बीस साल पहले", 2021 | the listener cannot tell when "now" is | one now, one flashback, every jump stamped; real events placed relative to the story's now |
+| A question bolted onto scenes ("क्या वो अंदर आएंगे?", "तीन पीढ़ी का रिश्ता... कैसे टूट गया?") | the scene already had the tension; the question explains the scene to the viewer | cut it, and let the action carry the moment (he wipes the counter glass; they cross the road) |
+| The mentor speaks only in riddles ("तुम्हारे पापा की असली दुकान नीचे नहीं है", "आप इस बाजार के सबसे बड़े जुआरी हैं") | a fortune-cookie line once is a hook; a character who only speaks that way is a device in a costume | an old karigar talks like an old karigar: plain words, one concrete image from his trade, a little humour |
+| Stingers written to the checker's phrase list ("असली चोट अगले नंबर से लगने वाली थी", "चौथी वाली आपको सबसे ज्यादा चुभेगी") | the viewer hears the machinery | a re-hook that names this story's specific thing, or nothing at all if the scene holds |
+| "इस हिसाब को कहीं लिख लीजिए। वीडियो के आखिर में आप इसे खुद काटेंगे।" | a homework order breaks the spell | the challenge stays inside the story ("तीस लाख की सेल, तो लाखों की कमाई। है ना?") and the payoff calls it back |
+| The same bill read out three times; about 40 numbers in five minutes (5.2 crore, 52 lakh, 20.8 lakh, 16 lakh, 6 lakh, 9.2 lakh, 12.5 lakh, 2.6 crore...) | the ear drops every number after the second | three payoff numbers, repeated; everything else felt as a comparison ("एक एफडी से भी कम") |
+| Father and son trade lines with no speaker named ("जिस दुकान ने मेरे कस्टमर छीने, तू उसकी नौकरी करेगा?" / "पापा, मैं वहां नौकरी करने नहीं जा रहा...") | one narrator's voice reads both; the listener loses who is speaking | name the speaker first, two turns at most, the rest as reported speech |
+| The son states the theme ("ये सीखने जा रहा हूं कि वो जीतते कैसे हैं") | people do not announce the moral of their own scene | give him a want in his own idiom, and let the action show the theme |
+| "हमारे हिसाब में" three times; "सामने वाली कंपनी खुद मानती है", "वर्ल्ड गोल्ड काउंसिल के मुताबिक" | the same hedge on a loop sounds like a disclaimer; sources read aloud sound like a report | vary the estimate words; keep at most two authority lines |
+| A showroom chapter that lists Titan's ₹290 crore hit, the gold metal loan, the 11% margin, the karat meter, the exchange offer, hallmarking and HUID, with no scene | an info-dump with a character's name on it | one scene where the son sees the mechanism happen, one fact per beat; cut what does not change the ending |
+| Six asks in the last six lines (look at the bill, comment, send it, Hype, next video, sign-off) | the ending dissolves into chores | the insight, the last image, one comment question, one ask, the next video, the sign-off |
+
+What v2 got right and v3 should keep: the share-takers with faces (the bullion dealer counting money, the karigar on the roof),
+the inventory reveal (the shop's real business is a bet on the gold price), the three-generation stakes, the closing image of
+the scales and the phone.
+
+## 10. Writing for the ear: before and after
+
+These are illustrations of the move. Never reuse the lines.
+
+**Name the speaker before the quote.**
+- Before: "रमेश जी का हाथ थाली में रुक जाता है। जिस दुकान ने मेरे कस्टमर छीने, तू उसकी नौकरी करेगा?"
+- After: "रमेश जी का हाथ थाली में रुक जाता है। फिर वो बेटे से पूछते हैं, जिस दुकान ने मेरे कस्टमर छीने, तू वहां नौकरी करेगा?"
+
+**One number, landed last, then made human.**
+- Before: "साल भर में करीब चार किलो सोना बिकता है, पांच करोड़ बीस लाख का। वो सारा तो गोयल जी के पास लौट जाता है। कमाई है सिर्फ
+  मेकिंग चार्ज, बावन लाख।"
+- After: "साल भर में दुकान से करीब पांच करोड़ का सोना निकलता है। पर इसमें से ज्यादातर पैसा अगली सुबह ही गोयल जी के पास लौट जाता है।"
+
+**Let the scene carry the tension; cut the bolted-on question.**
+- Before: "तभी शीशे के बाहर उन्हें शर्मा परिवार दिखता है। क्या वो अंदर आएंगे?"
+- After: "तभी शीशे के बाहर शर्मा परिवार दिखता है। रमेश जी जल्दी से काउंटर का शीशा पोंछने लगते हैं।"
+
+**A mentor in his own idiom, not a riddle machine.**
+- Before: "बेटा, गहनों का हिसाब मत लगाओ। तुम्हारे पापा की असली दुकान नीचे नहीं है।"
+- After (the move): one plain sentence from his trade that points at the safe, a gesture, and the narrator moves on. A riddle,
+  if used at all, is used once in a video.
+
+**The challenge inside the story, not a homework order.**
+- Before: "इस हिसाब को कहीं लिख लीजिए। वीडियो के आखिर में आप इसे खुद काटेंगे।"
+- After: "आप भी यही सोच रहे होंगे। तीस लाख की सेल, तो कमाई लाखों में।" Then the close calls it back once, without an order.
+
+**A spoken connector, not a written one.**
+- Before: "इसके अलावा, शोरूम गोल्ड मेटल लोन का उपयोग करता है, जो एक महत्वपूर्ण अंतर है।"
+- After: "और शोरूम एक चाल और चलता है। वो सोना खरीदता ही नहीं। बैंक से किराए पर लेता है।"

@@ -440,14 +440,14 @@ When done, print the same JSON as your final message."""
         fmt = a.get("format") if a.get("format") in HI_FORMATS else (t.get("format") if t.get("format") in HI_FORMATS else "economics")
         facts = "\n".join(f"- {k}: {clean(t.get(k), 400)}" for k in ("assumption", "gap", "angle", "promise", "visual") if t.get(k))
         covered = "; ".join(strings(t.get("covered_by"), 5, 160))
-        prompt = f"""Use the hindi-case-study skill (read ~/.claude/skills/hindi-case-study/SKILL.md, references/study.md and ~/.claude/youtube/voice-hindi.md) for the channel "{c['channel']}". Write the script for this video.
+        prompt = f"""Use the hindi-case-study skill (read ~/.claude/skills/hindi-case-study/SKILL.md, references/craft.md, references/study.md and ~/.claude/youtube/voice-hindi.md) for the channel "{c['channel']}". Write the script for this video.
 Title: {title}
 Format: {fmt} ({HI_FORMATS[fmt]}). Target runtime: {mins} minutes (about {int(mins * 155 * 0.97)} Hindi words).
 {facts}
 {('Already covered by: ' + covered + '. Take the different angle above; never retell their script.') if covered else ''}
 {('Chapters suggested: ' + ', '.join(strings(t.get('chapters'), 9, 80))) if t.get('chapters') else ''}
 {('Extra notes from the user: ' + clean(a.get('notes'), 800)) if a.get('notes') else ''}
-The project folder is {p} (it exists). Write script.json (with the per-line kind and shot plan from the skill), the research file, the check output and the voice text there. Run casecheck.py, fix every FAIL, and finish with the hand-back (including the shot counts and the estimated xAI cost). Do not generate images, video or voice and do not touch other projects."""
+The project folder is {p} (it exists). Write the research, engine, beats and hooks files, script.json (with the loop ledger, the fact ids and the per-line kind from the skill), the check output, the voice text and the readable <slug>-script.md (casecheck.py --md) there. Run casecheck.py, fix every FAIL, never add a line only to satisfy the checker, and finish with the hand-back. Do not generate images, video or voice and do not touch other projects."""
         j = run_agent(f"script · {slug}", prompt, "opus", "feed")
         (DATA / "make").mkdir(parents=True, exist_ok=True)
         save_json(DATA / "make" / f"{slug}.json", {"kind": "long", "topic": t, "answers": a, "when": dt.datetime.now().isoformat(timespec="seconds")})
