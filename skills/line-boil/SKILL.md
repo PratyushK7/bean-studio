@@ -113,7 +113,7 @@ How to apply it:
    Keep the simplification honest: simpler is fine, wrong is not. Verify every number in a primary source (the paper, the review, the
    agency page), never invent one, and drop what you cannot verify. Write `<project>-sources.md`: a table of claim, link, and how far you
    checked it (full text / abstract only / secondary report), plus a short "not claimed, on purpose" list. The YouTube sheet's Sources
-   come from it.
+   come from it. Then do the **script review** (**Quality review** below): score it, and rewrite only the weak lines, before the voice.
 3. **Cast.** (Choose the genre and theme first: see **Genre** above.) The channel is The Bean With Bad Ideas, so the cast is **beans**: use *different beans* to explain the topic, one
    bean per idea or role (the viewer, the thing being explained, the force pushing against it, the sceptic, the crowd).
    Make them different at thumbnail size: body shape (`bean`, `pear`, `tall`, `ball`, `box`, `wide`, `tiny`), colour (RED, BLUE,
@@ -124,7 +124,7 @@ How to apply it:
    `references/style.md`. Props stay props. Pick from the shapes, accessories and expressions in `references/api.md` before
    inventing new drawing code. The red host bean (glasses, tuft, yellow scarf, lit cracked bulb) may appear in any video as the
    narrator-in-frame, but is not required.
-4. **Show the plan.** Before animating, give the user the script plus a one-line cast list and a one-line visual per
+4. **Show the plan.** Before animating, give the user the script with its review scores, plus a one-line cast list and a one-line visual per
    sentence. Wait for an OK unless they asked you to go straight through.
 5. **Project and voice.** Run `build.py new <project>` (add `--theme noir` etc. for a non-classic genre; just the slug; it lands in `C:\Users\praty\youtube\line-boil\<project>`), write `script.json`, then run `build.py voice <project>`.
    It prints every word with its start time, grouped by sentence. Those times are your timeline.
@@ -142,7 +142,7 @@ How to apply it:
    - expressions that don't match the line
    - a prop that hasn't appeared yet
    Fix what you see, then render stills again for anything you changed.
-8. **Build.** Run `build.py video <project>`, then `build.py sheet <project>` and look at the sheet once.
+8. **Build.** Run `build.py video <project>`, then `build.py sheet <project>` and look at the sheet once. Then do the **animation review** and the final score (**Quality review** below).
 9. **Thumbnail.** Every Short gets one, at make time, rendered straight into the project folder. Follow `~/.claude/skills/line-boil-thumbnail-short/SKILL.md` (the original style: 2 to 4 words that name the topic, one big topic object, a face only when it helps, flat high-contrast background, and an accuracy test). It lands as `<project>/<project>-thumbnail.png`.
 10. **YouTube sheet.** Write `<project>-youtube.txt` next to the MP4: the title (linted with `yt-package`'s
    `title.py`, with two alternates), the thumbnail text and brief, the description, tags, target search queries,
@@ -150,8 +150,69 @@ How to apply it:
    Follow `references/youtube.md`, which brings in the `yt-package` and `yt-seo` rules. Do this for every new video.
 11. **Hand over** the full path, `C:\Users\praty\youtube\line-boil\<project>\<project>.mp4`, plus the `.srt`,
    `<project>-thumbnail.png` and `<project>-youtube.txt` beside it, with the script, a short note on the cast, the winning hook with its
-   score, the sheet's title, thumbnail text and first two description lines, and anything you could not verify. End with: ship it, or
+   score, the review's four scores and remaining issues, the sheet's title, thumbnail text and first two description lines, and anything you could not verify. End with: ship it, or
    change it?
+
+## Quality review: score, then fix only what is weak
+
+Twice per Short, before the voice (the script) and after the render (the animation), act as an independent YouTube Shorts editor who
+did not write it. Write the review to `<project>-review.md` and put the scores in the hand-over. Never inflate a score, and never
+change a line just to raise a number. The aim is a Short that is more entertaining, clearer and more memorable without breaking what already works.
+
+**1. Score the script** after the fact-check and before `build.py voice`, so a rewrite costs no voice re-run. Give each dimension a
+score out of 10 and quote the line you are judging next to it:
+
+| Dimension | What 8 or more means |
+|---|---|
+| First-second hook | names a belief and breaks it, or a paradox the viewer has lived; under 12 words; a concrete image |
+| Sentence 2 retention | deepens the question or raises the stakes; never explains, sets up or answers |
+| Curiosity and intrigue | the main answer is held back until about halfway |
+| Storytelling and clarity | one mechanism, one drawable image per sentence; a stranger could repeat the point |
+| Re-hook effectiveness | a catch, a scale jump or a strange consequence about halfway |
+| Humour and entertainment | a joke about every 8 to 10 s, on topic, dry, in the genre's style |
+| Natural narration | reads aloud without a stumble; plain words; under 15 words a sentence |
+| Pacing and concision | no line that carries neither a fact nor a laugh |
+| Factual accuracy | every claim is in `<project>-sources.md`, hedged inside the claim |
+| Ending and payoff | the payback flips or answers the hook; nothing tacked on after it |
+
+The overall score is the mean, to one decimal. Whatever the mean, the script is not ready while the hook, sentence 2 or factual
+accuracy is under 8.
+Calibrate against the channel's own data, where three of four Shorts lost the most viewers at 4 to 8 s, on sentence 2:
+- a sentence 2 that states a common belief or explains scores 5 at most
+- an answer given before the halfway point caps curiosity at 5
+- an ending that stops on a flat callback or adds a teaser caps the ending at 6
+- one unverified number caps factual accuracy at 4
+
+A first draft that scores 8 or more everywhere is unusual: before accepting that, re-read it as a viewer with a thumb over the swipe.
+
+**2. Name the weaknesses.** List only the dimensions under 8. For each, quote the sentence, say exactly what is wrong, and label it
+**writing** or **fact**. A fact problem is fixed from the sources (hedge it, correct it or drop the claim), never by rewording it to
+sound safer.
+
+**3. Rewrite only the weak lines.** Do one revision pass.
+- Keep the strong hook, the jokes, the metaphors and the beans, and keep the core idea and the length (the voice target still has to pass).
+- Read the new lines aloud: they must sound natural, with no filler, no predictable explanation, and the answer still not given away early.
+- Never rewrite the whole script to fix one line.
+
+Then re-score and write both scores in the review.
+
+**4. Review the animation** after `build.py video`. Use the sheet you look at in step 8 plus two stills: one at 0 s (the first frame)
+and one just before the iris closes (the last picture). Read no other images. Score each out of 10:
+- the pictures tell the story with the captions covered
+- the faces act, fit the line, and are funny
+- there is enough movement and variety: no two shots alike in a row, and something changes about every 2 s
+- it is in sync: actions land on their words. Judge this from the `at()` anchors and `check`; stills cannot show sound, so say so rather than guess.
+- the first frame grabs: mid-action, a face or the topic object, readable at feed size
+- the last picture pays off: the hero's face on the payback line
+
+Fix only the shots that are visibly weak, in at most one fix round and one re-render. Leave good animation alone.
+
+**5. Final score.** In `<project>-review.md` and the hand-over, give:
+- the original script score
+- the revised script score
+- the animation score (the mean of the six)
+- the final overall score (the mean of the revised script score and the animation score)
+- the remaining issues, if any
 
 ## Captions, ending and outro
 

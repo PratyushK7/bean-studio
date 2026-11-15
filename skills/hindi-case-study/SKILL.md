@@ -485,13 +485,31 @@ weak.
 
 Never invent a weakness to have something to fix.
 
-**Always run the fact audit, whatever the scores.**
-- Re-verify every number that carries the story against a current source.
-- Check every window against the scene's date.
-- Redo every piece of arithmetic.
-- Check what the characters do against the law.
-- Hunt for metaphors a viewer could take literally. An example: "the machine is in your pocket", when the app checks a
+**Always run the fact and logic audit, whatever the scores.**
+- **Re-verify** every statistic, date and claim that carries the story against a current source.
+- **Check every window** against the scene's date.
+- **Recompute every financial example** with a short script, from the model rows to each spoken number. Check that the
+  shares add up to the total, that percentages match their base (with or without GST, before or after interest), and that
+  every comparison holds.
+- **Compare like with like.** Name the metric on both sides: operating margin against EBIT margin, not against profit after
+  interest. A stock gain against a year's profit is a comparison of sizes, not of income, so the script must not treat it as
+  earnings.
+- **Give every number a status** in the score file: verified, reported, estimate or model. Model numbers are said as
+  approximations ("करीब", "मोटा-मोटा").
+- **Flag unsupported claims** (a superlative, a "most", an "everywhere") instead of letting them stand as facts.
+- **Check the law**: what the characters do on screen is legal.
+- **Check realism against the trade.** A jeweller's books go to a CA. One karigar does not earn ₹21 lakh a year alone. A
+  dealer restocks the whole day's sales, not one necklace.
+- **Hunt for metaphors** a viewer could take literally. An example: "the machine is in your pocket", when the app checks a
   hallmark record and does not test the gold.
+
+**Always run the naturalness check, whatever the scores.**
+- Characters sound like real Indian people in their own trade and age, not like a serial, a slogan or a chatbot.
+- Cut artificial drama: a narrator announcing a feeling ("वो बात जो कोई बेटा नहीं कहना चाहता") instead of showing a gesture.
+- Cut repeated hooks and suspense the story does not need.
+
+**Fix these faults wherever they are**, even in a section that scores 8 or more. They are errors, not style. If the audit
+finds a fault an earlier score missed, lower that score and say so.
 
 **Step 3: targeted fixes.**
 - Rewrite only the weak lines and paragraphs.
