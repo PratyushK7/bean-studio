@@ -1,0 +1,471 @@
+{
+ "version": 1,
+ "name": "Decoding Vyapaar visual bible",
+ "about": "The channel's one source of truth for pictures, motion, graphics, grade and render settings. Every tool reads this file (tools/vyapaar_visual.py, vyapaar_review.py, vyapaar_graphics.py, vyapaar_render.py, vyapaar_clips.py, vyapaar_qa.py). A project may override any key in <project>/visual-bible.json. The readable copy, visual-bible.md, is generated: python tools/vyapaar_visual.py bible",
+ "style": {
+  "summary": "Premium semi-realistic digital illustration for serious Hindi business documentaries: a painted film still, not a photo, not a cartoon.",
+  "prompt": "Premium semi-realistic digital illustration, like a painted documentary film still: realistic proportions and anatomy, natural textures (wood, glass, metal, brass, gold, fabric, paper), refined soft shading with controlled highlights, rich but restrained colour.",
+  "never": [
+   "photorealistic photograph",
+   "cartoon or anime",
+   "plastic 3D render or waxy skin",
+   "oversaturated advertising colour",
+   "stock-photo grins",
+   "fantasy glow or lens-flare spectacle",
+   "mixed art styles within one video"
+  ]
+ },
+ "palette": {
+  "summary": "Rich but restrained. Warm wood, brass and cream carry the old world; cool teal-grey and white LED carry the new. Gold is a highlight, never a flood.",
+  "base": [
+   "warm walnut brown #5A3B24",
+   "cream #EFE3CC",
+   "muted teal-grey #6F8C88",
+   "charcoal #26211C"
+  ],
+  "accents": [
+   "restrained gold #C9A23A",
+   "marigold orange #D9822B",
+   "vermilion #B5432F"
+  ],
+  "cool": [
+   "LED white #E8EEF0",
+   "steel blue-grey #5B6B78",
+   "night blue #1F2A3A"
+  ],
+  "rules": [
+   "One dominant temperature per scene, with at most one contrasting practical light.",
+   "Gold appears as polished highlights on objects, never as a yellow wash over the frame.",
+   "Skin stays natural brown with warm undertones in every look; never orange, never grey."
+  ]
+ },
+ "lighting": {
+  "philosophy": "Light comes from a source that exists in the scene (a shopfront, a tube light, a diya, a streetlamp, a desk lamp) and has a direction. The story's time and mood decide the light, never a global preset. Night is dark, with pools of practical light; day is soft, with real shadows; a memory is warm and faded."
+ },
+ "looks": {
+  "street_day": {
+   "label": "Market street, day",
+   "prompt": "Late-morning light: high soft sun filtered through shop awnings, warm dappled shade on stone and painted plaster, a light haze down the lane.",
+   "time": "day",
+   "luma": [
+    0.42,
+    0.66
+   ],
+   "sat": [
+    0.22,
+    0.48
+   ]
+  },
+  "interior_day": {
+   "label": "Small interior, day",
+   "prompt": "Soft daylight from the open shopfront on one side, warm tungsten spotlights inside the glass showcases, natural falloff into the back of the room, real shadows under the counter.",
+   "time": "day",
+   "luma": [
+    0.38,
+    0.62
+   ],
+   "sat": [
+    0.22,
+    0.48
+   ]
+  },
+  "interior_festive_night": {
+   "label": "Interior, festival night",
+   "prompt": "Night during a festival: warm tungsten shop lights overhead and the flicker of diyas at the door, marigold strings, deep warm shadows, faces lit warmly from the side; no daylight anywhere.",
+   "time": "night",
+   "luma": [
+    0.26,
+    0.5
+   ],
+   "sat": [
+    0.25,
+    0.52
+   ]
+  },
+  "street_festive_night": {
+   "label": "Bazaar, festival night",
+   "prompt": "A festival night in the bazaar: strings of warm bulbs and marigolds overhead, shop light spilling onto the crowd, deep warm shadows between pools of light; no daylight.",
+   "time": "night",
+   "luma": [
+    0.24,
+    0.5
+   ],
+   "sat": [
+    0.25,
+    0.52
+   ]
+  },
+  "interior_after_hours": {
+   "label": "Interior after closing",
+   "prompt": "After closing: a single desk lamp or one tube light is the only source, the rest of the room falls into soft shadow, quiet and still.",
+   "time": "night",
+   "luma": [
+    0.14,
+    0.38
+   ],
+   "sat": [
+    0.12,
+    0.4
+   ]
+  },
+  "street_night": {
+   "label": "Lane at midnight",
+   "prompt": "Midnight: one amber streetlamp and cool blue moonlit shadows, shutters down, empty stone lane, a few lit windows; dark overall, faces lit only by the nearest lamp.",
+   "time": "night",
+   "luma": [
+    0.1,
+    0.34
+   ],
+   "sat": [
+    0.1,
+    0.4
+   ]
+  },
+  "retail_modern": {
+   "label": "Modern showroom, inside",
+   "prompt": "Even bright cool-white LED light, polished marble floor and glass counters with crisp reflections, gold under small focused spotlights, clean and expensive.",
+   "time": "any",
+   "luma": [
+    0.48,
+    0.72
+   ],
+   "sat": [
+    0.12,
+    0.4
+   ]
+  },
+  "retail_night_exterior": {
+   "label": "Showroom glowing at night",
+   "prompt": "Night: the glass showroom glows white and gold from inside across a dark road, its light spilling on the pavement; everything around it is in deep blue shadow.",
+   "time": "night",
+   "luma": [
+    0.14,
+    0.4
+   ],
+   "sat": [
+    0.12,
+    0.4
+   ]
+  },
+  "rooftop_workshop": {
+   "label": "Rooftop goldsmith workshop",
+   "prompt": "Rooftop workshop: hard late-morning sun and open sky, shade from a corrugated sheet roof, the small blue-orange flame of a blowpipe, soot, brass tools and worn wood.",
+   "time": "day",
+   "luma": [
+    0.38,
+    0.64
+   ],
+   "sat": [
+    0.18,
+    0.46
+   ]
+  },
+  "home_evening": {
+   "label": "Home at night",
+   "prompt": "A middle-class dining room at night under one cool overhead tube light: flat, slightly harsh light, muted colours, plain walls, quiet.",
+   "time": "night",
+   "luma": [
+    0.24,
+    0.48
+   ],
+   "sat": [
+    0.1,
+    0.36
+   ]
+  },
+  "office_day": {
+   "label": "Bank or office",
+   "prompt": "Institutional office: cool fluorescent light, beige files and steel cupboards, a glass partition, neutral and orderly.",
+   "time": "day",
+   "luma": [
+    0.42,
+    0.64
+   ],
+   "sat": [
+    0.08,
+    0.32
+   ]
+  },
+  "insert_neutral": {
+   "label": "Table-top insert",
+   "prompt": "A table-top insert: one soft directional key light from the side, shallow depth of field, the surface texture sharp and the background softly out of focus.",
+   "time": "any",
+   "luma": [
+    0.26,
+    0.6
+   ],
+   "sat": [
+    0.15,
+    0.48
+   ]
+  },
+  "aerial_dusk": {
+   "label": "City from above, dusk",
+   "prompt": "High view over a dense Indian city at dusk: a fading orange-blue sky, rooftops and water tanks, shop lights coming on along the main road.",
+   "time": "dusk",
+   "luma": [
+    0.2,
+    0.48
+   ],
+   "sat": [
+    0.18,
+    0.46
+   ]
+  },
+  "flashback": {
+   "label": "A memory (modifier)",
+   "prompt": "Seen as a memory: warm faded colours, slightly lower contrast, soft highlights with a gentle film glow.",
+   "time": "any",
+   "modifier": true,
+   "luma": [
+    0.34,
+    0.64
+   ],
+   "sat": [
+    0.1,
+    0.36
+   ]
+  }
+ },
+ "shots": {
+  "establishing": {
+   "label": "Establishing",
+   "prompt": "Establishing wide shot, slightly high angle, 24mm lens",
+   "use": "a new place or time; the first shot of a chapter or location"
+  },
+  "wide": {
+   "label": "Wide",
+   "prompt": "Wide shot, eye level, 28mm lens",
+   "use": "a person in their environment; crowds; movement through space"
+  },
+  "medium": {
+   "label": "Medium",
+   "prompt": "Medium shot from the waist up, eye level, 40mm lens",
+   "use": "a person doing something; dialogue setups"
+  },
+  "medium_close": {
+   "label": "Medium close-up",
+   "prompt": "Medium close-up from the chest up, eye level, 50mm lens, background softly out of focus",
+   "use": "a line of dialogue; listening; a decision"
+  },
+  "close": {
+   "label": "Close-up",
+   "prompt": "Close-up of the face, 85mm lens, shallow depth of field",
+   "use": "an emotional beat; a reaction; a realisation"
+  },
+  "extreme_close": {
+   "label": "Extreme close-up",
+   "prompt": "Extreme close-up, 100mm macro lens, very shallow depth of field",
+   "use": "eyes, fingers, a tiny engraved mark"
+  },
+  "insert": {
+   "label": "Insert",
+   "prompt": "Insert shot of the object, 60mm lens, shallow depth of field",
+   "use": "an object that carries the story: a bill, a scale, a safe dial"
+  },
+  "macro": {
+   "label": "Macro detail",
+   "prompt": "Macro detail, 100mm macro lens, razor-thin focus",
+   "use": "texture and process: solder, gold dust, a hallmark"
+  },
+  "ots": {
+   "label": "Over-the-shoulder",
+   "prompt": "Over-the-shoulder shot, 50mm lens, the near shoulder soft in the foreground",
+   "use": "one person facing another; what someone sees across a counter"
+  },
+  "pov": {
+   "label": "Point of view",
+   "prompt": "Point-of-view shot through the character's eyes, 35mm lens",
+   "use": "what a character looks at: the showroom across the road, the safe"
+  },
+  "reaction": {
+   "label": "Reaction",
+   "prompt": "Reaction close-up of the listener, 85mm lens",
+   "use": "the face of the person hearing the line, not the speaker"
+  },
+  "two_shot": {
+   "label": "Two-shot",
+   "prompt": "Two-shot of both people in one frame, 40mm lens, both faces clearly visible",
+   "use": "a relationship; two people on one step; father and son"
+  }
+ },
+ "angles": {
+  "eye": "eye level",
+  "low": "slightly low angle, looking up",
+  "high": "slightly high angle, looking down",
+  "top": "top-down view"
+ },
+ "composition": {
+  "rules": [
+   "Place the subject on a third, eyes on the upper third, with room in the direction of the gaze or movement.",
+   "Build depth in three layers: a foreground element (a counter edge, a doorway, showcase glass), the subject in the middle ground, and the setting behind.",
+   "Separate the subject from the background with light and value, not with outlines.",
+   "Keep faces and key objects inside the central 80% of the width and above the lower 18%, so camera moves and graphics never cut them.",
+   "Centre a subject only on purpose (a formal, still, or lonely moment).",
+   "One idea per frame: the line's moment, not a collage."
+  ],
+  "placements": {
+   "left_third": "the subject on the left third, looking or moving to the right",
+   "right_third": "the subject on the right third, looking or moving to the left",
+   "centre": "the subject centred, deliberately formal and still",
+   "two_thirds": "one person on each third, facing each other",
+   "low_horizon": "the horizon low, the sky or ceiling filling the top",
+   "foreground_frame": "framed through a doorway, glass or a counter edge in the foreground"
+  }
+ },
+ "negative": {
+  "always": "No readable text, logos or watermarks; signs, screens and papers are blank or illegible. Natural anatomy, five fingers per hand, no duplicate people, no distorted faces, no floating objects, plausible jewellery and tools, straight consistent architecture.",
+  "people": "Each named person appears once.",
+  "crowd": "Background people are varied and natural, none of them looks like a main character."
+ },
+ "aspect": {
+  "ratio": "16:9",
+  "safe": "Action-safe 5% on every side; title-safe 10%. Camera moves crop up to 1.3x, so the subject must sit inside the central 75% of a still."
+ },
+ "characters": {
+  "rules": [
+   "Every recurring person has a structured entry in the project's visual-plan.json (id, age, face, skin, hair, body, clothing, accessories, distinguishing features, reference sheet).",
+   "A reference sheet is made first and approved before any scene shows that person; every scene with the person attaches the sheet.",
+   "The scene prompt restates three to five identity details in the same words every time.",
+   "Clothes change only when the story says so (a showroom uniform), and the plan says so on that shot.",
+   "Expressions come from the shot, never a default smile."
+  ],
+  "sheet_prompt": "Character reference sheet of {who}: front view and three-quarter view, standing relaxed, full body, plus one head-and-shoulders close-up, on a plain warm grey background, even soft studio light."
+ },
+ "graphics": {
+  "summary": "Numbers, ledgers, comparisons and timelines are drawn as motion graphics, never generated as pictures. One design system for every video.",
+  "fonts": {
+   "text": "Nirmala UI",
+   "numbers": "Bahnschrift",
+   "fallback": "Segoe UI"
+  },
+  "colors": {
+   "bg0": "#17130F",
+   "bg1": "#241D16",
+   "panel": "#2C241B",
+   "ink": "#F3E9D7",
+   "muted": "#B8AC98",
+   "gold": "#D4A94A",
+   "loss": "#D0604F",
+   "gain": "#79A881",
+   "cool": "#6E9C9A",
+   "line": "#4A3F33"
+  },
+  "sizes": {
+   "title": 64,
+   "label": 42,
+   "small": 32,
+   "number": 168,
+   "number_mid": 112
+  },
+  "safe_px": [
+   140,
+   90
+  ],
+  "motion": {
+   "in_s": 0.45,
+   "stagger_s": 0.22,
+   "grow_s": 0.9,
+   "count_s": 1.1,
+   "ease": "cubic-bezier(.2,.7,.2,1)"
+  },
+  "rules": [
+   "Every number on a graphic comes from the line or the research file, and the graphic lists its fact ids.",
+   "One message per graphic; at most five rows or bars.",
+   "Hindi in Devanagari through Chromium (Nirmala UI); numerals in Bahnschrift.",
+   "Elements enter in the order the narration says them; nothing decorative moves.",
+   "A graphic sits on the blurred, darkened scene it interrupts (backdrop); rows already shown appear at once, only the new row counts up; a result appears after the rows that make it."
+  ],
+  "backdrop": {
+   "mode": "picture",
+   "blur": 26,
+   "darken": 0.74,
+   "tint": "#17130F",
+   "why": "a graphic sits on a blurred, darkened copy of the scene it interrupts, so it belongs to the same film instead of cutting to a black card"
+  }
+ },
+ "render": {
+  "width": 1920,
+  "height": 1080,
+  "fps": 30,
+  "fps_reason": "30 fps divides evenly into 60 Hz screens, where most viewers watch, so slow camera moves stay smooth; 24 fps on 60 Hz shows 3:2 judder exactly on slow pans. Clips made at 24 fps are conformed by frame repetition unless a measured test shows motion interpolation is cleaner (vyapaar_clips.py fps-test).",
+  "crf": 17,
+  "preset": "medium",
+  "grade": "eq=contrast=1.06:brightness=-0.02:saturation=0.92:gamma=0.98,colorbalance=rs=0.025:gs=0.005:bs=-0.03:rh=-0.01:bh=0.015,vignette=angle=PI/7:mode=forward,noise=alls=2:allf=t",
+  "grade_notes": "One grade for stills, clips and graphics alike: a touch of contrast, saturation slightly down so gold never floods, shadows warm, highlights a little cool, a light vignette and fine grain. It is applied once, in the encoder.",
+  "flashback": {
+   "saturation": 0.72,
+   "warm": [
+    1.06,
+    1.0,
+    0.9
+   ],
+   "lift": 0.05,
+   "soften": 0.8
+  },
+  "camera": {
+   "max_zoom_sd": 1.3,
+   "max_zoom_hd": 1.55,
+   "zoom_per_s": 0.02,
+   "pan_per_s": 0.028,
+   "min_zoom_span": 0.04,
+   "ease_s": 0.6,
+   "hd_dir": "images-hd"
+  },
+  "pacing": {
+   "split_over_s": 7.0,
+   "min_shot_s": 2.4,
+   "hook_s": 45
+  },
+  "transitions": {
+   "same_location": [
+    "cut",
+    0
+   ],
+   "location_change": [
+    "dissolve",
+    0.4
+   ],
+   "chapter": [
+    "dissolve",
+    0.6
+   ],
+   "flashback": [
+    "dissolve",
+    0.9
+   ],
+   "start_fade": 0.5,
+   "end_fade": 0.9
+  },
+  "overlay": {
+   "lower_third": true,
+   "in_s": 0.4,
+   "hold_min_s": 1.6
+  },
+  "audio": {
+   "voice_eq": "equalizer=f=220:t=q:w=1:g=1.5,equalizer=f=3400:t=q:w=1.5:g=-2,equalizer=f=7200:t=q:w=1:g=-2.5,aecho=0.8:0.85:20:0.06",
+   "music_gain": 0.3,
+   "duck": "sidechaincompress=threshold=0.03:ratio=5:attack=30:release=450",
+   "loudness": -14,
+   "true_peak": -1.5
+  },
+  "clips": {
+   "native_fps": 24,
+   "conform": "repeat"
+  }
+ },
+ "review": {
+  "checks": [
+   "character consistency",
+   "anatomy (hands, faces, duplicates)",
+   "composition",
+   "lighting matches the look",
+   "environment realism",
+   "the picture matches the line",
+   "visual identity (style)",
+   "continuity with the shots before and after"
+  ],
+  "min_width": 1600,
+  "duplicate_hash_distance": 6
+ }
+}

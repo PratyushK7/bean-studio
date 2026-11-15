@@ -8,6 +8,10 @@ Order of the images the extension makes (the studio's Collect step numbers downl
     k+1..  one picture per hero or still line (a card line is drawn by code and needs none); identical visual notes share one picture
 images-index.json maps each image number to the script lines it serves, its kind and its prompt, so the assembler knows which picture is which.
 prompts/ is rewritten every run (the old files are moved to prompts/_old-<time>/).
+
+If the project has a visual-plan.json (the art-directed plan, see tools/vyapaar_visual.py and channels/hindi/visual-bible.json), the structured
+system makes the prompts instead: scene-specific light, framing, layers and continuity, stable picture numbers, a reference manifest
+(prompts/REFS.md). Pass --legacy to force the old one-style-string prompts below.
 """
 import argparse, json, re, shutil, time
 from pathlib import Path
@@ -22,7 +26,16 @@ PERSON = re.compile(r"([A-Z][A-Za-z]+(?: (?:ji|dada))?) \(([^()]{20,220})\)")   
 
 def main():
     ap = argparse.ArgumentParser(); ap.add_argument("project"); ap.add_argument("--batch", type=int, default=30); ap.add_argument("--style", default="hinexp")
+    ap.add_argument("--legacy", action="store_true", help="ignore visual-plan.json and use the one-style-string prompts")
     a = ap.parse_args(); proj = Path(a.project); style = STYLES[a.style]
+    if (proj / "visual-plan.json").exists() and not a.legacy:
+        import sys; sys.path.insert(0, str(Path(__file__).resolve().parent)); import vyapaar_visual
+        index, problems = vyapaar_visual.build(proj, a.batch)
+        for x in problems: print("PROBLEM", x)
+        need = [e for e in index if e.get("file")]
+        print(f"structured prompts from visual-plan.json: {sum(1 for e in index if e['type'] == 'character')} character sheets, "
+              f"{sum(1 for e in index if e['type'] == 'scene')} pictures; {len(need)} to make in {len({e['file'] for e in need})} file(s); see prompts/REFS.md")
+        return
     lines = json.loads((proj / "script.json").read_text(encoding="utf-8"))["lines"]
     # characters: the first full description of each name in the visual notes
     people = {}

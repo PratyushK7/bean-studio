@@ -433,7 +433,9 @@ Run all of them, and write what each one changed into `<slug>-check.txt`.
 **Line fields:**
 - `hi`: the narration in Devanagari, exactly as the narrator says it, one sentence a line.
 - `visual`: what is on screen, in English, specific enough to draw (place, people, action, the one object). Use a new picture
-  every one to three lines, and describe recurring characters in the same words every time.
+  every one to three lines, and describe recurring characters in the same words every time. These notes are the brief for
+  the visual plan (`visual-plan.json`, `references/production.md` step 1). The plan, not the note, sets the framing, the
+  light and the continuity. Never ask for a diagram or readable text in a picture: that is a graphic.
 - `kind`: `still` (a picture with a camera move), `card` (a code graphic for a number, a ledger or a map), or `hero` (a paid
   image-to-video clip; on hold until the channel earns, so use it rarely).
 - `chapter`: on the first line of each chapter, a 3 to 5 word English title named for an event. It becomes the YouTube chapter.
@@ -556,10 +558,13 @@ Nothing here publishes. The last line of every run is the question: **ship it, o
 
 ```
 1 Topic and angle  ->  2 Script (this skill)  ->  GATE A: the owner reads script.md and hears preview-local.mp3 (free)
-3 Voice: a 60 s sample of the hook in the chosen voice (cheap), then the full voice (paid: the owner OKs the cost first)
-4 Pictures from the final script's visual notes, upscaled locally (WaveSpeed's ESRGAN, free)
-5 Edit: a 60 s sample in the chosen style  ->  GATE B: the owner OKs it  ->  full render  ->  QC (freeze, black, motion)
-6 Music and mix (real tracks only, credits in the description)  ->  7 Packaging: title, thumbnail, description, chapters
+3 Visual plan (visual-plan.json against channels/hindi/visual-bible.json) -> validate -> structured prompts + reference manifest
+4 Pictures (sheets first) -> GATE 1: vyapaar_review.py contact sheets, approve/reject per picture -> upscale approved only
+5 Voice: a 60 s sample of the hook in the chosen voice (cheap), then the full voice (paid: the owner OKs the cost first)
+6 Optional clips: select -> make (paid, --approve-cost) -> check -> approve
+7 Sample render (vyapaar_render.py sample) -> GATE 2: vyapaar_qa.py + the owner's look -> approve -> full render -> QA
+8 Packaging: title, thumbnail, description (music credits), chapters
 ```
+The whole visual pipeline, its rules and its rollback are in `references/production.md`.
 
 Nothing paid starts before Gate A. After the voice, a changed line means re-voicing that line, so the script freezes at Gate A.

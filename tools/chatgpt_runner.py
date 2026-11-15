@@ -5,7 +5,8 @@
   One picture at a time. (A 3-tab parallel version was tried and failed: tools/chatgpt_runner_parallel_BROKEN.py.)
 
 Reads <project>/images-index.json (written by vyapaar_prompts.py). For each slot with no images/NNN.* yet:
-  opens a new chat, attaches the character sheets of the people in the scene (images/00k.png), sends "Create an image: <prompt>",
+  opens a new chat, attaches the character sheets the slot's `refs` list names (from visual-plan.json; an older index without `refs`
+  falls back to the names found in the prompt), refuses a scene whose sheet is not yet approved in review.json, sends "Create an image: <prompt>",
   waits for the picture, saves it from the page (a blob download named vyapaar-NNN.png), moves it to images/NNN.png.
 The file name carries the slot number, so a failed prompt can never shift the others. Stops cleanly if ChatGPT says the image limit is reached
 (run it again later: finished slots are skipped). Failed slots are listed at the end and in <project>/runner-state.json.
@@ -112,7 +113,10 @@ def main():
     chars = {e["name"]: e["n"] for e in index if e["type"] == "character"}
     desc = {e["name"]: re.sub(r".*?, (a|an) ", "", e["prompt"].split(":")[0])[:30] for e in index if e["type"] == "character"}
     want = {int(x) for x in a.only.split(",")} if a.only else None
-    todo = [e for e in index if (want is None or e["n"] in want) and (not a.file or e.get("file") == a.file) and not list(img.glob(f"{e['n']:03d}.*"))][:a.max]
+    todo = [e for e in index if (want is None or e["n"] in want) and (not a.file or e.get("file") == a.file) and not list(img.glob(f"{e['n']:03d}.*"))
+            and e.get("status") not in ("skip", "have", "reused")][:a.max]
+    review = json.loads((proj / "review.json").read_text(encoding="utf-8")) if (proj / "review.json").exists() else None
+    names = {e["n"]: e["name"] for e in index if e["type"] == "character"}
     print(f"{len(todo)} pictures to make", flush=True)
     Chat.folder = a.folder
     sid = neo.session()
@@ -127,16 +131,24 @@ def main():
         n = e["n"]; t0 = time.time()
         try:
             chat.new_chat()
-            used = [] if e["type"] == "character" else [nm for nm in chars if nm.split()[0] in e["prompt"] and list(img.glob(f"{chars[nm]:03d}.*"))]
-            if used:
-                chat.attach([next(img.glob(f"{chars[nm]:03d}.*")) for nm in used])
+            if "refs" in e:                                          # the plan says exactly which sheets this picture needs (vyapaar_visual.py)
+                missing = [r for r in e["refs"] if not list(img.glob(f"{r:03d}.*"))]
+                unapproved = [r for r in e["refs"] if review is not None and (review.get(str(r)) or {}).get("status") != "approved"]
+                if missing or unapproved:
+                    raise RuntimeError(f"reference sheet(s) {missing or unapproved} {'not made' if missing else 'not approved'} yet: make and approve the sheets first")
+                used = [names.get(r, str(r)) for r in e["refs"]]; files = [next(img.glob(f"{r:03d}.*")) for r in e["refs"]]
+            else:                                                    # an older index: guess the people from the names in the prompt
+                used = [] if e["type"] == "character" else [nm for nm in chars if nm.split()[0] in e["prompt"] and list(img.glob(f"{chars[nm]:03d}.*"))]
+                files = [next(img.glob(f"{chars[nm]:03d}.*")) for nm in used]
+            if files:
+                chat.attach(files)
             pre = "Create an image: " + ("Use the attached character sheet(s) so each person looks exactly the same (same face, hair, clothes). " if used else "")
             chat.send(pre + e["prompt"])
             r = chat.wait_image()
             if r == "nosend":                                         # one automatic retry in a fresh chat
                 print(f"  #{n}: no reply after 90 s, resending once", flush=True)
                 chat.new_chat()
-                if used: chat.attach([next(img.glob(f"{chars[nm]:03d}.*")) for nm in used])
+                if files: chat.attach(files)
                 chat.send(pre + e["prompt"]); r = chat.wait_image()
             if r == "limit": print(f"  #{n}: ChatGPT says the image limit is reached. Run again later; finished pictures are kept.", flush=True); break
             if r == "refused": raise RuntimeError("ChatGPT could not make this one: " + chat.js("return document.body.innerText.slice(-300)")[:200].replace(chr(10), " "))
