@@ -51,7 +51,7 @@ FIRST_PERSON = rx(r"(^|\s)(मैं|मैंने|मेरा|मेरी|�
 SPEECH = rx(r"कह(ते|ता|ती|ा|कर)|बोल(े|ा|ी|ते|ता|ती|कर)|पूछ(ते|ता|ती|ा|कर)|चिल्ला|फुसफुसा|जवाब (देते|देता|देती|दिया)|आवाज (आती|आई)|डांट|हंसकर|मुस्कुराकर|सवाल (छोड़|करता|करते)")
 # numbers: a run of number words close together ("दो लाख साठ हजार पांच सौ अस्सी") counts as one number
 MAG = rx(r"^(₹?\d[\d,.]*%?|करोड|करोडों|लाख|लाखों|हजार|हजारों|सौ|परसेंट|प्रतिशत|डेढ|ढाई|साढे|सवा|किलो|ग्राम|रुपये|रुपया|रुपयों)$")
-MONEY = rx(r"₹|\d|करोड|लाख|हजार|परसेंट|प्रतिशत")
+MONEY = rx(r"₹|\d|करोड(?!पति)|लाख|हजार|(?<!कितने )(?<!कितना )(?<!कुछ )(परसेंट|प्रतिशत)")   # a stated amount, not "करोड़पति" or "कितने परसेंट"
 YEAR = re.compile(r"\b(1[89]|20)\d\d\b")
 TIME_ANCHOR = rx(r"((उन्नीस|दो) हजार [^\s,।]+)|\b(1[89]|20)\d\d\b|(\S+ )?(जनवरी|फरवरी|मार्च|अप्रैल|मई|जून|जुलाई|अगस्त|सितंबर|अक्टूबर|नवंबर|दिसंबर)|इस (साल|बार|धनतेरस|दिवाली|महीने)|पिछले (साल|महीने|हफ्ते)|अगले (साल|दिन)|अगली सुबह|उसी (रात|शाम|दिन)|उस रात|\S+ (साल|महीने|दिन) (पहले|बाद)")
 DEVANAGARI = re.compile(r"[ऀ-ॿ]")
@@ -149,14 +149,15 @@ def check(doc, research_text=None):
             if quick: say("WARN", f"loops closed within 15 s of opening: {quick} (a question answered at once is not a loop)")
             # what is open at each moment of the body
             dead, worst_open, run_start = [], 0, None
-            for i in range(hook_end, close_i):
+            story_end = min(close_i, closes.get("L1", close_i))     # after L1 is answered the ending runs on payoffs, not loops
+            for i in range(hook_end, story_end):
                 n_open = sum(1 for L in opens if opens[L] <= i and (L not in closes or closes[L] > i))
                 worst_open = max(worst_open, n_open)
                 if n_open == 0 and run_start is None: run_start = i
                 if n_open and run_start is not None:
                     if times[i][0] - times[run_start][0] > 20: dead.append(run_start)
                     run_start = None
-            if run_start is not None and body_end_t - times[run_start][0] > 20: dead.append(run_start)
+            if run_start is not None and times[story_end - 1][1] - times[run_start][0] > 20: dead.append(run_start)
             if dead: say("WARN", f"no loop open from {', '.join(at(i) for i in dead[:4])}: nothing pulls the viewer forward there (open the next loop before closing the last)")
             elif opens: say("PASS", "a loop is open at every moment of the body")
             if worst_open > 4: say("WARN", f"{worst_open} loops open at once somewhere; more than four and the viewer loses track")
@@ -230,7 +231,8 @@ def check(doc, research_text=None):
     if close_i == len(lines): say("WARN", "no closing ask (one comment question or one 'send it to a friend')")
     else:
         end = [i for i in range(len(lines)) if times[i][0] >= min(times[close_i][0], total - 90)]
-        asks = [i for i in end if CTA.search(txt[i]) or NEXT.search(txt[i]) or ASKQ.search(txt[i])]
+        nxt = [i for i in end if NEXT.search(txt[i])][:1]                 # the sign-off names the next decode again; count it once
+        asks = sorted(set([i for i in end if CTA.search(txt[i]) or ASKQ.search(txt[i])] + nxt))
         say("PASS" if len(asks) <= 3 else "WARN", f"{len(asks)} asks in the close (lines {first_lines(asks)})" + ("" if len(asks) <= 3 else "; keep one comment question, one ask and the next video, then the sign-off"))
     tail = " ".join(txt[int(len(txt) * 0.88):])
     if not NEXT.search(tail): say("WARN", "no next video named in the close")
@@ -310,7 +312,8 @@ def write_md(doc, path):
         marks = [f"opens {L}" for L in as_list(ln.get("open"))] + [f"pays {L}" for L in as_list(ln.get("close"))] + as_list(ln.get("tag"))
         m = (" **[" + ", ".join(marks) + "]**") if marks else ""
         o.append(f"`{mmss(times[i][0])}` {ln.get('hi', '')}{m}  ")
-        bits = [b for b in (ln.get("kind"), ln.get("visual"), ("screen: " + ln["screen"]) if ln.get("screen") else None) if b]
+        vis = re.sub(r"\s*\([^()]{40,}\)", "", ln.get("visual") or "")     # the long recurring character descriptions stay in script.json
+        bits = [b for b in (ln.get("kind"), vis, ("screen: " + ln["screen"]) if ln.get("screen") else None) if b]
         if bits: o.append(f"<sub>{' · '.join(bits)}</sub>")
         o.append("")
     if doc.get("sources"):
