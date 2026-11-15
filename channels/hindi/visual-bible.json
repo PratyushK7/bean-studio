@@ -317,7 +317,7 @@
  "negative": {
   "always": "No readable text, logos or watermarks; signs, screens and papers are blank or illegible. Natural anatomy, five fingers per hand, no duplicate people, no distorted faces, no floating objects, plausible jewellery and tools, straight consistent architecture.",
   "people": "Each named person appears once.",
-  "crowd": "Background people are varied, ordinary passers-by: none of them resembles any attached reference sheet or any named character (no green saree with glasses on a chain, no grey-suited man with a lanyard, unless planned)."
+  "crowd": "Background people are ordinary passers-by; none resembles an attached sheet or a named character."
  },
  "aspect": {
   "ratio": "16:9",
