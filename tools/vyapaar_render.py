@@ -280,7 +280,9 @@ class Stream:
 
 
 def crop(src, z, cx, cy, W, H):
-    sw, sh = src.size; w, h = sw / z, sh / z
+    sw, sh = src.size
+    if sw / sh > W / H: h = sh / z; w = h * W / H                  # crop at the output's shape: a 3:2 or 4:3 picture is cropped, never squashed
+    else: w = sw / z; h = w * H / W
     x0 = min(max(cx * sw - w / 2, 0), sw - w); y0 = min(max(cy * sh - h / 2, 0), sh - h)
     im = src.resize((W, H), Image.BICUBIC, box=(x0, y0, x0 + w, y0 + h))
     return im.filter(ImageFilter.UnsharpMask(radius=1.2, percent=25, threshold=2)) if w < W * 0.95 else im

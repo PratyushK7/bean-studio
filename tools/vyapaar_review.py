@@ -177,8 +177,10 @@ def flags(proj, index_name):
         if e.get("status") == "stale": fl.append(("warn", "the prompt changed after this picture was made"))
         if not a:
             out[n] = [("pending", "no picture yet")] if e.get("status") not in ("skip",) else []; continue
-        if a["w"] < bible["review"]["min_width"]: fl.append(("critical", f"low resolution: {a['w']}x{a['h']} (min width {bible['review']['min_width']})"))
-        if abs(a["w"] / a["h"] - 16 / 9) > 0.03 and e["type"] != "character": fl.append(("warn", f"not 16:9 ({a['w']}x{a['h']})"))
+        if a["w"] < 1200: fl.append(("critical", f"too small to use: {a['w']}x{a['h']}"))
+        elif a["w"] < bible["review"]["min_width"] and e["type"] != "character": fl.append(("info", f"{a['w']}x{a['h']}: fine after the 2x upscale"))
+        if abs(a["w"] / a["h"] - 16 / 9) > 0.03 and e["type"] != "character":
+            fl.append(("warn", f"not 16:9 ({a['w']}x{a['h']}): the renderer crops {100 - round(100 * (a['w'] * 9 / 16) / a['h'])}% of the height; check heads and key objects survive"))
         look = bible["looks"].get(e.get("look") or "")
         if look and e["type"] == "scene":
             lo, hi = look["luma"]
@@ -298,7 +300,10 @@ def report(proj, index_name):
     idx, fl, m = flags(proj, index_name); review = vv.load_json(proj / "review.json", {})
     used = [e for e in idx if e["type"] in ("scene", "character")]
     st = {k: 0 for k in ("approved", "rejected", "pending")}
-    for e in used: st[(review.get(str(e["n"])) or {}).get("status", "pending")] += 1
+    def status_of(n):
+        s0 = (review.get(str(n)) or {}).get("status", "pending")
+        return "pending" if s0 == "rejected" and vv.image_for(proj, n) else s0     # a remade picture waits for a fresh look
+    for e in used: st[status_of(e["n"])] += 1
     crit = [(e["n"], t) for e in used for l, t in fl.get(e["n"], []) if l == "critical"]
     warn = [(e["n"], t) for e in used for l, t in fl.get(e["n"], []) if l == "warn"]
     info = [(e["n"], t) for e in used for l, t in fl.get(e["n"], []) if l == "info"]
@@ -315,7 +320,7 @@ def report(proj, index_name):
         a = m.get(e["n"]) or {}
         md.append(f"| {e['n']:03d} | {e.get('shot', e.get('name', ''))} | {','.join(map(str, e.get('lines', [])))[:20]} | {e.get('category')} | {e.get('look') or '-'}"
                   f"{' (inferred)' if e.get('look_inferred') and e.get('look') else ''} | {a.get('luma', '-')} | {a.get('sat', '-')} | {len(a.get('faces', [])) if a else '-'} | "
-                  f"{(review.get(str(e['n'])) or {}).get('status', 'pending')} | {'; '.join(t for _, t in fl.get(e['n'], []))[:160] or '-'} |")
+                  f"{status_of(e['n'])} | {'; '.join(t for _, t in fl.get(e['n'], []))[:160] or '-'} |")
     out = proj / ("review-report.md" if index_name == "images-index.json" else f"review-report-{Path(index_name).stem}.md")
     out.write_text("\n".join(md), encoding="utf-8"); print(f"{out}: {st}, {len(crit)} critical, {len(warn)} warnings")
     return st, crit

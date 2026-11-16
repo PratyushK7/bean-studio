@@ -18,7 +18,7 @@ project may override any key in `<project>/visual-bible.json`.
 | 3. Prompts | `vyapaar_prompts.py <p>` (the studio's button; it uses the plan when there is one) | `prompts/*.txt`, `images-index.json`, `prompts/REFS.md` (sheets to attach, prompt by prompt), `visual-slots.json` (stable picture numbers) | free |
 | 4. Pictures | the ChatGPT extension (attach the sheets REFS.md lists) or `chatgpt_runner.py <p>` (attaches `refs` itself, refuses a scene whose sheet is not approved) | `images/NNN.png` | ChatGPT plan |
 | 5. Gate 1 | `vyapaar_review.py <p> analyze`, `sheets`, `report`, then `approve` / `reject` / `pick`, and `gate` | `analysis/`, `review/*.jpg`, `review-report.md`, `review.json` | free |
-| 6. Upscale | `vyapaar_review.py <p> upscale` (approved pictures only; WaveSpeed's local ESRGAN, about 90 s each) | `images-hd/` | free |
+| 6. Upscale | `vyapaar_review.py <p> upscale` (approved pictures only; WaveSpeed's local ESRGAN, about 24 s each on the RX 6700 XT) | `images-hd/` | free |
 | 7. Voice | `vyapaar_voice.py <p>` | `voice.mp3`, `voice-lines.json`, `.srt` | Sarvam, owner OKs |
 | 8. Clips (optional) | `vyapaar_clips.py <p> select`, `prompts`, `make --approve-cost`, `check`, `approve` | `clips-plan.json`, `clips/S###.mp4`, `clips/review/`, `clips/approved.json` | xAI, owner OKs |
 | 9. Graphics | `vyapaar_graphics.py <p>` (the renderer also calls it) | `graphics/G###-hash.mp4`, previews, lower-third labels, `report.json` | free |

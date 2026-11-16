@@ -77,7 +77,8 @@ def prompts_are_scene_specific():
     assert "early sun" in day
     assert "Only Ramesh's hand" in hand and "short grey hair" not in hand, "a hand-only shot must not describe the face"
     assert "Cinematic composition" not in night, "no empty 'cinematic composition' filler"
-    assert all(len(vv.shot_prompt(s, plan, b).split()) < 290 for s in plan["shots"] if s.get("action"))
+    # a three-person shot needs three identities: 300 words is the ceiling (the validator already warns above 250)
+    assert all(len(vv.shot_prompt(s, plan, b).split()) < 300 for s in plan["shots"] if s.get("action"))
 
 
 @test

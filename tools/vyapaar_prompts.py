@@ -27,10 +27,11 @@ PERSON = re.compile(r"([A-Z][A-Za-z]+(?: (?:ji|dada))?) \(([^()]{20,220})\)")   
 def main():
     ap = argparse.ArgumentParser(); ap.add_argument("project"); ap.add_argument("--batch", type=int, default=30); ap.add_argument("--style", default="hinexp")
     ap.add_argument("--legacy", action="store_true", help="ignore visual-plan.json and use the one-style-string prompts")
+    ap.add_argument("--rebase", action="store_true", help="after a wording-only prompt edit, keep existing pictures current")
     a = ap.parse_args(); proj = Path(a.project); style = STYLES[a.style]
     if (proj / "visual-plan.json").exists() and not a.legacy:
         import sys; sys.path.insert(0, str(Path(__file__).resolve().parent)); import vyapaar_visual
-        index, problems = vyapaar_visual.build(proj, a.batch)
+        index, problems = vyapaar_visual.build(proj, a.batch, rebase=a.rebase)
         for x in problems: print("PROBLEM", x)
         need = [e for e in index if e.get("file")]
         print(f"structured prompts from visual-plan.json: {sum(1 for e in index if e['type'] == 'character')} character sheets, "

@@ -92,7 +92,7 @@ def shot_prompt(shot, plan, bible):
     if shot.get("angle"):
         ang = bible["angles"].get(shot["angle"], shot["angle"])
         size = ANGLE_WORDS.sub(ang, size) if ANGLE_WORDS.search(size) else f"{size}, {ang}"
-    parts = [f"{size}. {shot['action'].rstrip('.')}."]
+    parts = [f"A 16:9 widescreen frame. {size}. {shot['action'].rstrip('.')}."]
     chars = shot.get("chars") or {}
     for cid, how in chars.items():
         c = plan["characters"][cid]
@@ -153,8 +153,9 @@ def phash(text):
 
 
 # ---------------------------------------------------------------- index + prompt files
-def build(proj, batch=30, write=True):
-    proj = Path(proj); bible = load_bible(proj); plan = load_json(proj / "visual-plan.json")
+def build(proj, batch=30, write=True, rebase=False):
+    """rebase: after a wording-only edit of the prompts, existing pictures stay current (an explicit decision; Gate 1 still judges them)"""
+    proj = Path(proj); bible = load_bible(proj); plan = load_json(proj / "visual-plan.json"); REBASE[0] = rebase
     if not plan: sys.exit("no visual-plan.json: write it first (python tools/vyapaar_visual.py draft <project> makes a starting point)")
     L = script_lines(proj, plan.get("script"))
     review = load_json(proj / "review.json", {})
@@ -193,7 +194,8 @@ def build(proj, batch=30, write=True):
         n = alloc(sh["id"], sh.get("reuse"))
         chars = list((sh.get("chars") or {}).keys())
         e = {"n": n, "type": "scene", "shot": sh["id"], "lines": lines_of(sh), "kind": kind if kind in ("still", "hero") else "still",
-             "chapter": L[lines_of(sh)[0] - 1].get("chapter"), "category": category(sh), "size": sh["size"], "look": sh.get("look"),
+             "chapter": L[lines_of(sh)[0] - 1].get("chapter"), "category": category(sh), "size": sh["size"],
+             "look": sh.get("look") or plan.get("locations", {}).get(sh.get("location") or "", {}).get("look") or "interior_day",   # the light the picture must have
              "characters": chars, "refs": [sheet_of[c] for c in chars], "prompt": p, "words": len(p.split())}
         if sh.get("reuse") is not None and not image_for(proj, n): problems.append(f"{sh['id']}: reuse {n} but images/{n:03d}.* does not exist")
         e["status"] = state(proj, n, p, slots.get(sh["id"]), review, have, reused=sh.get("reuse") is not None)
@@ -206,13 +208,17 @@ def build(proj, batch=30, write=True):
     return index, problems
 
 
+REBASE = [False]
+
+
 def state(proj, n, prompt, prev, review, have, reused=False):
     r = (review.get(str(n)) or {}).get("status")
+    if r == "rejected" and n in have: return "have"            # a rejected picture is moved away, so a picture here is its remake: pending review
     if r == "rejected": return "rejected"
     if r == "approved" and n in have: return "have"            # a person approved this picture: a later prompt edit does not queue it again
     if reused: return "reused" if n in have else "needed"
     if n not in have: return "needed"
-    if prev and prev.get("hash") and prev["hash"] != phash(prompt): return "stale"
+    if prev and prev.get("hash") and prev["hash"] != phash(prompt) and not REBASE[0]: return "stale"
     return "have"
 
 
@@ -468,12 +474,13 @@ def bible_md():
 def main():
     ap = argparse.ArgumentParser(); ap.add_argument("cmd", choices=["bible", "draft", "prompts", "validate", "show"]); ap.add_argument("project", nargs="?")
     ap.add_argument("shot", nargs="?"); ap.add_argument("--batch", type=int, default=30)
+    ap.add_argument("--rebase", action="store_true", help="after a wording-only prompt edit, keep existing pictures current (Gate 1 still judges them)")
     a = ap.parse_args()
     if a.cmd == "bible": return bible_md()
     if not a.project: sys.exit("give the project folder")
     if a.cmd == "draft": return draft(a.project)
     if a.cmd == "prompts":
-        index, problems = build(a.project, a.batch)
+        index, problems = build(a.project, a.batch, rebase=a.rebase)
         for p in problems: print("PROBLEM", p)
         st = {}
         for e in index: st[e.get("status")] = st.get(e.get("status"), 0) + 1
