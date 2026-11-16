@@ -88,6 +88,44 @@ Write `visual-plan.json` from the engine and the beat sheet, never by regex from
 - **Never ask the image model for a diagram or for text.** Maps with icons, see-saws and tickers are graphics. Bills, apps
   and boards are shown illegible, as real objects.
 
+### Visual retention: the plan is written against the beat sheet, not just the lines
+
+The script plans where a viewer would drift; the pictures must carry that plan. Before writing shots, put the beat sheet
+beside the script and give the retention beats the best visual material:
+
+- **The hook gets the video's two or three strongest pictures.** Whatever single image the research produced that a
+  stranger would stop on — the shutter half down at midnight, the tray of gold under one bulb — is picture one or two,
+  full-bleed, not saved for its chapter. Mark these shots `candidates: 2` always.
+- **Every chapter seam opens on a new picture with a new piece of visual information**: a new location, a new time of day,
+  a new scale, or a known place changed (the same shop, now dark). A chapter that opens on a picture the viewer has
+  already decoded reads as a rerun, and seams are where thumbs hover.
+- **A reveal lands on a fresh image, never a reused one**, and the next shot is a reaction: the person the reveal costs,
+  in a closer size than before. Reveal wide, react close.
+- **Pictures can open loops too.** Compose so something is deliberately withheld until the script pays it: the bill seen
+  over a shoulder and out of focus until the line that reads it; a visitor framed from behind until he is named; the
+  ledger always closed until the midnight chapter. Put the withholding in `avoid`/`placement` ("bill visible but
+  illegible, angled away") so the generator cannot spoil it.
+- **Jump scale as a pattern interrupt**: when the script zooms from one shop to the market or the country, the pictures
+  jump too — macro of a hallmark, then an aerial of the bazaar. One scale jump per chapter is worth three new mediums.
+- **Light follows the feeling map.** The engine's feeling map is also the lighting arc: looks trend darker and cooler into
+  the lowest point (45–70%) and recover warmth only at the resolution. Check the shot list's `look` column top to bottom —
+  it should read like the story's mood, not alternate at random.
+
+### Shot grammar (sequencing rules the art director applies, Gate 1 checks)
+
+- **Never three shots of the same size in a row.** A scene breathes wide → medium → close/insert; re-establish only when
+  the geography changed.
+- **Cut to what the narration names.** The line says "मेकिंग चार्ज" with a finger on the bill → the shot is the insert of
+  the finger on that row (illegible), not another medium of two men talking. The viewer's eye must land on the thing the
+  ear just heard, within the same line.
+- **Faces carry the money.** Every share-taker who "walks in" in the script gets one shot where their face and the object
+  of the transaction are both readable. Numbers go to graphics; *what the number costs someone* goes to a face.
+- **A location gets at most four consecutive shots** before an insert, a reaction or a scale change resets the eye. Long
+  two-man scenes are covered like coverage: two-shot, OTS each way, insert of the object between them.
+- **Recurring images earn their return.** A reused picture (`same_as`) is for a callback the script makes, and the
+  renderer must reframe it (a new crop or move) so the return feels deliberate, not cheap. A reuse the script does not
+  call back is just a missing picture.
+
 ## 2. Pictures and Gate 1
 
 Make and approve the character sheets first. Then make the scene files. The extension cannot attach sheets by itself:
@@ -108,7 +146,10 @@ What `vyapaar_review.py` checks by machine:
 
 What a person checks on the contact sheets (`review/*.jpg`, grouped into sheets, establishing, characters, close-ups and
 graphics, with candidates side by side): the right person, hands and faces, composition, light against the look,
-environment realism, the picture against the line, the style, and continuity with the shots before and after.
+environment realism, the picture against the line, the style, and continuity with the shots before and after. Then read
+the approved set **in story order** once, against the shot grammar above: sizes vary, every reveal has a fresh image and a
+reaction, nothing withheld is spoiled early, and the looks darken into the lowest point. A set where every picture passes
+alone can still watch flat in sequence; that re-read is what catches it.
 
 How to act on a picture:
 - `reject` moves the picture to `images/_rejected/`, and only that slot goes into the next prompt file.
@@ -120,6 +161,12 @@ How to act on a picture:
 `select` scores shots for the story (hook, reveals, payoffs, important shots, a written `motion` brief) against what
 image-to-video does badly (crowds morph, hands warp, papers and screens grow text). It keeps 45 s between clips and stays
 within `--budget`.
+
+**Spend motion where attention is bought, in this order:** (1) the first 15 seconds — one clip in the hook raises the whole
+video's perceived production value and is the cheapest retention money can buy; (2) the central revelation; (3) the lowest
+point; (4) the last image. A clip in the explaining middle is the weakest spend: by then the viewer has either committed or
+left. The best motion is small and diegetic — smoke, a flame, rain, a hand lowering a shutter — not a camera flying; the
+renderer already moves the camera.
 
 Each brief has the same parts:
 - where the shot starts and ends
@@ -146,7 +193,11 @@ this machine's Pillow cannot.
 - **Timing.** Elements enter in the order the narration says them (a `cues` word places an element on that word). A slow
   2.5% push keeps a finished graphic from freezing.
 - **Recurring motifs.** One graphic idea recurs through a video: the necklace bill fills up, line by line, until the six
-  names.
+  names. The motif's final, complete form is the payoff card — give it the most design care in the video, because it is
+  the frame viewers screenshot and the answer they came for.
+- **A card earns its screen time.** A graphic appears when the ear needs the eye (money math, a comparison), lands its
+  last element on its last cue, and leaves. A card that sits after its point is made is the visual version of explaining
+  past the click.
 - **QA in the page.** It reports text outside its box, outside the safe area, or overlapping other text; G048's long values
   were caught this way, and long values now shrink to fit.
 - **Lower thirds.** Still lines with `screen` text get a lower-third label, faded in and out by the renderer.
