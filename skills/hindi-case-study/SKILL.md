@@ -104,6 +104,9 @@ The viewer hears each sentence once, at about 155 words a minute, in one narrato
 7. **Eyes closed, it still works.** The narration never depends on the picture ("जैसा आप स्क्रीन पर देख रहे हैं"). The screen
    adds to the narration and never replaces it.
 8. **Say it once.** The same information twice is padding, unless it is a deliberate callback that now means something new.
+9. **The surprising word lands last.** A sentence pulls when its reveal sits at the end: "उस बिल में सबसे महंगी चीज़ सोना नहीं था।
+   वो था एक परसेंट — मेकिंग चार्ज।" beats "मेकिंग चार्ज उस बिल की सबसे महंगी चीज़ थी।" Delay the key noun where it costs nothing;
+   never pad a sentence just to delay it.
 
 ### The everyday word, not the textbook word
 
@@ -165,6 +168,32 @@ and why they work: `references/craft.md` sections 4 and 5.
 
 The feeling map in the engine (step 4) names the trigger each chapter leans on. Never let three beats in a row carry the same
 feeling.
+
+### Where viewers skip, and how to defuse each spot
+
+A viewer's thumb hovers over the 10-second jump the whole video. These are the stretches where it lands. Defuse them in the
+beat sheet, not with a stinger pasted on top:
+
+1. **Context before conflict.** Backstory before we care is the most skipped minute on YouTube. Start with the trouble; feed
+   the backstory in half-sentences after the viewer already needs it ("राजेश — जिसने ये दुकान अपने ससुर से उधार लेकर खोली थी —
+   ...").
+2. **A chapter that opens with setup.** Chapter seams are the biggest exit doors: the viewer feels a section end and decides.
+   So a chapter never ends settled and never opens slow. Close every chapter mid-motion, on the new question. Open the next
+   one inside a scene: by its second sentence, someone is doing something.
+3. **The lull after a reveal.** The seconds after a payoff are a natural "I got what I came for" exit. Open the next loop
+   within two lines of every reveal; the reveal's own consequence is the best new question ("अब राजेश को पता था पैसा कहां जाता
+   है। दिक्कत ये थी — रोकने का रास्ता गैरकानूनी था।").
+4. **A run of numbers.** Three numbers in a row and the ear gives up. One number a sentence; the rest of the math happens as a
+   scene (a finger moving down a bill, a character's face at the total).
+5. **Explaining past the click.** The moment the viewer gets it, every further sentence is a skip. Stop one beat earlier than
+   feels safe. If the explanation needs a second example, the first one was the wrong example.
+6. **A recap.** Never re-tell what the viewer just watched. A callback is allowed only when the old line now means something
+   new.
+7. **The tail after the answer.** Once L1 is paid, the video is on borrowed time: last image, one question, one ask, out.
+   Keep everything after the central revelation under 90 seconds.
+
+In the beat sheet, mark each of these spots where it occurs (a chapter seam, a reveal, a math stretch) and write in one word
+how it is defused. That column is for the writer's honesty, not for the checker.
 
 **Storytelling.** Use a real person, or, in an economics video, invented characters with real numbers. Give them a want, a wound,
 a naive belief and a mistake we see coming. Give the conflict a face: every cost is a character who walks in and takes a share.
@@ -332,6 +361,9 @@ Columns: time, **event** (what happens, to whom, where), **feeling and trigger**
 
 - **Every beat is an event.** "Explain making charges" is not a beat. "The father puts his finger on 'making 12%' and asks
   what it is" is. No fact appears without an event, and a beat holds at most two facts.
+- **Beats chain with "लेकिन" or "इसलिए", never "और फिर".** Read the event column top to bottom joining each row to the next
+  with one of the three. If only "and then" fits, the second beat is a list item, not a story beat: cut it, or find what in
+  the first beat forces it. (A story is causes; a Wikipedia page is "and then".)
 - **The relay**: after every beat at least one loop is open, and a new one opens before an old one closes.
 - **The feeling changes** at least every two beats.
 - **Chapters (5 to 9) are named for what happens** ("The Night the Duty Fell"), never for a category ("Investment", "Revenue",
@@ -352,6 +384,16 @@ Write three hooks in different shapes from craft section 4. Every one needs:
 - L1 as a guess with wrong options where there is money
 - the promise of one specific reveal
 - the viewer's gain in one plain line within 60 seconds
+
+And three hard rules, because the first 30 seconds decide more than the rest of the script together:
+- **The first five words hold something concrete**: a time, a place, a rupee amount or a person doing something — never a
+  generality the voice has to climb out of ("रात के ग्यारह बजे, दुकान का शटर आधा गिरा है" starts; "भारत में सोने का बाज़ार
+  बहुत बड़ा है" is a skip).
+- **No sentence in the first 30 seconds could open any other video.** Read each one alone: if it would fit a different
+  topic, replace it with this video's own detail.
+- **The hook spends the video's most arresting image.** Not a teaser of it, the image itself: the strongest single picture
+  the research produced goes in the first 15 seconds, and the script earns it back later by explaining what it really meant.
+  Saving the best image for the middle is saving it for people who already left.
 
 Shape by format:
 - **Format B**: the short hook (20 to 40 s): year, place, a humble act or the peak, then dramatic irony.
@@ -504,6 +546,12 @@ Never invent a weakness to have something to fix.
   dealer restocks the whole day's sales, not one necklace.
 - **Hunt for metaphors** a viewer could take literally. An example: "the machine is in your pocket", when the app checks a
   hallmark record and does not test the gold.
+
+**Always run the skip audit, whatever the scores.** Read the script as the impatient viewer whose thumb is on the 10-second
+jump: at every chapter seam, every reveal, every math stretch and the tail after the central revelation, ask "if I jumped
+ahead here, would I feel I missed something?" List the three stretches where the honest answer is no, with timestamps, and
+fix them using "Where viewers skip" above — by cutting or restructuring, never by pasting a stinger. If pass 5 of the
+revision already named three windows, check its fixes held; do not re-litigate windows that now pull.
 
 **Always run the naturalness check, whatever the scores.**
 - Characters sound like real Indian people in their own trade and age, not like a serial, a slogan or a chatbot.
