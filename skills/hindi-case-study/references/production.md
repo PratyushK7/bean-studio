@@ -25,6 +25,8 @@ project may override any key in `<project>/visual-bible.json`.
 | 10. Gate 2 | `vyapaar_render.py <p> sample`, then `vyapaar_qa.py <p> sample.mp4`, then `vyapaar_qa.py <p> approve sample.mp4` | `sample.mp4`, `qa/`, `gate2.json` | free |
 | 11. Full render | `vyapaar_render.py <p> full`, then `vyapaar_qa.py <p> video.mp4` | `video.mp4`, `video-plan.json`, `qa/` | free |
 
+Every row above also runs as one button or one command: `python tools/vyapaar_steps.py <p> <step>` and Bean Studio's Pipeline tab (section 8).
+
 **Which model runs what.** Opus only where a decision matters; everything mechanical goes to Haiku (low effort), started as
 a background child task with an exact command list.
 
@@ -48,6 +50,31 @@ Learned on the first run (16 Nov 2026):
 - **Style drift.** "Like a painted documentary film still" produced near-photographs, all rejected. The bible's style words
   now say "an illustration and not a photograph, gentle cel-like faces". New sheets attach an approved sheet as a style
   reference only (`style_ref` in the plan), and the runner does not tell ChatGPT to copy that person.
+
+Learned on the first full video (17 Nov 2026). Each of these cost real time once; do them right the first time:
+- **Check a file against the script before using it.** A `voice.mp3`, `.srt` or `video.mp4` from an earlier script looks fine and
+  is wrong. Compare the line count in `voice-lines.json` with `script.json`, and a video's date with the script's. The steps
+  runner and the studio do this; by hand, look at the file times first.
+- **Free voice first, pro later.** Build the whole cut on the free Kokoro voice (`preview.py`), judge the story, then make the
+  Sarvam voice. The pro voice changes every line's time, so the graphics are re-timed and the video re-rendered; pictures and
+  upscales are reused. Write the `.srt` from whichever voice the video used (`vyapaar_steps.py` does).
+- **A picture with no planned person must say so.** The image model adds people to an insert unless the shot's `avoid` says "no
+  people, hands or faces in the frame". Two men appeared in a scale-and-phone insert, with no character sheet attached.
+- **Never let a bill, ticker or note carry readable digits.** The hook's bill came back with a circled "₹200" under a ₹3 lakh
+  story. The prompt must say "a loose ink loop with no digits inside it", and Gate 1 must zoom in on every paper, bill and screen.
+- **The overlap check compares boxes, not glyphs.** Tall Devanagari vowel marks (ि ी ो) rise above their text box and touch the line
+  above. Look at every big-text graphic that has Hindi under a label; give the value room, not just the number.
+- **A change to `graphics.html` or the bible's render or graphics settings changes the settings hash**, so the approved sample no
+  longer counts. Make a new sample, check it, approve it, then render in full. The full render refuses otherwise, on purpose.
+- **A full render is about 20 minutes for 15 minutes of video.** Run it as a plain background process (3 workers when free memory is
+  under 5 GB), never in a model's turn, and keep the earlier video (`video.mp4` is renamed `video-prev-...`, never overwritten).
+- **The ChatGPT Go plan allows about 120 images a day.** When the runner reports the limit, stop; it says when it resets. Schedule
+  the run for just after, and test with one picture before releasing the batch.
+- **Pilot, then batch, then a second pass.** The runner has "send button missing" glitches; a second pass retries only what failed.
+- **Hero clips are not required.** A complete video is pictures with slow camera moves, graphics, voice and music. Add one or two
+  clips at the hook or the reveal only if you want them, and only after the owner OKs the cost.
+- **Choose a design by looking, not by engine.** Remotion and the HTML graphics both render in Chromium; what differs is the
+  design. Render the same card in both over the same backdrop and compare (section 7).
 
 Legacy, kept for old projects and for rollback:
 - `vyapaar_prompts.py --legacy` (the one-style-string prompts)
@@ -281,7 +308,30 @@ acceleration. Do not claim them as working until a run proves them.
 **License:** free for individuals, for-profit companies of up to 3 employees and non-profits, commercial use included
 (LICENSE.md in remotion-dev/remotion). Re-check if the channel becomes a company with 4 or more people.
 
-## 8. Rollback
+## 8. Bean Studio's Pipeline tab (the easy way to run all of this)
+
+`python app/server.py` (port 5173), choose the Decoding Vyapaar channel, open **Pipeline**. Each video shows its steps in order;
+only the current one is open, with plain words, who does it (Opus, automatic, you), what it costs, and its button. The steps read
+their state from the files, so the page cannot go stale, and a file made for an older script shows a warning.
+
+| Step | Button | What runs | Cost |
+|---|---|---|---|
+| Visual plan | Write the visual plan / Check the plan | Opus agent / `vyapaar_steps.py plan-check` | Claude usage |
+| Picture prompts | Make the picture prompts | `vyapaar_steps.py prompts` | free |
+| Pictures | Make the pictures in ChatGPT | `chatgpt_runner.py` twice, then measure | your ChatGPT plan |
+| Check the pictures | Measure / Approve / Send back (with a note) | `vyapaar_review.py` | free |
+| Sharpen | Sharpen the approved pictures | `vyapaar_review.py upscale` | free |
+| Voice | Free voice / Pro voice (asks first) | `preview.py` + `.srt` / `vyapaar_voice.py` | free / Sarvam |
+| Sample | Make, Check, Approve | `vyapaar_render.py sample`, `vyapaar_qa.py` | free |
+| Full video | Make the full video | `vyapaar_render.py full`, then QA | free |
+
+The same steps run from a terminal: `python tools/vyapaar_steps.py <project> <step>` (see its docstring). The tools need the
+system Python 3.12 (numpy, OpenCV, Pillow); the studio's own `.venv` does not have them, so the studio calls that Python.
+The review panel shows each waiting picture with its script line and the machine's flags; "I looked: approve the N with no
+warnings" exists, and is for after you have looked. Paid steps need an explicit OK in the page. When a feature is added to the
+pipeline, add its step here and in `app/pipeline.py`, with a test in `tools/tests/test_studio_pipeline.py`.
+
+## 9. Rollback
 
 Every replaced file was backed up in `tools/_backup-visual-upgrade-2026-11-15/`, and git has the rest.
 - A project without `visual-plan.json` runs the old path unchanged.

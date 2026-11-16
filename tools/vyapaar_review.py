@@ -337,6 +337,35 @@ def gate(proj, index_name):
     print("GATE 1 OPEN: every picture is approved and no critical flag is open"); return True
 
 
+def status_json(proj, index_name):
+    """what Bean Studio's review panel shows: counts, whether Gate 1 is open, and every picture that still needs a decision, with its flags and script line"""
+    idx, fl, m = flags(proj, index_name); review = vv.load_json(proj / "review.json", {})
+    script = vv.script_lines(proj, None) if hasattr(vv, "script_lines") else []
+    used = [e for e in idx if e["type"] in ("scene", "character")]
+    def st(n):
+        s0 = (review.get(str(n)) or {}).get("status", "pending")
+        return "pending" if s0 == "rejected" and vv.image_for(proj, n) else s0
+    items, counts = [], {"approved": 0, "rejected": 0, "pending": 0, "not_made": 0}
+    for e in used:
+        n = e["n"]; made = bool(vv.image_for(proj, n)); s1 = st(n)
+        if not made: counts["not_made"] += 1
+        else: counts[s1] += 1
+        if s1 == "approved" or not made: continue
+        ln = (e.get("lines") or [None])[0]
+        text = ""
+        if ln and 0 < ln <= len(script):
+            l = script[ln - 1]; text = (l.get("hi") if isinstance(l, dict) else str(l)) or ""
+        fls = [[lvl, t] for lvl, t in fl.get(n, []) if lvl != "pending"]
+        if not (proj / "analysis" / f"{n:03d}.json").exists(): fls.insert(0, ["warn", "not measured yet: run 'Measure the pictures' first, so the automatic checks can speak"])
+        items.append({"n": n, "shot": e.get("shot") or e.get("name", ""), "lines": e.get("lines", []), "category": e.get("category"), "status": s1, "text": text,
+                      "note": (review.get(str(n)) or {}).get("note", ""), "flags": fls})
+    crit = sum(1 for e in used for l, _ in fl.get(e["n"], []) if l == "critical")
+    hd = sum(1 for e in used if (proj / "images-hd" / f"{e['n']:03d}.png").exists())
+    approved_made = counts["approved"]
+    print(json.dumps({"total": len(used), "counts": counts, "critical": crit, "gate_open": counts["approved"] == len(used) and crit == 0, "upscaled": hd,
+                      "need_upscale": approved_made, "items": items}, ensure_ascii=False))
+
+
 def upscale(proj):
     review = vv.load_json(proj / "review.json", {})
     ok = sorted(int(k) for k, v in review.items() if v.get("status") == "approved" and not (proj / "images-hd" / f"{int(k):03d}.png").exists() and vv.image_for(proj, int(k)))
@@ -347,7 +376,7 @@ def upscale(proj):
 
 
 def main():
-    ap = argparse.ArgumentParser(); ap.add_argument("project"); ap.add_argument("cmd", choices=["analyze", "sheets", "report", "approve", "reject", "pick", "gate", "upscale"])
+    ap = argparse.ArgumentParser(); ap.add_argument("project"); ap.add_argument("cmd", choices=["analyze", "sheets", "report", "approve", "reject", "pick", "gate", "upscale", "status"])
     ap.add_argument("arg", nargs="?"); ap.add_argument("arg2", nargs="?"); ap.add_argument("--note", default=""); ap.add_argument("--index", default="images-index.json")
     ap.add_argument("--no-masks", action="store_true")
     a = ap.parse_args(); proj = Path(a.project)
@@ -359,6 +388,7 @@ def main():
     elif a.cmd == "pick": pick(proj, int(a.arg), a.arg2 or "b")
     elif a.cmd == "gate": sys.exit(0 if gate(proj, a.index) else 1)
     elif a.cmd == "upscale": upscale(proj)
+    elif a.cmd == "status": status_json(proj, a.index)
 
 
 if __name__ == "__main__":

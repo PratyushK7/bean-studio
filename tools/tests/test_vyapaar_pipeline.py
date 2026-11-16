@@ -1,5 +1,5 @@
 """Tests for the Decoding Vyapaar visual pipeline. Plain Python, no test framework needed:
-    python tools/tests/test_vyapaar_pipeline.py
+    python tools/tests/test_vyapaar_pipeline.py      (the studio's own tests: .venv/Scripts/python.exe tools/tests/test_studio_pipeline.py, which needs Flask)
 Uses throwaway projects in a temp folder; the real projects are only read. No paid calls, no browser automation.
 """
 import filecmp, json, shutil, subprocess, sys, tempfile, traceback
@@ -149,6 +149,53 @@ def clips_cost_gate():
 def line_boil_untouched():
     out = subprocess.run(["git", "status", "--porcelain", "skills/line-boil", "line-boil/engine"], cwd=ROOT, capture_output=True, text=True).stdout
     assert not out.strip(), f"line-boil files changed: {out}"
+
+
+@test
+def steps_never_use_a_voice_from_an_older_script():
+    """a stale voice.mp3 (made for another script) must never be picked: the free voice that matches the script is used, and with none the step stops"""
+    import vyapaar_steps as st
+    d = tmp_project(True); n = len(json.loads((d / "script.json").read_text(encoding="utf-8"))["lines"])
+    (d / "voice.mp3").write_bytes(b"x"); (d / "voice-lines.json").write_text(json.dumps([{"i": 0, "start": 0, "end": 1}] * (n - 5)), encoding="utf-8")     # an older, shorter script
+    try: st.voice_args(d); raise AssertionError("a stale voice was accepted")
+    except SystemExit: pass
+    (d / "preview-local.mp3").write_bytes(b"x"); (d / "preview-local-lines.json").write_text(json.dumps([{"i": i, "start": i, "end": i + 1} for i in range(n)]), encoding="utf-8")
+    args, kind = st.voice_args(d); assert kind.startswith("free") and "preview-local.mp3" in args, (args, kind)
+    (d / "voice-lines.json").write_text(json.dumps([{"i": i, "start": i, "end": i + 1} for i in range(n)]), encoding="utf-8")
+    assert st.voice_args(d)[1] == "Sarvam", "a voice that matches the script wins"
+
+
+@test
+def steps_sample_covers_hook_a_graphic_and_the_ending():
+    import vyapaar_steps as st
+    d = tmp_project(True); n = len(json.loads((d / "script.json").read_text(encoding="utf-8"))["lines"])
+    segs = [tuple(map(int, x.split("-"))) for x in st.sample_segments(d).split(",")]
+    assert segs[0][0] == 1 and segs[-1][1] == n and all(a <= b for a, b in segs) and all(segs[i][1] < segs[i + 1][0] for i in range(len(segs) - 1)), segs
+    plan = json.loads((d / "visual-plan.json").read_text(encoding="utf-8"))
+    gl = [s["lines"][0] for s in plan["shots"] if s.get("kind") == "graphic"]
+    assert any(segs[1][0] <= g <= segs[1][1] for g in gl), "the middle stretch must contain a graphic"
+
+
+@test
+def steps_write_an_srt_that_is_a_separate_file():
+    import vyapaar_steps as st
+    d = tmp_project(True); n = len(json.loads((d / "script.json").read_text(encoding="utf-8"))["lines"])
+    (d / "preview-local-lines.json").write_text(json.dumps([{"i": i, "start": i * 3.0, "end": i * 3.0 + 2.5} for i in range(n)]), encoding="utf-8")
+    st.write_srt(d, "preview-local-lines.json"); t = (d / f"{d.name}.srt").read_text(encoding="utf-8")
+    assert t.startswith("1" + chr(10) + "00:00:00,000 --> ") and t.count("-->") >= n
+    assert all(len(c.split()) <= 8 for blk in t.split(chr(10) * 2) if blk for c in blk.splitlines()[2:]), "at most 8 words a cue"
+
+
+@test
+def review_status_lists_pictures_waiting_with_their_script_line():
+    d = tmp_project(True, images=[6]); vv.build(d)
+    idx = json.loads((d / "images-index.json").read_text(encoding="utf-8")); n = next(e["n"] for e in idx if e["type"] == "scene")
+    shutil.copy(next((JEW / "images").glob("001.*")), d / "images" / f"{n:03d}.png")
+    r = subprocess.run([PY, str(TOOLS / "vyapaar_review.py"), str(d), "status"], capture_output=True, text=True, encoding="utf-8")
+    st = json.loads(next(l for l in reversed(r.stdout.splitlines()) if l.startswith("{")))
+    it = next(i for i in st["items"] if i["n"] == n)
+    assert st["counts"]["pending"] >= 1 and not st["gate_open"] and it["text"], st
+    assert any("not measured yet" in f[1] for f in it["flags"]), "an unmeasured picture must say so"
 
 
 if __name__ == "__main__":

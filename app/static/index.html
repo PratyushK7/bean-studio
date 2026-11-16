@@ -273,6 +273,20 @@ const PL_INFO = {
   render:  ['Build the video', 'Joins pictures, clips, cards, voice and sound into the final MP4. Not built into the studio yet.'],
   sheet:   ['Upload sheet', 'Title, description and chapters, then upload from the Videos tab.'],
 };
+// The documentary pipeline (projects with a visual plan, and every Hindi-channel project): [title, plain words, who does it, what it costs]
+const PL2 = {
+  script:  ['Script', 'Opus writes it from your topic: research, hook, chapters, a shot plan. You read it and hear the free listen before anything else starts.', 'Opus', 'Claude usage'],
+  plan:    ['Visual plan', 'The art director step. Opus decides, for every shot, who is in it, the light, the camera and what is held back, against the channel\'s visual bible. Nothing is drawn yet.', 'Opus', 'Claude usage'],
+  prompts: ['Picture prompts', 'Turns the plan into one prompt per picture, with the character sheet each one needs. A re-run never renumbers a picture you already have.', 'automatic', 'free'],
+  images:  ['Pictures', 'ChatGPT draws them through your BrowserOS neo browser, one fresh chat per picture, character sheets first. If ChatGPT says the daily image limit is hit, the run stops; run it again after the reset (it says when).', 'automatic', 'your ChatGPT plan'],
+  review:  ['Check the pictures', 'Gate 1. A machine measures light, colour, blur, repeats and faces, then <b>you look at every picture</b> and approve it or send it back with a note. Nothing goes on until all are approved.', 'you (or Opus)', 'free'],
+  upscale: ['Sharpen (upscale)', 'Makes the approved pictures 2x sharper on your graphics card (about 24 seconds each). Only approved pictures, so no time goes on a bad one.', 'automatic', 'free'],
+  voice:   ['Voice', 'Start with the free voice: it judges the story and pacing, not the delivery. When the cut is right, make the paid Sarvam voice and re-run the video: pictures are reused, only audio and timing change.', 'automatic', 'free · Sarvam is paid'],
+  clips:   ['Hero clips (optional)', 'A few shots become short moving clips. Not needed: the video is complete with pictures and camera moves. They are paid and always ask first; use them where they buy attention: the first 15 seconds, then the big reveal.', 'you decide', 'paid, asks first'],
+  sample:  ['Sample', 'Gate 2. A short cut of the hook, a graphics stretch and the ending is made and checked by a machine for freezes, jumps, loudness and text clipping. <b>You watch it</b> and approve it. The full video refuses to start without that.', 'automatic + you', 'free'],
+  video:   ['Full video', 'Joins pictures, graphics, voice and music into the final MP4 (about 20 minutes for 15 minutes of video), then checks it. The subtitles are a separate .srt, never burned in.', 'automatic', 'free'],
+  sheet:   ['Upload sheet', 'Title, description (with the music credit) and chapters, then upload from the Videos tab.', 'Opus', 'Claude usage'],
+};
 async function loadPipeline() {
   const d = await api('/api/pipeline');
   $('#plcount').textContent = d.projects.length + ' video' + (d.projects.length === 1 ? '' : 's');
@@ -280,22 +294,26 @@ async function loadPipeline() {
   $('#plgrid').innerHTML = d.projects.map(plCard).join('') || '<p class="muted">No videos yet. Type a name above and press + New video.</p>';
 }
 function plCard(p) {
-  const n = esc(p.name), cur = PL_OPEN[p.name] || p.next_key, done = p.stages.filter(s => s.state).length;
+  const n = esc(p.name), cur = PL_OPEN[p.name] || p.next_key, done = p.stages.filter(s => s.state && !s.warn).length;
   const rows = p.stages.map((s, i) => {
-    const open = s.key === cur, state = s.state, fail = /FAIL/.test(state || '');
+    const open = s.key === cur, state = s.state, fail = /FAIL/.test(state || '') || s.warn;
     const dot = fail ? '⚠' : state ? '✓' : (open ? '●' : '○');
+    const info = p.new ? PL2[s.key] : PL_INFO[s.key];
+    const chips = p.new ? `<span class="chip">${esc(info[2])}</span><span class="chip ${/free/.test(info[3]) && !/paid/.test(info[3]) ? 'y' : ''}">${esc(info[3])}</span>` : '';
     const head = `<div class="row" style="gap:10px;cursor:pointer;padding:6px 0" onclick="plToggle('${n}','${s.key}')">
       <span style="width:22px;text-align:center;font-weight:700;color:${fail ? '#c0262d' : state ? '#1b7f3b' : '#999'}">${dot}</span>
-      <b style="${state || open ? '' : 'color:#888'}">${i + 1}. ${esc(PL_INFO[s.key][0])}</b>
-      <span class="muted">${esc(state || (s.built ? '' : 'coming next'))}</span></div>`;
+      <b style="${state || open ? '' : 'color:#888'}">${i + 1}. ${esc(info[0])}</b>
+      <span class="muted" style="${fail ? 'color:#c0262d' : ''}">${esc(state || s.note || (s.built ? '' : 'coming next'))}</span><span style="flex:1"></span>${open ? '' : chips}</div>`;
     return `<div style="border-top:1px solid #eee">${head}${open ? `<div style="margin:0 0 10px 32px;padding:10px 12px;background:#faf7f0;border-radius:8px">
-      <div class="muted" style="margin-bottom:8px">${esc(PL_INFO[s.key][1])}</div>${plActions(p, s)}</div>` : ''}</div>`;
+      <div class="row" style="margin-bottom:6px;gap:6px">${chips}</div>
+      <div class="muted" style="margin-bottom:8px">${p.new ? info[1] : esc(info[1])}</div>${p.new ? plActions2(p, s) : plActions(p, s)}</div>` : ''}</div>`;
   }).join('');
   return `<div class="card" style="margin-bottom:14px;padding:14px" id="pl-${n}">
     <div class="row"><b style="font-size:16px">${n}</b><span class="muted">${done} of ${p.stages.length} steps done</span><span style="flex:1"></span>
       <button class="act sec" onclick="plOpen('${n}','')">📂 Folder</button></div>
     <div style="height:6px;background:#eee;border-radius:3px;margin:8px 0 6px"><div style="height:6px;width:${Math.round(100 * done / p.stages.length)}%;background:#1b7f3b;border-radius:3px"></div></div>
-    <div class="muted" style="margin-bottom:6px"><b>Next:</b> ${esc(p.next)}</div>${rows}
+    <div class="row" style="margin-bottom:6px;gap:10px"><span class="muted"><b>Next:</b> ${esc(p.next)}</span>${p.new && p.next_key ? `<button class="act blue" onclick="plToggle('${n}','${p.next_key}')">Go to this step</button>` : ''}</div>
+    <div id="plrun-${n}"></div>${rows}
     <div id="plx-${n}" style="margin-top:10px"></div></div>`;
 }
 function plActions(p, s) {
@@ -318,6 +336,96 @@ function plActions(p, s) {
     case 'render': return '<div class="muted">Not built into the studio yet.</div>';
     default: return '<div class="muted">After the video is built.</div>';
   }
+}
+// ---------- the documentary pipeline: buttons, the review panel, the sample and video panels ----------
+function plBtn(label, fn, cls = '') { return `<button class="act ${cls}" onclick="${fn}">${label}</button>`; }
+async function plStep(n, step, started, confirmText) {
+  if (confirmText && !confirm(confirmText)) return;
+  const r = await api(`/api/pipeline/${n}/step`, {method: 'POST', body: {step, confirm_cost: !!confirmText}});
+  if (r.output !== undefined) { $(`#plx-${n}`).innerHTML = `<pre style="white-space:pre-wrap;font-size:12px;background:#fff;padding:8px;border-radius:8px;border:1px solid #ddd">${esc(r.output)}</pre>`; return; }
+  toast((started || 'Started') + ' Follow it in the Activity tab; this page updates when it finishes.'); plWatch(); show('jobs');
+}
+async function plWritePlan(n) { await api(`/api/pipeline/${n}/plan`, {method: 'POST', body: {}}); toast('Opus is writing the visual plan: follow it in the Activity tab.'); plWatch(); show('jobs'); }
+function plActions2(p, s) {
+  const n = esc(p.name), st = k => (p.stages.find(x => x.key === k) || {}).state;
+  switch (s.key) {
+    case 'script': return `<div class="row" style="flex-wrap:wrap;gap:8px"><input id="plt-${n}" placeholder="topic, e.g. jewellery shop economics" style="min-width:280px">${plBtn('✍ Write the script (Opus)', `plScript('${n}')`)}</div>` +
+      (s.state ? `<div class="muted" style="margin-top:6px">A script exists. Writing again replaces it, so only do that on purpose.</div>` : '');
+    case 'plan': return plBtn('✍ Write the visual plan (Opus)', `plWritePlan('${n}')`) + ' ' + (s.state ? plBtn('Check the plan', `plStep('${n}','plan-check')`, 'sec') : '') +
+      (s.state ? '<div class="muted" style="margin-top:6px">"Check the plan" looks for shots with no picture, wrong people counts, and graphic numbers that do not trace to the research. Fix critical ones before drawing.</div>' : '');
+    case 'prompts': return plBtn('📋 Make the picture prompts', `plStep('${n}','prompts','Making the prompts.')`) + ' ' + (s.state ? plBtn('Show the prompts', `plPrompts('${n}')`, 'sec') + ' ' + plBtn('📂 Folder', `plOpen('${n}','prompts')`, 'sec') : '');
+    case 'images': return plBtn('▶ Make the pictures in ChatGPT', `plStep('${n}','pictures','ChatGPT is drawing the missing pictures (about a minute each).')`) +
+      `<div class="muted" style="margin-top:6px">Open BrowserOS neo and stay signed in to ChatGPT. It makes only the pictures you do not have yet; a picture you sent back is the only one redrawn. Done pictures are measured for the next step.</div>
+       <div class="muted" style="margin-top:6px">Prefer your own extension? ${plBtn('Show the prompts', `plPrompts('${n}')`, 'sec')} then ${plBtn('Get my pictures', `plBatch('${n}','collect')`, 'sec')} (the older way).</div>`;
+    case 'review': setTimeout(plReview, 0, p.name); return `<div class="row" style="gap:8px;margin-bottom:8px">${plBtn('🔬 Measure the pictures', `plStep('${n}','check-pictures','Measuring the pictures and building the contact sheets.')`, 'sec')}
+      <span class="muted">do this after new pictures arrive: it makes the automatic flags below</span></div><div id="plrev-${n}"></div>`;
+    case 'upscale': return plBtn('🔍 Sharpen the approved pictures', `plStep('${n}','upscale','Sharpening: about 24 seconds a picture.')`) + `<div class="muted" style="margin-top:6px">${esc(s.state || 'Approve pictures first.')}</div>`;
+    case 'voice': return `<div class="row" style="gap:8px;flex-wrap:wrap">${plBtn('🎙 Free voice (Kokoro, about 10 minutes)', `plStep('${n}','voice-free','Making the free voice.')`)}
+      ${plBtn('💰 Pro voice (Sarvam, paid)', `plStep('${n}','voice-pro','Making the Sarvam voice.','This is a paid step (Sarvam, a few rupees for a 15 minute video). Make the Sarvam voice now?')`, 'sec')}</div>
+      <div class="muted" style="margin-top:6px">${esc(s.state || 'No voice yet.')} The free voice is flat: it shows the story and pacing, not the delivery. The pro voice changes the timings, so the graphics are re-timed and the video re-rendered; the pictures are reused.</div>`;
+    case 'clips': return `<div class="muted">${esc(s.state || 'Not planned. The video does not need them.')}. Clips are made from the chat with you saying OK to the cost (xAI, or a cheaper model such as Hailuo, Wan or Seedance after a one-clip trial).</div>`;
+    case 'sample': setTimeout(plOutputs, 0, p.name, 'sample'); return `<div class="row" style="gap:8px;flex-wrap:wrap">${plBtn('🎞 1. Make the sample', `plStep('${n}','sample','Making the sample (a few minutes).')`)}
+      ${plBtn('🔎 2. Check it', `plStep('${n}','check-sample','Checking the sample.')`, 'sec')}${plBtn('👍 3. Approve it', `plStep('${n}','approve-sample','Approving.','Approve the sample? Do this only after you watched it and it looks right: it unlocks the full video.')`, 'sec')}</div>
+      <div id="plout-${n}" style="margin-top:10px"></div>`;
+    case 'video': setTimeout(plOutputs, 0, p.name, 'video'); return `${plBtn('🎬 Make the full video', `plStep('${n}','full','Rendering the full video (about 20 minutes).')`)}
+      <span class="muted">it refuses to start until every picture is approved and the sample was approved with the same settings; an earlier video is kept, not overwritten</span><div id="plout-${n}" style="margin-top:10px"></div>`;
+    default: return '<div class="muted">After the video is built.</div>';
+  }
+}
+function plFlag(f) { const c = f[0] === 'critical' ? '#c0262d' : f[0] === 'warn' ? '#b26a00' : '#777'; return `<div style="color:${c};font-size:12px;margin-top:2px">${f[0] === 'critical' ? '⛔' : f[0] === 'warn' ? '⚠' : 'ℹ'} ${esc(f[1])}</div>`; }
+async function plReview(n) {
+  const box = $(`#plrev-${n}`); if (!box) return;
+  box.innerHTML = '<div class="muted">Reading the pictures…</div>';
+  let d; try { d = await api(`/api/pipeline/${n}/review`); } catch (e) { box.innerHTML = ''; return; }
+  const c = d.counts, clean = d.items.filter(i => !i.flags.some(f => f[0] === 'critical' || f[0] === 'warn'));
+  const head = `<div style="margin-bottom:8px"><b>${c.approved} of ${d.total} approved</b>${c.pending ? ` · ${c.pending} waiting for you` : ''}${c.rejected ? ` · ${c.rejected} sent back` : ''}${c.not_made ? ` · ${c.not_made} not made yet` : ''}${d.critical ? ` · <span style="color:#c0262d">${d.critical} critical</span>` : ''}${d.gate_open ? ' · <b style="color:#1b7f3b">Gate 1 is open ✓</b>' : ''}</div>`;
+  const bulk = clean.length > 1 ? `<div style="margin-bottom:10px">${plBtn(`👍 I looked: approve the ${clean.length} with no warnings`, `plApproveClean('${n}','${clean.map(i => i.n).join(',')}')`, 'sec')}</div>` : '';
+  const grid = d.items.map(i => `<div class="card" style="padding:8px;box-shadow:2px 2px 0 var(--ink)">
+      <img src="/api/pipeline/${n}/pic/${i.n}?channel=${encodeURIComponent(CH)}" loading="lazy" style="width:100%;border-radius:8px;cursor:zoom-in" onclick="window.open(this.src)">
+      <div style="margin-top:6px"><b>#${i.n}</b> · ${esc(i.shot)} · line${i.lines.length > 1 ? 's' : ''} ${esc(i.lines.join(','))} · <span class="muted">${esc(i.category || '')}</span></div>
+      <div lang="hi" style="margin:4px 0;font-size:13px">${esc(i.text)}</div>${i.flags.map(plFlag).join('')}
+      <div class="row" style="gap:6px;margin-top:8px">${plBtn('✓ Approve', `plDecide('${n}',${i.n},'approve')`)}
+        <input id="plnote-${n}-${i.n}" placeholder="what is wrong?" style="flex:1;min-width:120px">${plBtn('✗ Send back', `plDecide('${n}',${i.n},'reject')`, 'red')}</div></div>`).join('');
+  box.innerHTML = head + bulk + (d.items.length ? `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:12px">${grid}</div>
+      <div class="muted" style="margin-top:8px">Look at faces and hands, the right person, the light against the moment, and whether the picture matches the line. A picture you send back is kept in a side folder, and only that slot is redrawn: if the shot's description caused it, fix the plan first.</div>`
+    : (d.gate_open ? '<div class="muted">Every picture is approved. Next: sharpen them.</div>' : '<div class="muted">Nothing is waiting. Make the pictures, then press Measure the pictures.</div>'));
+}
+async function plDecide(n, num, act) {
+  const note = ($(`#plnote-${n}-${num}`) || {}).value || '';
+  if (act === 'reject' && !note.trim()) { toast('Write what is wrong first: it is how the picture gets fixed.'); return; }
+  const r = await api(`/api/pipeline/${n}/review`, {method: 'POST', body: {action: act, numbers: String(num), note}});
+  toast(act === 'approve' ? `Picture ${num} approved.` : `Picture ${num} sent back: press Make the pictures to redraw it.`); await loadPipeline(); PL_OPEN[n] = 'review'; loadPipeline();
+}
+async function plApproveClean(n, list) {
+  if (!confirm('Approve these pictures? Only do this if you have looked at them. They are the ones the machine found no warning on.')) return;
+  await api(`/api/pipeline/${n}/review`, {method: 'POST', body: {action: 'approve', numbers: list, note: 'approved in Bean Studio after looking, no machine warnings'}});
+  toast('Approved.'); PL_OPEN[n] = 'review'; loadPipeline();
+}
+async function plOutputs(n, which) {
+  const box = $(`#plout-${n}`); if (!box) return;
+  let o; try { o = await api(`/api/pipeline/${n}/outputs`, {silent: true}); } catch (e) { return; }
+  const vids = o.videos.filter(v => which === 'sample' ? v.file === 'sample.mp4' : v.file !== 'sample.mp4');
+  const g2 = o.gate2 && o.gate2.approved ? `<div style="margin-bottom:8px"><b style="color:#1b7f3b">Gate 2 approved</b> <span class="muted">${esc(o.gate2.at || '')} · settings ${esc(o.gate2.settings || '')} · a change to the graphics or the bible needs a new sample</span></div>` : (which === 'sample' ? '<div class="muted" style="margin-bottom:8px">Gate 2 is not approved yet.</div>' : '');
+  box.innerHTML = g2 + (vids.map(v => `<div style="margin-bottom:14px"><div><b>${esc(v.file)}</b> <span class="muted">${v.mb} MB</span>
+      ${v.verdict ? `<span class="chip ${/^PASS$/.test(v.verdict) ? 'y' : ''}">${esc(v.verdict.toLowerCase())}</span>` : '<span class="chip n">not checked</span>'}${v.stale ? '<span class="chip" style="background:#ffe0e0">older than the script</span>' : ''}</div>
+      <video controls preload="none" style="width:100%;max-width:760px;margin-top:6px;border-radius:8px;background:#000" src="${v.url}?channel=${encodeURIComponent(CH)}"></video>
+      <div class="muted" style="margin-top:4px">${v.shots ? `<a href="${v.shots}?channel=${encodeURIComponent(CH)}" target="_blank">one frame of every shot</a> · ` : ''}${v.strips ? `<a href="${v.strips}?channel=${encodeURIComponent(CH)}" target="_blank">the opening, middle and ending</a>` : ''}</div>
+      ${v.fail.length || v.warn.length ? `<details style="margin-top:4px"><summary class="muted">${v.fail.length} failures, ${v.warn.length} warnings</summary>${v.fail.concat(v.warn).map(w => `<div class="muted">• ${esc(w)}</div>`).join('')}</details>` : ''}</div>`).join('')
+    || '<div class="muted">None yet.</div>') + (o.srt.length ? `<div class="muted">Subtitles: ${o.srt.map(esc).join(', ')} (separate file, never burned in)</div>` : '');
+}
+let PL_TIMER = null;
+function plWatch() {                                        // while a job from this tab runs, show it here and refresh the steps when it ends
+  clearInterval(PL_TIMER);
+  const tick = async () => {
+    const js = await api('/api/jobs', {silent: true}).catch(() => null); if (!js) return;
+    const run = js.filter(j => !j.done && /^[a-z-]+ · [a-z0-9-]+$/.test(j.label) && !j.label.startsWith('upload'));
+    document.querySelectorAll('[id^="plrun-"]').forEach(el => {
+      const mine = run.filter(j => j.label.endsWith(' · ' + el.id.slice(6)));
+      el.innerHTML = mine.length ? `<div style="padding:6px 10px;background:#e8f3ff;border-radius:8px;margin-bottom:6px">⏳ Running: <b>${mine.map(j => esc(j.label.split(' · ')[0])).join(', ')}</b> <span class="muted">· see the Activity tab</span></div>` : '';
+    });
+    if (!run.length) { clearInterval(PL_TIMER); PL_TIMER = null; if ($('#pipeline').classList.contains('on')) loadPipeline(); }
+  };
+  tick(); PL_TIMER = setInterval(tick, 8000);
 }
 function plToggle(name, key) { PL_OPEN[name] = PL_OPEN[name] === key ? '__none' : key; loadPipeline(); }
 async function plMakePrompts(n) { const r = await api(`/api/pipeline/${n}/make-prompts`, {method: 'POST', body: {}}); toast(r.summary.split('\n')[0]); await loadPipeline(); PL_OPEN[n] = 'images'; loadPipeline(); }

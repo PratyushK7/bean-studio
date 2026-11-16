@@ -613,6 +613,6 @@ Nothing here publishes. The last line of every run is the question: **ship it, o
 7 Sample render (vyapaar_render.py sample) -> GATE 2: vyapaar_qa.py + the owner's look -> approve -> full render -> QA
 8 Packaging: title, thumbnail, description (music credits), chapters
 ```
-The whole visual pipeline, its rules and its rollback are in `references/production.md`.
+The whole visual pipeline, its rules and its rollback are in `references/production.md`. Bean Studio's **Pipeline** tab runs steps 3 to 8 with one button each (and `python tools/vyapaar_steps.py <project> <step>` does the same from a terminal); use it, and keep it in step with the pipeline when anything is added.
 
-Nothing paid starts before Gate A. After the voice, a changed line means re-voicing that line, so the script freezes at Gate A.
+Nothing paid starts before Gate A. Build the first full cut on the free voice; the pro voice comes after the cut is right. After the voice, a changed line means re-voicing that line, so the script freezes at Gate A.

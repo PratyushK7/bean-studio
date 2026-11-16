@@ -12,7 +12,7 @@ register(app, ROOT, cfg, start_agent, JOBS, start_job) adds /api/pipeline*.
 """
 import json, os, re, shutil, subprocess, time
 from pathlib import Path
-from flask import abort, jsonify, request
+from flask import abort, jsonify, request, send_file
 
 SLUG = re.compile(r"^[a-z0-9][a-z0-9-]{0,60}$")
 IMG = {".png", ".jpg", ".jpeg", ".webp"}
@@ -20,7 +20,15 @@ IMG = {".png", ".jpg", ".jpeg", ".webp"}
 MODELS = {"topic": "opus", "research": "opus", "script": "opus", "packaging": "opus", "visual_plan": "opus", "review": "opus",
           "prompts": "haiku", "images": "haiku", "upscale": "haiku", "shots": "haiku", "build": "haiku", "render": "haiku", "checks": "haiku"}
 STAGES = [("script", "Script"), ("prompts", "Image prompts"), ("images", "Pictures"), ("voice", "Voice"), ("clips", "Clips"),
-          ("sound", "Sound"), ("render", "Video"), ("sheet", "Upload sheet")]
+          ("sound", "Sound"), ("render", "Video"), ("sheet", "Upload sheet")]          # the older, simpler path: projects without a visual plan
+# The art-directed documentary pipeline (references/production.md): a visual plan, pictures with a review gate, a sample with a second gate, then the full cut
+NEW_STAGES = [("script", "Script"), ("plan", "Visual plan"), ("prompts", "Image prompts"), ("images", "Pictures"), ("review", "Check the pictures"),
+              ("upscale", "Sharpen (upscale)"), ("voice", "Voice"), ("clips", "Hero clips"), ("sample", "Sample"), ("video", "Full video"), ("sheet", "Upload sheet")]
+OPTIONAL = {"clips"}                                         # never the "next step": the video is complete without them
+STEPS = {"plan-check", "prompts", "pictures", "check-pictures", "upscale", "voice-free", "voice-pro", "sample", "check-sample", "approve-sample", "full"}   # tools/vyapaar_steps.py
+SYNC_STEPS = {"plan-check"}                                  # quick enough to answer on the spot
+PAID_STEPS = {"voice-pro"}                                   # needs the owner's OK on the cost, sent as confirm_cost
+SUBS = {"qa", "review", "graphics"}                          # project subfolders whose pictures the page may show
 BUILT = {"script", "prompts", "images", "voice", "sound"}        # steps with a working button; the rest say "coming next" instead of pretending
 NEXT = {"script": "Write the script (Opus does it from your topic).",
         "prompts": "Make the image prompts from the script.",
@@ -62,14 +70,90 @@ def status(p):
     return out
 
 
-def summary(p):
+def _j(f, default=None):
+    try: return json.loads(Path(f).read_text(encoding="utf-8"))
+    except Exception: return default
+
+
+def tools_python():
+    """the vyapaar tools need numpy, OpenCV and Pillow, which the studio's own .venv does not have: use the system Python they were built on"""
+    c = Path.home() / "AppData" / "Local" / "Programs" / "Python" / "Python312" / "python.exe"
+    return str(c) if c.exists() else None
+
+
+def _have_files(p):
+    return {int(f.stem) for f in (p / "images").iterdir() if f.stem.isdigit() and f.suffix.lower() in IMG} if (p / "images").is_dir() else set()
+
+
+def status_new(p):
+    """{stage: (detail or None, warn)} for the documentary pipeline. Read from files, never stored, and a file made for an OLDER script says so."""
+    base = status(p); out = {}
+    script = _j(p / "script.json", {}); nlines = len(script.get("lines", []))
+    out["script"] = (base["script"], "FAIL" in (base["script"] or ""))
+    plan = _j(p / "visual-plan.json")
+    out["plan"] = ((f"{len(plan.get('shots', []))} shots · {sum(1 for x in plan.get('shots', []) if x.get('kind') == 'graphic')} graphics", False) if plan else (None, False))
+    idx = _j(p / "images-index.json", [])
+    used = [e for e in idx if e.get("type") in ("scene", "character")]
+    own = [e for e in used if e.get("status") not in ("skip", "reused")]
+    out["prompts"] = ((f"{len(own)} prompts", False) if own else (base["prompts"], False))        # the plan's prompts, not just the ones still waiting
+    have = _have_files(p)
+    review = _j(p / "review.json", {})
+    out["images"] = ((f"{sum(1 for e in own if e['n'] in have)} of {len(own)} made", False) if have else (None, False))
+    appr = sum(1 for e in used if (review.get(str(e["n"])) or {}).get("status") == "approved")
+    out["review"] = ((("Gate 1 open · " if used and appr == len(used) else "") + f"{appr} of {len(used)} approved", False) if review and used else (None, False))
+    hd = sum(1 for e in used if (p / "images-hd" / f"{e['n']:03d}.png").exists())
+    out["upscale"] = ((f"{hd} of {appr}", False) if appr else (None, False))
+    vl, pl = _j(p / "voice-lines.json"), _j(p / "preview-local-lines.json")
+    if vl and (p / "voice.mp3").exists() and len(vl) == nlines: out["voice"] = ("Sarvam voice ready", False)
+    elif pl and (p / "preview-local.mp3").exists() and len(pl) == nlines: out["voice"] = ("free voice ready (Kokoro)", False)
+    elif (p / "voice.mp3").exists() or (p / "preview-local.mp3").exists(): out["voice"] = ("voice is for an older script", True)
+    else: out["voice"] = (None, False)
+    cp, ca = _j(p / "clips-plan.json", {}), _j(p / "clips" / "approved.json", {})
+    n_ok = len(ca.get("clips", ca) if isinstance(ca, dict) else ca) if ca else 0
+    out["clips"] = ((f"{n_ok} approved", False) if n_ok else ((f"{len(cp.get('clips', []))} planned · about ${cp.get('cost_estimate', '?')} · not made", False) if cp.get("clips") else (None, False)))
+    g2 = _j(p / "gate2.json", {})
+    if g2.get("approved"): out["sample"] = (f"Gate 2 approved · {g2.get('at', '')}", False)
+    elif (p / "sample.mp4").exists(): out["sample"] = ("made, not approved yet", False)
+    else: out["sample"] = (None, False)
+    vids = sorted((f for f in p.glob("video*.mp4") if "-prev-" not in f.name and "oldgraphics" not in f.name), key=lambda f: f.stat().st_mtime)
+    if vids:
+        v = vids[-1]; qa = _j(p / "qa" / f"{v.stem}-qa.json", {})
+        old = (p / "script.json").exists() and v.stat().st_mtime < (p / "script.json").stat().st_mtime
+        verdict = (qa.get("verdict") or "not checked yet").lower()
+        out["video"] = ((f"{v.name} is older than the script" if old else f"{v.name} · {verdict}"), old or verdict.startswith("fail"))
+    else: out["video"] = (None, False)
+    out["sheet"] = (base["sheet"], False)
+    return out
+
+
+NEXT_NEW = {"script": "Write the script (Opus does it from your topic).",
+            "plan": "Write the visual plan: who is in every shot, the light, the camera (Opus, from the script).",
+            "prompts": "Make the picture prompts from the plan.",
+            "images": "Make the pictures in ChatGPT (runs by itself through BrowserOS neo).",
+            "review": "Check the pictures: approve the good ones, send the bad ones back.",
+            "upscale": "Sharpen the approved pictures (free, on your graphics card).",
+            "voice": "Make the voice: the free one first, the paid Sarvam one later.",
+            "sample": "Make a short sample and check it before the full video.",
+            "video": "Make the full video (free).",
+            "sheet": "Write the title, description and chapters, then upload from the Videos tab."}
+
+
+def summary(p, hindi=False):
+    if hindi or (p / "visual-plan.json").exists():
+        st = status_new(p)
+        stages = [{"key": k, "label": lab, "state": st[k][0], "warn": st[k][1], "built": True, "optional": k in OPTIONAL} for k, lab in NEW_STAGES]
+        for x in stages:                                       # an optional step that is only planned is a note, not a finished step
+            if x["optional"] and x["state"] and "not made" in x["state"]: x["note"], x["state"] = x["state"], None
+        nxt = next((x["key"] for x in stages if not x["optional"] and (not x["state"] or x["warn"])), None)
+        return {"name": p.name, "new": True, "stages": stages, "next_key": nxt, "next": NEXT_NEW.get(nxt, "Everything is ready: upload it."), "hero": 0, "hero_cost": 0,
+                "modified": max((f.stat().st_mtime for f in p.rglob("*") if f.is_file() and "render-cache" not in f.parts and "images-hd" not in f.parts), default=p.stat().st_mtime)}
     st = status(p)
     nxt = next((k for k, _ in STAGES if not st[k] or (k == "script" and "FAIL" in st[k])), None)
     hero = []
     try: hero = [l for l in json.loads((p / "script.json").read_text(encoding="utf-8")).get("lines", []) if l.get("kind") == "hero"]
     except Exception: pass
     secs = sum(max(2.0, min(5.0, len(str(l.get("hi", "")).split()) * 60 / 155 + 0.4)) for l in hero)
-    return {"name": p.name, "stages": [{"key": k, "label": lab, "state": st[k], "built": k in BUILT} for k, lab in STAGES],
+    return {"name": p.name, "new": False, "stages": [{"key": k, "label": lab, "state": st[k], "built": k in BUILT} for k, lab in STAGES],
             "next": NEXT.get(nxt, "Everything is ready: upload it."), "next_key": nxt, "hero": len(hero), "hero_cost": round(secs * 0.032, 2),
             "modified": max((f.stat().st_mtime for f in p.rglob("*") if f.is_file()), default=p.stat().st_mtime)}
 
@@ -91,7 +175,8 @@ def register(app, ROOT, cfg, start_agent, JOBS, start_job):
     @app.get("/api/pipeline")
     def pipeline_list():
         d = Path(cfg()["projects_dir"])
-        rows = [summary(p) for p in d.iterdir() if p.is_dir() and not p.name.startswith("_")] if d.exists() else []
+        hindi = cfg().get("language") == "Hindi"
+        rows = [summary(p, hindi) for p in d.iterdir() if p.is_dir() and not p.name.startswith("_")] if d.exists() else []
         return jsonify(projects=sorted(rows, key=lambda r: -r["modified"]), models=MODELS, downloads=str(_downloads()))
 
     def _downloads():
@@ -270,6 +355,101 @@ def register(app, ROOT, cfg, start_agent, JOBS, start_job):
         r = subprocess.run(cmd + ["-filter_complex", filt, "-map", "[o]", "-frames:v", "1", "-q:v", "3", str(out)], capture_output=True, text=True)
         if r.returncode: abort(500, "ffmpeg could not build the sheet: " + r.stderr[-300:])
         return jsonify(ok=True, url=f"/media/{name}/{out.name}", pages=(len(imgs) + 35) // 36, count=len(imgs))
+
+    # ---------------------------------------------------------------- the documentary pipeline (tools/vyapaar_steps.py and friends)
+    def _tools_py():
+        py = tools_python()
+        if not py: abort(500, "the vyapaar tools need the system Python 3.12 with numpy and OpenCV (not found)")
+        return py
+
+    @app.post("/api/pipeline/<name>/step")
+    def pipeline_step(name):
+        """one button = one tools/vyapaar_steps.py step, run as a background job (follow it in the Activity tab). Paid steps need confirm_cost."""
+        p = pdir(name); b = request.get_json(silent=True) or {}; step = str(b.get("step") or "")
+        if step not in STEPS: abort(400, "unknown step")
+        if step in PAID_STEPS and not b.get("confirm_cost"): abort(400, "this step is paid: say OK to the cost first")
+        cmd = [_tools_py(), str(ROOT / "tools" / "vyapaar_steps.py"), str(p), step]
+        if step in SYNC_STEPS:
+            r = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace", cwd=str(ROOT), env={**os.environ, "PYTHONUTF8": "1"}, timeout=300)
+            return jsonify(ok=r.returncode == 0, output=(r.stdout + r.stderr).strip()[-1800:])
+        return jsonify(start_job(f"{step} · {name}", cmd, str(ROOT), unique=True))
+
+    @app.post("/api/pipeline/<name>/plan")
+    def pipeline_plan(name):
+        """Opus writes visual-plan.json from the approved script (the art director's job): the one judgment step before any picture exists"""
+        p = pdir(name)
+        if not (p / "script.json").exists(): abort(400, "this video has no script.json yet")
+        c = cfg()
+        prompt = (f'Use the hindi-case-study skill (read ~/.claude/skills/hindi-case-study/SKILL.md and references/production.md, "1. The visual plan") for the channel "{c["channel"]}". '
+                  f"The project folder is {p}. Write visual-plan.json against the channel's visual-bible.json (copy the structure of an existing project's build_visual_plan.py if one exists): "
+                  "characters with sheets, locations, and one shot per picture or graphic, with the light following the story's clock, a face on every share-taker, the hook spending the strongest pictures, "
+                  "and every graphic number traced to a research row. Then run `python tools/vyapaar_steps.py <project> plan-check` and fix every critical issue. "
+                  "Do not make any pictures, do not run ChatGPT, and do not touch other projects.")
+        return jsonify(start_agent(f"visual plan · {name}", prompt, MODELS["visual_plan"], "feed"))
+
+    @app.get("/api/pipeline/<name>/review")
+    def pipeline_review(name):
+        """Gate 1 for the page: counts, whether the gate is open, and every picture still waiting for a decision with its flags and script line"""
+        p = pdir(name)
+        r = subprocess.run([_tools_py(), str(ROOT / "tools" / "vyapaar_review.py"), str(p), "status"], capture_output=True, text=True, encoding="utf-8", errors="replace",
+                           cwd=str(ROOT), env={**os.environ, "PYTHONUTF8": "1"}, timeout=240)
+        line = next((l for l in reversed(r.stdout.splitlines()) if l.startswith("{")), "")
+        if not line: abort(500, "could not read the review state: " + (r.stderr or r.stdout)[-300:])
+        return jsonify(json.loads(line))
+
+    @app.post("/api/pipeline/<name>/review")
+    def pipeline_review_act(name):
+        """approve / reject / pick, exactly as vyapaar_review.py does them (a rejected picture is kept in images/_rejected and only that slot is remade)"""
+        p = pdir(name); b = request.get_json(silent=True) or {}; act = b.get("action"); nums = str(b.get("numbers") or "").strip()
+        if act not in ("approve", "reject", "pick") or not re.fullmatch(r"[0-9, \-]+", nums): abort(400, "say approve, reject or pick and the picture numbers, like 12 or 3,5-9")
+        cmd = [_tools_py(), str(ROOT / "tools" / "vyapaar_review.py"), str(p), act, nums.replace(" ", "")]
+        if act == "pick": cmd.append(str(b.get("which") or "b")[:1])
+        note = str(b.get("note") or "").strip()[:300]
+        if note and act != "pick": cmd += ["--note", note]
+        r = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace", cwd=str(ROOT), env={**os.environ, "PYTHONUTF8": "1"}, timeout=120)
+        if r.returncode: abort(500, (r.stderr or r.stdout)[-300:])
+        return jsonify(ok=True, output=r.stdout.strip()[-600:])
+
+    @app.get("/api/pipeline/<name>/pic/<int:n>")
+    def pipeline_pic(name, n):
+        """a 960 px preview of images/NNN.* (the originals are 2 MB each; the page shows many at once)"""
+        p = pdir(name)
+        src = next((f for f in (p / "images").glob(f"{n:03d}.*") if f.suffix.lower() in IMG), None)
+        if not src: abort(404, "no such picture")
+        out = p / "review" / "thumbs" / f"{n:03d}.jpg"
+        if not out.exists() or out.stat().st_mtime < src.stat().st_mtime:
+            out.parent.mkdir(parents=True, exist_ok=True)
+            r = subprocess.run(["ffmpeg", "-y", "-v", "error", "-i", str(src), "-vf", "scale=960:-2", "-q:v", "4", str(out)], capture_output=True, text=True)
+            if r.returncode: abort(500, "could not make the preview: " + r.stderr[-200:])
+        return send_file(out, mimetype="image/jpeg")
+
+    @app.get("/api/pipeline/<name>/asset/<sub>/<fname>")
+    def pipeline_asset(name, sub, fname):
+        """a picture from qa/, review/ or graphics/ (contact sheets, shot sheets, graphic previews)"""
+        p = pdir(name)
+        if sub not in SUBS or not re.fullmatch(r"[\w.-]+\.(jpg|png)", fname): abort(400)
+        f = p / sub / fname
+        if not f.is_file(): abort(404)
+        return send_file(f)
+
+    @app.get("/api/pipeline/<name>/outputs")
+    def pipeline_outputs(name):
+        """what to look at: the sample and the full video (played through /media), the QA verdicts and sheets, the review contact sheets, the gates"""
+        p = pdir(name); out = {"videos": [], "sheets": [], "review_sheets": []}
+        for f in sorted(p.glob("*.mp4"), key=lambda f: -f.stat().st_mtime):
+            if "-prev-" in f.name or "oldgraphics" in f.name or f.name.startswith(("test-", "sample-v")): continue
+            qa = _j(p / "qa" / f"{f.stem}-qa.json", {}); issues = qa.get("issues", {})
+            sj = p / "script.json"
+            out["videos"].append({"file": f.name, "url": f"/media/{name}/{f.name}", "mb": round(f.stat().st_size / 1e6), "verdict": qa.get("verdict"),
+                                  "stale": sj.exists() and f.stat().st_mtime < sj.stat().st_mtime,
+                                  "fail": issues.get("fail", []), "warn": issues.get("warn", []),
+                                  "shots": f"/api/pipeline/{name}/asset/qa/{f.stem}-shots.jpg" if (p / "qa" / f"{f.stem}-shots.jpg").exists() else None,
+                                  "strips": f"/api/pipeline/{name}/asset/qa/{f.stem}-strips.jpg" if (p / "qa" / f"{f.stem}-strips.jpg").exists() else None})
+        rv = p / "review"
+        out["review_sheets"] = [{"file": f.name, "url": f"/api/pipeline/{name}/asset/review/{f.name}"} for f in sorted(rv.glob("*.jpg"))] if rv.is_dir() else []
+        out["gate2"] = _j(p / "gate2.json", {})
+        out["srt"] = [f.name for f in p.glob("*.srt")]
+        return jsonify(out)
 
     @app.post("/api/pipeline/<name>/open")
     def pipeline_open(name):

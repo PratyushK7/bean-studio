@@ -1,0 +1,57 @@
+"""Tests for Bean Studio's Pipeline tab (app/pipeline.py and its endpoints). Needs Flask, which only the studio's .venv has:
+    .venv/Scripts/python.exe tools/tests/test_studio_pipeline.py
+Throwaway projects only; the real project is read, never changed, and no job is started."""
+import json, shutil, sys, tempfile, traceback
+from pathlib import Path
+
+TOOLS = Path(__file__).resolve().parents[1]; ROOT = TOOLS.parent
+JEW = ROOT / "channels" / "hindi" / "videos" / "jewellery-shop-economics"
+results = []
+
+
+def test(fn):
+    try: fn(); results.append((fn.__name__, "ok", ""))
+    except Exception as e: results.append((fn.__name__, "FAIL", f"{e}\n{traceback.format_exc(limit=2)}"))
+    return fn
+
+
+def tmp_project(with_plan=True):
+    d = Path(tempfile.mkdtemp(prefix="studio-test-")); shutil.copy(JEW / "script.json", d / "script.json")
+    if with_plan: shutil.copy(JEW / "visual-plan.json", d / "visual-plan.json")
+    (d / "images").mkdir()
+    return d
+
+
+@test
+def studio_stage_status_comes_from_files_and_flags_stale_ones():
+    sys.path.insert(0, str(ROOT / "app")); import pipeline as pl
+    d = tmp_project(True)
+    s = pl.summary(d, hindi=True)
+    assert s["new"] and s["next_key"] == "prompts" and s["stages"][1]["state"].startswith("144 shots"), s["next_key"]
+    (d / "voice.mp3").write_bytes(b"x"); (d / "voice-lines.json").write_text(json.dumps([{"i": 0}] * 3), encoding="utf-8")     # a voice made for a shorter, older script
+    v = next(x for x in pl.summary(d, hindi=True)["stages"] if x["key"] == "voice")
+    assert v["warn"] and "older script" in v["state"], v
+    assert pl.summary(d, hindi=False)["new"], "a project with a visual plan always gets the documentary stages"
+    plain = tmp_project(False)
+    assert not pl.summary(plain, hindi=False)["new"], "an older project keeps the older stages"
+    clips = next(x for x in pl.summary(JEW, hindi=True)["stages"] if x["key"] == "clips")
+    assert not clips["state"] and "not made" in clips.get("note", ""), "planned clips are a note, not a finished step"
+
+
+@test
+def studio_endpoints_refuse_bad_requests_and_start_nothing():
+    sys.path.insert(0, str(ROOT / "app")); import server
+    c = server.app.test_client(); H = {"X-Channel": "hindi"}; name = JEW.name
+    jobs_before = len(server.JOBS)
+    assert c.post(f"/api/pipeline/{name}/step", headers=H, json={"step": "format-c"}).status_code == 400, "an unknown step"
+    assert c.post(f"/api/pipeline/{name}/step", headers=H, json={"step": "voice-pro"}).status_code == 400, "a paid step needs the owner's OK"
+    assert c.post(f"/api/pipeline/{name}/review", headers=H, json={"action": "approve", "numbers": "1; rm -rf"}).status_code == 400, "picture numbers are checked"
+    assert c.get(f"/api/pipeline/{name}/asset/images/001.png", headers=H).status_code == 400, "only qa, review and graphics are served"
+    assert len(server.JOBS) == jobs_before, "nothing may have started"
+
+
+if __name__ == "__main__":
+    for name, st, why in results: print(f"{st:4s} {name}" + (f"\n     {why}" if why else ""))
+    bad = [r for r in results if r[1] != "ok"]
+    print(f"\n{len(results) - len(bad)} passed, {len(bad)} failed")
+    sys.exit(1 if bad else 0)
