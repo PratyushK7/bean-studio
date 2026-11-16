@@ -256,6 +256,14 @@ The video's graphics are still `tools/video/graphics.html` (10 templates, cues, 
 shaping and edges are clean, 120 frames in about 26 s, about 33 MB for 4 s (ours: about 6 MB). `npx remotion studio` gives a
 live preview with a timeline.
 
+**Decision (17 Nov 2026): stay on `graphics.html`, borrow Remotion's design.** I rendered the same two cards in both over the
+same blurred backdrop. Remotion's number card beat ours (a 230 px number with a soft gold glow against our 168 px), but our
+bill card beat Remotion's (heavier Hindi weight, and the accent bar that marks the row being spoken). Both render in
+Chromium, so the difference was design, not engine. The number template now uses 210 px, a gold glow, a brighter label and
+sub-line, and a width that respects the safe area (bible `graphics.sizes.number` 210, `number_mid` 140). The overlap check
+only compares text boxes, so look at a number card with tall Hindi vowel marks (ि ी ो) under its label before approving.
+Remotion's engine gives no gain until we need something `graphics.html` cannot animate.
+
 **Use it for what the template set does not do well**, in this order:
 1. **A new graphic type the ten templates lack** (a timeline, a route map, a split comparison, a spring-physics chart).
    Prototype it in the Studio. If it earns a place in more than one video, port it into `graphics.html` so it keeps the cues,

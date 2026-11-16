@@ -1,0 +1,267 @@
+<!doctype html>
+<meta charset="utf-8">
+<!-- Decoding Vyapaar motion graphics. One template set, driven frame by frame: setup(spec, dur, tokens, times) builds the graphic, seek(t) draws
+     time t. Pure function of t, so every frame is reproducible. Rendered by tools/video/render_graphics.js; specs come from visual-plan.json. -->
+<style>
+  html, body { margin: 0; width: 1920px; height: 1080px; overflow: hidden; background: transparent; }
+  #stage { position: absolute; inset: 0; overflow: hidden; }
+  #stage.full { background: radial-gradient(ellipse at 50% 40%, var(--bg1) 0%, var(--bg0) 75%); }
+  #stage.full::after { content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,.35) 100%); }
+  .t { font-family: var(--text), 'Segoe UI', sans-serif; color: var(--ink); }
+  .n { font-family: var(--numbers), var(--text), sans-serif; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .abs { position: absolute; }
+  .label { font-size: var(--label); color: var(--muted); font-weight: 600; letter-spacing: .5px; }
+  .title { font-size: var(--title); font-weight: 700; }
+  .small { font-size: var(--small); color: var(--muted); }
+  .center { left: 0; right: 0; text-align: center; }
+  .panel { background: var(--panel); border: 2px solid var(--line); border-radius: 22px; box-shadow: 0 30px 80px rgba(0,0,0,.45); }
+  .rule { height: 2px; background: var(--line); }
+  .gold { color: var(--gold); } .loss { color: var(--loss); } .gain { color: var(--gain); } .cool { color: var(--cool); } .ink { color: var(--ink); }
+</style>
+<div id="stage"></div>
+<script>
+const W = 1920, H = 1080;
+let S, D, T, TM, items = [];
+const $ = (tag, cls, css, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (css) e.style.cssText = css; if (html != null) e.innerHTML = html; document.getElementById('stage').appendChild(e); return e; };
+const clamp = (x) => Math.max(0, Math.min(1, x));
+const easeOut = (x) => 1 - Math.pow(1 - clamp(x), 3);
+const easeInOut = (x) => { x = clamp(x); return x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2; };
+const tone = (t) => ({ gold: 'var(--gold)', loss: 'var(--loss)', gain: 'var(--gain)', cool: 'var(--cool)', ink: 'var(--ink)' }[t] || 'var(--ink)');
+
+// Indian number formats
+function inr(v) {
+  const neg = v < 0; v = Math.round(Math.abs(v)); let s = String(v);
+  if (s.length > 3) { const last = s.slice(-3); let rest = s.slice(0, -3); rest = rest.replace(/\B(?=(\d{2})+(?!\d))/g, ','); s = rest + ',' + last; }
+  return (neg ? '−' : '') + '₹' + s;
+}
+function inrShort(v) {
+  const neg = v < 0, a = Math.abs(v); let s;
+  if (a >= 1e7) s = '₹' + trim(a / 1e7) + ' करोड़'; else if (a >= 1e5) s = '₹' + trim(a / 1e5) + ' लाख'; else s = inr(a);
+  return (neg ? '−' : '') + s;
+}
+function trim(x) { return (Math.round(x * 10) / 10).toString(); }
+function fmt(v, f, d) {
+  if (typeof v === 'string') return v;
+  if (f === 'inr') return inr(v); if (f === 'inr_short') return inrShort(v); if (f === 'pct') return (Math.round(v * 10) / 10) + '%';
+  return (Math.round(v * 10) / 10).toLocaleString('en-IN');
+}
+// a time for each element: explicit cue times from Python (narration word positions), else a stagger
+function at(i, base) { return (TM && TM[i] != null) ? TM[i] : base + i * T.motion.stagger_s; }
+
+// appear: fade + rise; returns progress
+function appear(el, t0, t, dy = 26) { const p = easeOut((t - t0) / T.motion.in_s); el.style.opacity = p; el.style.transform = `translateY(${(1 - p) * dy}px)`; return p; }
+
+const TPL = {
+  number(s) {
+    const big = s.small ? 'var(--number-mid)' : 'var(--number)';
+    const lab = $('div', 't label abs center', 'top:330px', s.label || '');
+    const val = $('div', 't n abs center fit', `top:${s.small ? 470 : 420}px;width:${W}px;font-size:${big};color:${tone(s.tone || 'gold')};line-height:1;white-space:nowrap`, '');
+    const sub = $('div', 't abs center small', `top:${s.small ? 640 : 670}px;font-size:40px`, s.sub || '');
+    const numeric = typeof s.value === 'number';
+    return (t) => {
+      appear(lab, .1, t);
+      const t1 = at(0, .35), p = easeOut((t - t1) / T.motion.count_s);
+      val.style.opacity = clamp((t - t1) / .25);
+      val.textContent = (s.prefix || '') + (numeric ? fmt(s.value * (s.count === false ? 1 : p), s.format) : s.value) + (s.suffix || '');
+      appear(sub, (TM && TM[1] != null) ? TM[1] : t1 + (numeric ? T.motion.count_s : .5), t);     // the sub-line can wait for its own sentence
+    };
+  },
+  bill(s) {
+    const rows = s.rows || [], n = rows.length, rh = n > 4 ? 84 : 96, w = 1120;
+    const h = 150 + n * rh + (s.total ? 120 : 30), top = Math.max(70, (H - h) / 2), left = (W - w) / 2;
+    const panel = $('div', 'panel abs', `left:${left}px;top:${top}px;width:${w}px;height:${h}px`);
+    const title = $('div', 't title abs', `left:${left + 60}px;top:${top + 40}px;font-size:52px`, s.title || '');
+    const els = rows.map((r, i) => {
+      const y = top + 140 + i * rh;
+      const hl = r.new || r.tone === 'gold';
+      const box = $('div', 'abs', `left:${left + 30}px;top:${y - 8}px;width:${w - 60}px;height:${rh - 8}px;border-radius:12px;background:${hl ? 'rgba(212,169,74,.10)' : 'transparent'};border-left:${hl ? '6px solid var(--gold)' : '6px solid transparent'}`);
+      const l = $('div', 't abs', `left:${left + 70}px;top:${y + 8}px;font-size:44px;font-weight:600;color:${r.tone === 'gold' ? 'var(--gold)' : 'var(--ink)'}`, r.label);
+      const blank = r.value === '' || r.value == null;
+      const v = $('div', 't n abs', `right:${left + 70}px;top:${y + 4}px;font-size:52px;color:${tone(r.tone || 'ink')}`, '');
+      const dots = blank ? $('div', 'abs', `left:${left + 200}px;right:${left + 70}px;top:${y + 44}px;border-bottom:3px dotted var(--line)`) : null;
+      const line = $('div', 'rule abs', `left:${left + 60}px;width:${w - 120}px;top:${y + rh - 6}px`);
+      return { box, l, v, dots, line, r };
+    });
+    let tot;
+    if (s.total) {
+      const y = top + 140 + n * rh + 18;
+      tot = [$('div', 'abs', `left:${left + 60}px;width:${w - 120}px;top:${y}px;height:4px;background:var(--muted);opacity:.6`),
+             $('div', 't abs', `left:${left + 70}px;top:${y + 22}px;font-size:46px;font-weight:700`, s.total.label || 'कुल'),
+             $('div', 't n abs', `right:${left + 70}px;top:${y + 16}px;font-size:56px`, fmt(s.total.value, 'inr'))];
+    }
+    const newIdx = rows.map((r, i) => r.new ? i : -1).filter(i => i >= 0), carry = newIdx.length > 0;
+    const tNew = Math.min(Math.max(.6, D * .15), D * .4);                // the new row arrives early in the line, never after it
+    const isResult = s.total && s.total.label && s.total.label !== 'कुल';  // "बचा": a result, shown after the rows that make it
+    return (t) => {
+      appear(panel, 0, t, 14); appear(title, .12, t);
+      let last = .5;
+      els.forEach((e, i) => {
+        const r = e.r, isNew = r.new;
+        // rows the viewer has already seen (carry-over) appear at once with their final value; only new rows count up
+        const t0 = carry ? (isNew ? ((TM && TM[i] != null) ? TM[i] : tNew + newIdx.indexOf(i) * .4) : .25) : Math.min(at(i, .5), D * .55);
+        last = Math.max(last, t0);
+        [e.box, e.l, e.line, e.v].forEach(x => appear(x, t0, t, isNew || !carry ? 12 : 0)); if (e.dots) appear(e.dots, t0, t, 0);
+        if (r.value === '?') { e.v.textContent = '?'; e.v.style.color = 'var(--gold)'; e.v.style.transform += ` scale(${1 + .06 * Math.sin(Math.max(0, t - t0) * 4)})`; }
+        else if (typeof r.value === 'number') { const p = (carry && !isNew) ? 1 : easeOut((t - t0) / (T.motion.count_s * .8)); e.v.textContent = fmt(r.value * p, s.format || 'inr'); }
+        else e.v.textContent = r.value || '';
+      });
+      if (tot) tot.forEach(x => appear(x, isResult ? Math.min(last + T.motion.count_s * .8, D * .72) : .3, t, 10));   // a result lands before the line ends
+    };
+  },
+  stack(s) {
+    const segs = s.segments, tot = segs.reduce((a, b) => a + b.value, 0), bw = 1500, bx = (W - bw) / 2, by = 470;
+    const title = $('div', 't title abs center', 'top:250px', s.title || '');
+    const track = $('div', 'abs', `left:${bx}px;top:${by}px;width:${bw}px;height:130px;border-radius:18px;background:var(--panel);border:2px solid var(--line)`);
+    let x = bx; const els = segs.map((g, i) => {
+      const w = bw * g.value / tot;
+      const bar = $('div', 'abs', `left:${x}px;top:${by}px;width:0;height:130px;background:${tone(g.tone)};opacity:.9;border-radius:${i === 0 ? '18px 0 0 18px' : '0 18px 18px 0'}`);
+      const lab = $('div', 't abs', `left:${x}px;width:${Math.max(w, 260)}px;top:${by + 160}px;font-size:40px;font-weight:600;text-align:${i === 0 ? 'left' : 'right'};${i ? `left:${x + w - Math.max(w, 260)}px` : ''}`, `${g.label}<br><span class="n" style="color:${tone(g.tone)};font-size:48px">${fmt(g.value, 'inr')}</span>`);
+      const e = { bar, lab, w, x0: x }; x += w; return e;
+    });
+    const mark = s.mark ? $('div', 't n abs', `left:${bx}px;width:${els[0].w}px;top:${by + 30}px;text-align:center;font-size:62px;color:#1a140e`, s.mark) : null;
+    return (t) => {
+      appear(title, .1, t); appear(track, .2, t, 0);
+      els.forEach((e, i) => { const t0 = at(i, .45 + i * .9), p = easeInOut((t - t0) / T.motion.grow_s); e.bar.style.width = (e.w * p) + 'px'; appear(e.lab, t0 + .3, t); });
+      if (mark) appear(mark, .45 + T.motion.grow_s, t, 8);
+    };
+  },
+  bars(s) {
+    const items = s.items, mx = s.max || Math.max(...items.map(i => i.value)) * 1.08, bw = 1000, x0 = 640;
+    const title = $('div', 't title abs center', 'top:250px', s.title || '');
+    const top = 430 - (items.length - 1) * 70;
+    const els = items.map((it, i) => {
+      const y = top + i * 170;
+      const lab = $('div', 't abs', `left:180px;width:430px;top:${y + 14}px;font-size:44px;font-weight:600;text-align:right`, it.label);
+      const tr = $('div', 'abs', `left:${x0}px;top:${y}px;width:${bw}px;height:96px;border-radius:14px;background:var(--panel)`);
+      const bar = $('div', 'abs', `left:${x0}px;top:${y}px;width:0;height:96px;border-radius:14px;background:${tone(it.tone)}`);
+      const val = $('div', 't n abs', `left:${x0 + 24}px;top:${y + 104}px;font-size:46px;color:${tone(it.tone)}`, '');
+      return { lab, tr, bar, val, it, w: bw * it.value / mx };
+    });
+    const yb = top + (items.length - 1) * 170 + 170;
+    const ticks = (s.ticks || []).map(v => [$('div', 'abs', `left:${x0 + bw * v / mx}px;top:${top - 14}px;width:2px;height:${yb - top}px;background:var(--line);opacity:.7`),
+      $('div', 't n abs small', `left:${x0 + bw * v / mx - 60}px;width:120px;top:${yb}px;text-align:center;font-size:30px`, fmt(v, s.format || 'plain'))]);
+    return (t) => {
+      appear(title, .1, t); ticks.forEach(k => { k[0].style.opacity = .7 * clamp((t - .3) / .3); appear(k[1], .3, t, 0); });
+      els.forEach((e, i) => { const t0 = at(i, .4 + i * .7); appear(e.lab, t0, t); appear(e.tr, t0, t, 0);
+        const p = easeInOut((t - t0 - .15) / T.motion.grow_s); e.bar.style.width = (e.w * p) + 'px';
+        e.val.style.opacity = clamp((t - t0 - .3) / .3); e.val.textContent = e.it.display || fmt(e.it.value * p, s.format || 'plain'); });
+    };
+  },
+  change(s) {
+    const lab = $('div', 't label abs center', 'top:270px', s.label || '');
+    const fv = $('div', 't n abs fit', 'left:220px;width:620px;top:400px;text-align:center;font-size:190px;white-space:nowrap;color:var(--muted)', s.from.value);
+    const fl = $('div', 't abs small', 'left:220px;width:620px;top:640px;text-align:center;font-size:40px', s.from.label || '');
+    const op = $('div', 't n abs', 'left:860px;width:200px;top:430px;text-align:center;font-size:150px;color:var(--muted)', s.op || '→');
+    const tv = $('div', 't n abs fit', `left:1080px;width:620px;top:400px;text-align:center;font-size:190px;white-space:nowrap;color:${tone(s.tone || 'gold')}`, s.to.value);
+    const tl = $('div', 't abs small', 'left:1080px;width:620px;top:640px;text-align:center;font-size:40px', s.to.label || '');
+    const strike = s.op === '=' ? null : $('div', 'abs', 'left:300px;top:500px;width:0;height:12px;background:var(--loss);border-radius:6px;transform:rotate(-8deg)');
+    return (t) => {
+      appear(lab, .1, t); appear(fv, .3, t); appear(fl, .3, t);
+      const t1 = at(0, Math.max(.9, D * .55)); appear(op, t1 - .15, t, 0); appear(tv, t1, t); appear(tl, t1, t);
+      if (strike) { strike.style.width = (460 * easeOut((t - t1) / .35)) + 'px'; fv.style.opacity = 1 - .5 * clamp((t - t1) / .35); }
+    };
+  },
+  line(s) {
+    const pts = s.points, title = $('div', 't title abs center', 'top:200px', s.title || '');
+    const x0 = 420, x1 = 1500, y0 = 380, y1 = 800, ys = pts.map(p => p.y), lo = Math.min(...ys), hi = Math.max(...ys), pad = (hi - lo) * .6 || 1;
+    const X = (i) => x0 + (x1 - x0) * i / (pts.length - 1), Y = (v) => y1 - (y1 - y0) * (v - (lo - pad)) / ((hi + pad) - (lo - pad));
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); svg.setAttribute('width', W); svg.setAttribute('height', H); svg.style.position = 'absolute'; svg.style.inset = 0;
+    document.getElementById('stage').appendChild(svg);
+    const axis = document.createElementNS(svg.namespaceURI, 'line'); Object.entries({ x1: x0 - 40, x2: x1 + 40, y1: y1 + 30, y2: y1 + 30, stroke: 'var(--line)', 'stroke-width': 3 }).forEach(([k, v]) => axis.setAttribute(k, v)); svg.appendChild(axis);
+    const path = document.createElementNS(svg.namespaceURI, 'path'); path.setAttribute('d', pts.map((p, i) => (i ? 'L' : 'M') + X(i) + ' ' + Y(p.y)).join(' '));
+    Object.entries({ fill: 'none', stroke: tone(s.tone || 'gold'), 'stroke-width': 10, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }).forEach(([k, v]) => path.setAttribute(k, v)); svg.appendChild(path);
+    const len = path.getTotalLength(); path.style.strokeDasharray = len;
+    const dots = pts.map((p, i) => { const c = document.createElementNS(svg.namespaceURI, 'circle'); c.setAttribute('cx', X(i)); c.setAttribute('cy', Y(p.y)); c.setAttribute('r', 15); c.setAttribute('fill', tone(s.tone || 'gold')); svg.appendChild(c); return c; });
+    const xl = pts.map((p, i) => $('div', 't abs small', `left:${X(i) - 200}px;width:400px;top:${y1 + 56}px;text-align:center;font-size:38px`, p.x));
+    const lastX = X(pts.length - 1), lastY = Y(pts[pts.length - 1].y);
+    const mark = s.mark ? $('div', 't n abs', `left:${lastX - 760}px;width:560px;top:${lastY + 30}px;text-align:right;white-space:nowrap;font-size:88px;color:${tone(s.tone || 'gold')}`, s.mark) : null;
+    const vals = pts.map((p, i) => $('div', 't n abs', `left:${X(i) - 150}px;width:300px;top:${Y(p.y) + (i === pts.length - 1 ? 26 : -86)}px;text-align:center;white-space:nowrap;font-size:46px;color:var(--ink)`, fmt(p.y, s.format || 'plain')));
+    const note = s.note ? $('div', 't abs small', `left:${x0 - 40}px;top:${y1 + 130}px;font-size:30px`, s.note) : null;
+    return (t) => {
+      appear(title, .1, t); axis.style.opacity = clamp((t - .2) / .3); xl.forEach((e, i) => appear(e, .3 + i * .2, t));
+      const t0 = at(0, .6), p = easeInOut((t - t0) / (D * .45)); path.style.strokeDashoffset = len * (1 - p);
+      dots.forEach((c, i) => c.style.opacity = clamp((p * (pts.length - 1) - i + .05) * 4));
+      vals.forEach((v, i) => v.style.opacity = clamp((p * (pts.length - 1) - i + .05) * 4));
+      if (mark) appear(mark, t0 + D * .45, t); if (note) appear(note, .5, t, 0);
+    };
+  },
+  share(s) {
+    const title = $('div', 't title abs center', 'top:150px', s.title || ''), cells = [], size = 46, gap = 10, gw = 10 * size + 9 * gap, gx = (W - gw) / 2, gy = 260;
+    for (let i = 0; i < s.total; i++) cells.push($('div', 'abs', `left:${gx + (i % 10) * (size + gap)}px;top:${gy + Math.floor(i / 10) * (size + gap)}px;width:${size}px;height:${size}px;border-radius:9px;background:var(--panel);border:2px solid var(--line)`));
+    const lab = $('div', 't abs center', `top:${gy + 10 * (size + gap) + 40}px;font-size:52px;font-weight:700;color:${tone(s.tone || 'gold')}`, s.label || '');
+    return (t) => {
+      appear(title, .1, t); cells.forEach((c, i) => { c.style.opacity = clamp((t - .25 - i * .006) / .2); });
+      const t0 = at(0, .9); cells.forEach((c, i) => { const on = i < s.n && t > t0 + i * .022; c.style.background = on ? tone(s.tone || 'gold') : 'var(--panel)'; c.style.borderColor = on ? 'transparent' : 'var(--line)'; });
+      appear(lab, t0 + s.n * .022, t);
+    };
+  },
+  flow(s) {
+    const st = s.steps, n = st.length, cw = 440, gapw = 130, total = n * cw + (n - 1) * gapw, x0 = (W - total) / 2, y = 420;
+    const title = $('div', 't title abs center', 'top:240px', s.title || '');
+    const ICON = { necklace: 'M30 20 Q60 70 90 20 M60 72 l-8 14 h16z', cash: 'M20 35 h80 v45 h-80z M60 57 m-10 0 a10 10 0 1 0 20 0 a10 10 0 1 0 -20 0', bar: 'M30 75 l12 -35 h36 l12 35z',
+                   bank: 'M20 40 L60 18 L100 40 z M28 46 v32 M48 46 v32 M72 46 v32 M92 46 v32 M20 84 h80', calendar: 'M24 30 h72 v56 h-72z M24 46 h72 M42 22 v14 M78 22 v14' };
+    const cards = st.map((p, i) => {
+      const x = x0 + i * (cw + gapw);
+      const c = $('div', 'panel abs', `left:${x}px;top:${y}px;width:${cw}px;height:300px`);
+      const ic = $('div', 'abs', `left:${x + cw / 2 - 60}px;top:${y + 34}px;width:120px;height:100px`, `<svg viewBox="0 0 120 100" width="120" height="100"><path d="${ICON[p.icon] || ICON.bar}" fill="none" stroke="var(--gold)" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/></svg>`);
+      const l = $('div', 't abs', `left:${x + 24}px;width:${cw - 48}px;top:${y + 160}px;text-align:center;font-size:40px;font-weight:600;line-height:1.3`, p.label);
+      const ar = i < n - 1 ? $('div', 't n abs', `left:${x + cw + 10}px;width:${gapw - 20}px;top:${y + 100}px;text-align:center;font-size:80px;color:var(--gold)`, '→') : null;
+      return { c, ic, l, ar };
+    });
+    return (t) => { appear(title, .1, t); cards.forEach((e, i) => { const t0 = at(i, .45 + i * Math.max(.8, D * .25)); [e.c, e.ic, e.l].forEach(x => appear(x, t0, t)); if (e.ar) appear(e.ar, t0 + .45, t, 0); }); };
+  },
+  title(s) {
+    const k = $('div', 't n abs center', 'top:300px;font-size:210px;color:var(--gold);line-height:1', s.kicker || '');
+    const ti = $('div', 't abs center', 'top:560px;font-size:84px;font-weight:700', s.title || '');
+    const sub = $('div', 't abs center small', 'top:690px;font-size:44px', s.sub || '');
+    return (t) => { appear(k, .15, t); appear(ti, .5, t); appear(sub, .85, t); };
+  },
+  triad(s) {
+    const n = s.items.length, cw = 480, x0 = (W - n * cw) / 2;
+    const els = s.items.map((it, i) => [$('div', 't abs', `left:${x0 + i * cw}px;width:${cw}px;top:390px;text-align:center;font-size:120px;font-weight:700;color:${i === n - 1 ? 'var(--loss)' : 'var(--gold)'}`, it.word),
+                                        $('div', 't abs', `left:${x0 + i * cw}px;width:${cw}px;top:560px;text-align:center;font-size:50px;color:var(--muted)`, it.sub)]);
+    return (t) => els.forEach((e, i) => { const t0 = at(i, .3 + i * Math.max(.7, D * .28)); appear(e[0], t0, t); appear(e[1], t0 + .2, t); });
+  },
+  label(s) {   // a lower third over a picture (transparent background)
+    const box = $('div', 'abs', `left:${T.safe_px[0]}px;bottom:${T.safe_px[1] + 40}px;padding:22px 40px 24px 34px;border-left:8px solid var(--gold);background:linear-gradient(90deg, rgba(20,15,11,.86), rgba(20,15,11,.62));border-radius:0 14px 14px 0;box-shadow:0 12px 40px rgba(0,0,0,.35)`,
+                  `<span class="t n" style="font-size:58px;color:var(--ink)">${s.text}</span>`);
+    return () => {};
+  },
+};
+
+window.setup = (spec, dur, tokens, times) => {
+  S = spec; D = dur; T = tokens; TM = times || null;
+  const r = document.documentElement.style, c = tokens.colors, z = tokens.sizes;
+  Object.entries(c).forEach(([k, v]) => r.setProperty('--' + k, v));
+  r.setProperty('--text', `'${tokens.fonts.text}'`); r.setProperty('--numbers', `'${tokens.fonts.numbers}'`);
+  r.setProperty('--title', z.title + 'px'); r.setProperty('--label', z.label + 'px'); r.setProperty('--small', z.small + 'px');
+  r.setProperty('--number', z.number + 'px'); r.setProperty('--number-mid', z.number_mid + 'px');
+  const st = document.getElementById('stage'); st.innerHTML = ''; st.className = (spec.type === 'label' || (tokens.backdrop || {}).mode === 'picture') ? '' : 'full';
+  window.draw = TPL[spec.type](spec); return document.fonts.ready.then(() => true);
+};
+window.seek = (t) => { window.draw(t); document.querySelectorAll('#stage .fit').forEach(fit);
+  // a slow camera push over the whole graphic, so a finished graphic never sits frozen (labels stay still: they ride on a moving picture)
+  if (S.type !== 'label') document.getElementById('stage').style.transform = `scale(${1 + 0.025 * Math.min(1, t / Math.max(D, 0.1))})`; };
+// shrink a one-line text until it fits its box (long Hindi values must never wrap into their neighbours)
+function fit(e) { if (e.dataset.fitted === e.textContent) return; let f = parseFloat(e.dataset.size || getComputedStyle(e).fontSize); e.dataset.size = f;
+  e.style.fontSize = f + 'px'; while (e.scrollWidth > e.clientWidth + 1 && f > 40) { f -= 4; e.style.fontSize = f + 'px'; } e.dataset.fitted = e.textContent; }
+// text that spills outside its box or outside the title-safe area
+window.overflow = () => {
+  const bad = [], sx = T.safe_px[0] * .6, sy = T.safe_px[1] * .6;
+  document.querySelectorAll('#stage .t').forEach(e => {
+    if (!e.textContent.trim() || getComputedStyle(e).opacity === '0') return;
+    const b = e.getBoundingClientRect(), r = document.createRange(); r.selectNodeContents(e); const tb = r.getBoundingClientRect();
+    if (tb.width > 0 && (tb.left < sx || tb.right > W - sx || tb.top < sy || tb.bottom > H - sy)) bad.push('outside the safe area: ' + e.textContent.trim().slice(0, 40));
+    if (e.scrollWidth > e.clientWidth + 2 && getComputedStyle(e).width !== 'auto' && e.clientWidth > 0) bad.push('text wider than its box: ' + e.textContent.trim().slice(0, 40));
+  });
+  // two visible texts on top of each other (measured on the glyphs, not the boxes)
+  const boxes = [...document.querySelectorAll('#stage .t')].filter(e => e.textContent.trim() && +getComputedStyle(e).opacity > .5 && !e.querySelector('.t')).map(e => {
+    const r = document.createRange(); r.selectNodeContents(e); return { e, b: r.getBoundingClientRect() }; }).filter(x => x.b.width > 0);
+  for (let i = 0; i < boxes.length; i++) for (let j = i + 1; j < boxes.length; j++) {
+    const a = boxes[i].b, c = boxes[j].b, ox = Math.min(a.right, c.right) - Math.max(a.left, c.left), oy = Math.min(a.bottom, c.bottom) - Math.max(a.top, c.top);
+    if (ox > 6 && oy > 6 && !boxes[i].e.contains(boxes[j].e) && !boxes[j].e.contains(boxes[i].e)) bad.push('texts overlap: "' + boxes[i].e.textContent.trim().slice(0, 24) + '" and "' + boxes[j].e.textContent.trim().slice(0, 24) + '"');
+  }
+  return bad;
+};
+</script>

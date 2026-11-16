@@ -55,9 +55,10 @@ function appear(el, t0, t, dy = 26) { const p = easeOut((t - t0) / T.motion.in_s
 const TPL = {
   number(s) {
     const big = s.small ? 'var(--number-mid)' : 'var(--number)';
-    const lab = $('div', 't label abs center', 'top:330px', s.label || '');
-    const val = $('div', 't n abs center fit', `top:${s.small ? 470 : 420}px;width:${W}px;font-size:${big};color:${tone(s.tone || 'gold')};line-height:1;white-space:nowrap`, '');
-    const sub = $('div', 't abs center small', `top:${s.small ? 640 : 670}px;font-size:40px`, s.sub || '');
+    const lab = $('div', 't label abs center', 'top:280px;font-size:54px;color:var(--ink);text-shadow:0 4px 24px rgba(0,0,0,.6)', s.label || '');
+    const glow = (s.tone || 'gold') === 'gold' ? '0 0 60px rgba(232,195,106,.32),' : '';
+    const val = $('div', 't n abs center fit', `top:${s.small ? 490 : 440}px;left:${T.safe_px[0]}px;width:${W - 2 * T.safe_px[0]}px;font-size:${big};color:${tone(s.tone || 'gold')};line-height:1;white-space:nowrap;text-shadow:${glow}0 6px 30px rgba(0,0,0,.6)`, '');
+    const sub = $('div', 't abs center small', `top:${s.small ? 680 : 720}px;font-size:46px;text-shadow:0 3px 18px rgba(0,0,0,.6)`, s.sub || '');
     const numeric = typeof s.value === 'number';
     return (t) => {
       appear(lab, .1, t);
