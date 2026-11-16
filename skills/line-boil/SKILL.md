@@ -1,6 +1,6 @@
 ---
 name: line-boil
-description: Makes a narrated, funny explainer video in a hand-drawn cartoon style with line boil, told by a cast of different beans (the channel is The Bean With Bad Ideas). Any subject that helps people learn something works, concrete or abstract: science, health, money, tech, history, psychology, how things work, everyday life. Output is an MP4 (Shorts are 9:16, 1080x1920, 30 to 60 s) with word-timed captions, a YouTube .srt, a free local voiceover, synthesised cartoon sound effects and a thumbnail. Variable-width ink lines, flat red, blue and yellow fills on off-white paper, 24 fps animation on twos, anticipation and smear frames, faces that act. Use this whenever the user asks for a video, reel, short, TikTok or animated explainer in the line-boil or hand-drawn cartoon style, says "make a video about X" after seeing this style, asks for a "Pip and the Star" style animation, or wants any topic explained as a cartoon, even if they don't name the style.
+description: Makes a narrated, funny explainer video in a hand-drawn cartoon style with line boil, where the topic's own things (animals, places, objects, body parts, machines, people) are drawn as themselves and act, with beans only where they help (the channel is The Bean With Bad Ideas). Any subject that helps people learn something works, concrete or abstract: science, health, money, tech, history, psychology, how things work, everyday life. Output is an MP4 (Shorts are 9:16, 1080x1920, 30 to 60 s) with word-timed captions, a YouTube .srt, a free local voiceover, synthesised cartoon sound effects and a thumbnail. Variable-width ink lines, flat red, blue and yellow fills on off-white paper, 24 fps animation on twos, anticipation and smear frames, faces that act. Use this whenever the user asks for a video, reel, short, TikTok or animated explainer in the line-boil or hand-drawn cartoon style, says "make a video about X" after seeing this style, asks for a "Pip and the Star" style animation, or wants any topic explained as a cartoon, even if they don't name the style.
 ---
 
 # line-boil
@@ -93,8 +93,8 @@ How to apply it:
    again, not a verdict. The first 15 seconds confirm the title's promise, open a question the viewer can't close, and prove the payoff exists.
    Any subject is fair game, abstract ones included (inflation, interest, a vaccine, procrastination, a market, a
    deadline): do not avoid them, and do not flatten them into something merely concrete. Turn the idea into a *metaphor you can draw*
-   and give it a bean to play it (see **Cast**). Hard-to-draw words (numbers, names, jargon) get a prop, a label shape or a bean
-   standing in for them. The viewer should be able to repeat the point to a friend afterwards.
+   and draw it (see **Picture and cast**). Hard-to-draw words (numbers, names, jargon) get a prop, a label shape, a map or a
+   scale comparison. The viewer should be able to repeat the point to a friend afterwards.
    **Write it like a script people repeat.** A strong Short has: (1) a hook that names the belief everyone holds and breaks it, or
    states a paradox the viewer has lived, in under 12 words, with a concrete image (a Monday meeting that lasts a year) and no
    throat-clearing; (2) sentence 2 that deepens it ("Same clock. So who's stealing your weekend?"); (3) a mechanism told through ONE
@@ -104,7 +104,7 @@ How to apply it:
    saying is false if the research supports it; say "that's not quite it" and give the real reason), and anything uncertain is hedged
    ("scientists think"). hookscore.py rates most explainer hooks WEAK because it is tuned to creator advice, so use it to compare the
    five candidates and spot a formula, then choose by judgment (a Contrarian Flip, The Mistake or a paradox usually wins).
-   **Funny.** The channel is dry-funny in every genre. Put a joke roughly every 8 to 10 seconds in a Short (10 to 15 in a long video), mostly in a bean's reaction, a
+   **Funny.** The channel is dry-funny in every genre. Put a joke roughly every 8 to 10 seconds in a Short (10 to 15 in a long video), mostly in a character's reaction (the subject itself or a bean), a
    literal-minded image, or the last line, never in shouting. A running gag that comes back at the end is worth more than five
    one-offs. Funny never replaces correct: facts stay checked and honest.
    **Length.** A Short's length is variable: you decide it from the topic. The target counts the voiceover; a Short has no outro and ends 1.6 s after the last word (breath, iris close, black), so the voiceover is almost the whole video. Before writing, list the three things a viewer must leave knowing (the answer, why it is true, one surprising detail or number they can repeat), then write only the sentences that carry those: ONE core mechanism, no padding, and never cut a needed fact just to hit a number. That usually lands at 30 to 50 s of voiceover (about 95 to 155 words). Go up to 60 s only when every extra beat escalates (a bigger scale, a new consequence, as "What if you grew 1 cm every second?" did), never for more explanation. If the user names a duration (the Bean Studio Agent tab and Topics wizard pass it as "TARGET LENGTH: N seconds"), follow it instead. Kokoro reads about 3.1 words per second, so N seconds is about N x 3.1 words. Run `build.py voice <project> --target N` (N = the seconds you chose, or the user's) after writing; it prints `TARGET N s: OK`, or how many words to cut or add, and you repeat the read until it is within 4 s of the target. More than 60 s of voiceover is a long video (16:9, chapters): use the **line-boil-wide** skill instead, which runs on this same engine (`build.py new <project> --wide`).
@@ -114,21 +114,29 @@ How to apply it:
    agency page), never invent one, and drop what you cannot verify. Write `<project>-sources.md`: a table of claim, link, and how far you
    checked it (full text / abstract only / secondary report), plus a short "not claimed, on purpose" list. The YouTube sheet's Sources
    come from it. Then do the **script review** (**Quality review** below): score it, and rewrite only the weak lines, before the voice.
-3. **Cast.** (Choose the genre and theme first: see **Genre** above.) The channel is The Bean With Bad Ideas, so the cast is **beans**: use *different beans* to explain the topic, one
-   bean per idea or role (the viewer, the thing being explained, the force pushing against it, the sceptic, the crowd).
-   Make them different at thumbnail size: body shape (`bean`, `pear`, `tall`, `ball`, `box`, `wide`, `tiny`), colour (RED, BLUE,
-   YEL, PAPER), accessory (hat, glasses, scarf, tuft) and a habit of expression. Two to four beans is the sweet spot; a crowd of
-   `tiny` beans can stand for a quantity. Abstract ideas get a bean with a *costume that shows what it does*, for example
-   Inflation as a big red bean that keeps swelling and shrinking everyone's coins, Interest as a tiny yellow bean that
-   duplicates itself, a Virus as a spiky bean, Procrastination as a sleepy bean on a sofa. See "A cast of beans" and "Mindful details" in
-   `references/style.md`. Props stay props. Pick from the shapes, accessories and expressions in `references/api.md` before
-   inventing new drawing code. The red host bean (glasses, tuft, yellow scarf, lit cracked bulb) may appear in any video as the
-   narrator-in-frame, but is not required.
-4. **Show the plan.** Before animating, give the user the script with its review scores, plus a one-line cast list and a one-line visual per
-   sentence. Wait for an OK unless they asked you to go straight through.
+3. **Picture and cast: show what is said.** (Choose the genre and theme first: see **Genre** above.) The topic's own things are
+   the stars, drawn as themselves: a video about dinosaurs shows dinosaurs, one about the heart shows a heart, one about Mexico shows
+   Mexico's shape. A sentence that names a thing shows that thing, recognisable at phone size (see **Show what is said** in
+   `references/style.md`). Beans are a tool, not the default: use one only where it helps, and never in place of a real thing the
+   script names.
+   - **When a bean helps:** the viewer's stand-in ("you"), a reactor who says what the audience feels, a sceptic, the host bean as
+     narrator-in-frame, or an abstract idea with no look of its own (inflation, procrastination, a deadline) played as a costume bean.
+   - **When it does not:** an animal, a place, an object, a body part, a machine, a person's job or a historical figure. Draw the real
+     thing. If it should act, it gets a face with `face()` (the same eyes, brows and mouth as a bean: a scared T. rex, a smug moon).
+   - **The mix:** most shots have the subject as the focus. A bean is the focus in at most about a third of the shots, and often
+     it is a small reactor in a corner. Many shots need no character at all: a map, a cutaway, a scale comparison, a close-up.
+   - **Draw new things.** Writing a drawing function in `web/cast.js` for this topic's subjects is the normal job, not a last resort:
+     build each from `shape`, `line`, `tube` and `blobPts`, silhouette first, with the 2 or 3 features that make it recognisable
+     (see "Drawing the subject" in `references/api.md`). Reuse the props, sets and actions in `references/api.md` wherever they fit.
+   - **Characters, when you use them,** are different at a glance (shape, colour, accessory) and keep one colour per role. The red
+     host bean (glasses, tuft, yellow scarf, lit cracked bulb) is optional.
+4. **Show the plan.** Before animating, give the user the script with its review scores, plus the list of subjects and characters and a one-line visual per
+   sentence (what is said, then what is shown). Wait for an OK unless they asked you to go straight through.
 5. **Project and voice.** Run `build.py new <project>` (add `--theme noir` etc. for a non-classic genre; just the slug; it lands in `C:\Users\praty\youtube\line-boil\<project>`), write `script.json`, then run `build.py voice <project>`.
    It prints every word with its start time, grouped by sentence. Those times are your timeline.
-6. **Shots.** Write `web/cast.js` and `web/shots.js`. No shot runs longer than about 4 s, so plan about one shot per 3 to 4 s of
+6. **Shots.** Write `web/cast.js` (this topic's drawn subjects and any characters) and `web/shots.js`. Every shot passes the
+   **picture test**: with the sound and captions off, a viewer could say which sentence it is. Vary the shot types (a wide scene, a close-up on the
+   object, a map, a cutaway, a scale comparison, a reaction) and never use the same set and framing three shots in a row. No shot runs longer than about 4 s, so plan about one shot per 3 to 4 s of
    voice (10 to 14 for a 40 s Short): split a long explainer sentence into two shots (a wide set-up, then a close-up on the prop or the
    reaction), and inside a shot change something on screen with `at()` about every 2 s. Time every action to the word that motivates it with `at()`. If a word
    occurs more than once, pass `nth` or use a longer phrase. `check` warns you when you didn't. Start the first
@@ -149,7 +157,7 @@ How to apply it:
    a pinned comment and an upload-settings checklist, all in the channel voice from `~/.claude/youtube/voice.md`.
    Follow `references/youtube.md`, which brings in the `yt-package` and `yt-seo` rules. Do this for every new video.
 11. **Hand over** the full path, `C:\Users\praty\youtube\line-boil\<project>\<project>.mp4`, plus the `.srt`,
-   `<project>-thumbnail.png` and `<project>-youtube.txt` beside it, with the script, a short note on the cast, the winning hook with its
+   `<project>-thumbnail.png` and `<project>-youtube.txt` beside it, with the script, a short note on the subjects and characters, the winning hook with its
    score, the review's four scores and remaining issues, the sheet's title, thumbnail text and first two description lines, and anything you could not verify. End with: ship it, or
    change it?
 
@@ -190,7 +198,7 @@ A first draft that scores 8 or more everywhere is unusual: before accepting that
 sound safer.
 
 **3. Rewrite only the weak lines.** Do one revision pass.
-- Keep the strong hook, the jokes, the metaphors and the beans, and keep the core idea and the length (the voice target still has to pass).
+- Keep the strong hook, the jokes, the metaphors and the pictures, and keep the core idea and the length (the voice target still has to pass).
 - Read the new lines aloud: they must sound natural, with no filler, no predictable explanation, and the answer still not given away early.
 - Never rewrite the whole script to fix one line.
 
@@ -198,7 +206,8 @@ Then re-score and write both scores in the review.
 
 **4. Review the animation** after `build.py video`. Use the sheet you look at in step 8 plus two stills: one at 0 s (the first frame)
 and one just before the iris closes (the last picture). Read no other images. Score each out of 10:
-- the pictures tell the story with the captions covered
+- every shot shows what its sentence says, recognisably (a sentence about dinosaurs shows a dinosaur; a named place is its real shape)
+- the topic's subject, not a stand-in bean, is the focus in most shots, and the shots vary (wide, close-up, map, cutaway, reaction)
 - the faces act, fit the line, and are funny
 - there is enough movement and variety: no two shots alike in a row, and something changes about every 2 s
 - it is in sync: actions land on their words. Judge this from the `at()` anchors and `check`; stills cannot show sound, so say so rather than guess.
@@ -210,7 +219,7 @@ Fix only the shots that are visibly weak, in at most one fix round and one re-re
 **5. Final score.** In `<project>-review.md` and the hand-over, give:
 - the original script score
 - the revised script score
-- the animation score (the mean of the six)
+- the animation score (the mean of the seven)
 - the final overall score (the mean of the revised script score and the animation score)
 - the remaining issues, if any
 

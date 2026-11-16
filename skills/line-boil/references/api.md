@@ -124,12 +124,43 @@ Actions set absolute `x`/`y` only where they move the character, so put a base k
 - Props: `star(x, y, r, rot, seed, {face})`, `bulb(x, y, r, seed, on)`, `heart(x, y, r, seed)`, `drop(x, y, r, seed)`,
   `arrow([x, y], [x, y], seed, color, bow)`.
 - Effects: `burst(x, y, r0, r1, seed, phase)`, `plus(x, y, s, seed)` (sparkle), `speedLines(x, y, [dx, dy], len, spread, seed)`.
-- `miniFace(x, y, scale, rot, seed, 'smile' | 'o' | 'frown' | 'happy' | 'sleepy', look)` puts a face on any prop.
+- `miniFace(x, y, scale, rot, seed, 'smile' | 'o' | 'frown' | 'happy' | 'sleepy', look)` puts a face on any prop. For a subject that should really act, use `face()` (below).
   Props that act are this style's secret weapon.
 - `gridSafe(() => {...}, k = 0.76)` (thumb.js only) shrinks what you draw inside it about the centre so key marks stay in y 130 to 830, safe for a 3:4 grid crop.
 - Thumbnail lettering (`web/thumb.js` only): `bigWord(text, cx, y, size, fill, seed)` draws one big word in the caption
   font with tilted letters, a thick ink outline and a drop shadow. `build.py thumb` renders frame 0 of `thumb.js`.
 - Make new props in `cast.js` from the ink marks. The example's `lightWave`, `bit` and `scatter` show the pattern.
+
+**Drawing the subject.** Most topics need things the engine does not ship (a T. rex, a heart, a volcano, a satellite). Write a drawing
+function for each in `web/cast.js`. It is normal, and about 15 to 25 lines:
+1. Side or front view, whichever reads at a glance. Choose (x, y) as the point where it stands, and a scale s.
+2. Build the silhouette from 3 to 6 `shape()` parts (body, head, tail, legs), each with a fixed seed so it boils, not flickers.
+3. Add the 2 or 3 identity features (teeth, tiny arms, a snout, spikes, a logo), then one flat fill for the belly or a highlight.
+4. Animate with t: a bob, a jaw that opens, a tail that sways. Return useful anchors, and call `face()` on the head if it acts.
+
+```js
+// a T. rex, side view facing right; (x, y) = between the feet
+function trex(x, y, s, t, o = {}) {
+  const P = (px, py) => [x + px * s, y + py * s + (py < -40 ? Math.sin(t * 6) * 3 * s : 0)], pts = a => a.map(p => P(...p));
+  const col = o.color || BLUE, sd = o.seed || 500, jaw = o.roar ? 18 : 4;
+  shape(pts([[-40, -95], [-150, -70], [-200, -55], [-150, -92], [-60, -140]]), col, 4.4, sd, 1.4);                 // tail
+  shape(pts([[-30, -5], [-20, -70], [5, -70], [10, -5]]), col, 4, sd + 1, 1.2);                                   // legs
+  shape(pts([[20, -5], [25, -60], [50, -60], [48, -5]]), col, 4, sd + 2, 1.2);
+  shape(pts(blobPts(0, -105, 75, 55, sd + 3, 12, 0.04)), col, 4.6, sd + 3, 1.4);                                   // body
+  fillOnly(pts(blobPts(15, -88, 45, 26, sd + 4, 9, 0.05)), PAPER, sd + 4);                                         // belly
+  shape(pts([[40, -150], [55, -200], [150, -200], [165, -160], [150, -135], [70, -128]]), col, 4.6, sd + 5, 1.4);  // big head
+  shape(pts([[75, -135], [160, -140 + jaw], [150, -118 + jaw], [80, -120]]), col, 4, sd + 6, 1.2);                  // jaw
+  for (let i = 0; i < 5; i++) shape(pts([[95 + i * 12, -138], [101 + i * 12, -128], [107 + i * 12, -138]]), PAPER, 1.6, sd + 10 + i, 0.6);
+  line(pts([[55, -110], [75, -100], [82, -88]]), 4, sd + 7, INK, 1);                                               // tiny arms
+  line(pts([[45, -105], [62, -92], [66, -82]]), 4, sd + 8, INK, 1);
+  return face(...P(110, -178), 0.75 * s, o.expr || 'neutral', { spread: 0.7, t, look: o.look });
+}
+// in a shot: trex(250, gy, 1.2, t, { expr: at('vanished') - 0.1 < t ? 'scared' : 'neutral' });
+```
+
+- `face(x, y, s, expr, { look, facing, spread, eye, talk, blink, t })` draws a bean's acting eyes, brows and mouth on anything: the
+  same `expr` names (`scared`, `smug`, `shocked` ...) or an object `{eyes, mouth, brow, browY}`. `talk: true` makes the mouth move with the
+  voiceover's words. Draw the subject first, then the face on top.
 
 ## 6b. Sets: ready-made scenes
 `setSunny(t)`, `setNight(t)`, `setRoom(t, {wall, floor})`, `setStreet(t)`, `setStage(t, {wall})`, `setDesk(t, {wall, chart})`, `setSpace(t)` and

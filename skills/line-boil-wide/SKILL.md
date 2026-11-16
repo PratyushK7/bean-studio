@@ -1,6 +1,6 @@
 ---
 name: line-boil-wide
-description: Makes a long, narrated, funny explainer video (16:9, 1920x1080, 4 to 15 minutes, MP4) in the channel's hand-drawn cartoon style with line boil, told by a cast of different beans (the channel is The Bean With Bad Ideas). It is the long-form sibling of the line-boil skill and uses the same engine, characters, props and sound, but plans a chaptered, sourced script with a scored hook, a scene and music plan that changes with the script, one shots file per chapter, YouTube chapters timed from the real voiceover, closed captions (no burned-in subtitles, the long-form standard) and a 1280x720 thumbnail. Any subject that teaches something works, concrete or abstract. Use this whenever the user asks for a long video, a long-form video, a landscape or 16:9 video, an episode, a "6 to 12 minute" explainer, or any video over 60 seconds in this style, including when the Bean Studio Topics tab or Agent tab asks for one. For Shorts (9:16, up to 60 seconds) use line-boil instead.
+description: Makes a long, narrated, funny explainer video (16:9, 1920x1080, 4 to 15 minutes, MP4) in the channel's hand-drawn cartoon style with line boil, where the topic's own things are drawn as themselves and act, with beans only where they help (the channel is The Bean With Bad Ideas). It is the long-form sibling of the line-boil skill and uses the same engine, characters, props and sound, but plans a chaptered, sourced script with a scored hook, a scene and music plan that changes with the script, one shots file per chapter, YouTube chapters timed from the real voiceover, closed captions (no burned-in subtitles, the long-form standard) and a 1280x720 thumbnail. Any subject that teaches something works, concrete or abstract. Use this whenever the user asks for a long video, a long-form video, a landscape or 16:9 video, an episode, a "6 to 12 minute" explainer, or any video over 60 seconds in this style, including when the Bean Studio Topics tab or Agent tab asks for one. For Shorts (9:16, up to 60 seconds) use line-boil instead.
 ---
 
 # line-boil-wide
@@ -10,7 +10,7 @@ A topic in, a finished `<project>/<project>.mp4` (1920x1080) plus its `.srt`, `-
 and this file only adds what is different for a long video:
 
 - `~/.claude/skills/line-boil/SKILL.md` (workflow, voice, ending, sound)
-- `~/.claude/skills/line-boil/references/api.md` and `style.md` (characters, props, acting, **"A cast of beans"**, **"Mindful details"**)
+- `~/.claude/skills/line-boil/references/api.md` and `style.md` (characters, props, acting, **"Show what is said"**, **"Who is on screen"**, **"Mindful details"**, and **"Drawing the subject"** with `face()` in api.md)
 - `~/.claude/youtube/voice.md` (the channel voice)
 - `references/wide.md` in this skill (staging for 16:9, pacing, chapters, **the scene and sound plan**, cost control)
 
@@ -46,7 +46,7 @@ A 7-minute video renders in about 2.5 minutes on the user's computer (it is free
 
 1. **Length and shape.** The user gives minutes (the Bean Studio prompt says `TARGET LENGTH: N seconds`). The voice reads about 3.1 words
    a second, so 7 minutes is about 1,300 words. Plan 5 to 9 **chapters** of 45 to 90 seconds. Every chapter has one idea, one
-   metaphor (a bean) and a one-line takeaway; the video ends on a callback to its opening image, never on a recap.
+   central picture (the subject drawn as itself, or a metaphor when it has no look) and a one-line takeaway; the video ends on a callback to its opening image, never on a recap.
 2. **Hook, with yt-script.** The first 15 seconds do three jobs or the video leaks: confirm the click the title promised, open a
    question the viewer cannot close, and prove the payoff exists. Write **five** candidate first lines (against the 21 formulas in
    `~/.claude/skills/yt-script/hooks.json`), put them one per line in `<project>-hooks.txt`, run
@@ -84,7 +84,7 @@ A 7-minute video renders in about 2.5 minutes on the user's computer (it is free
    start of every sentence; use `at('a few words')` in shots for exact word times. Then `build.py chapters <project>`; fix
    `NOT VALID FOR YOUTUBE` before moving on.
 6. **Scene and sound plan (required, before any shot).** A long video that keeps one sky and one tune for seven minutes is a screensaver.
-   Write `<project>-plan.md`: one row per chapter with **the location/set, the time of day, the dominant background colour, which beans
+   Write `<project>-plan.md`: one row per chapter with **the location/set, the time of day, the dominant background colour, which subjects and characters
    are on screen, the props, the music mood and why, the sound or silence beat, and the joke**. The picture and the music must follow
    what the script is saying at that moment (the full guide, with every set and mood, is in `references/wide.md`):
    - **Scenes change with the script.** A new place or colour at least every chapter. `setScene(name, t, opts)` gives `sunny`, `night`,
@@ -97,7 +97,7 @@ A 7-minute video renders in about 2.5 minutes on the user's computer (it is free
 7. **Shots, one file per chapter.** Write `web/shots/ch01.js`, `ch02.js`, ... (zero-padded; they load in name order after
    `web/shots.js`, if any; put shared helpers in `cast.js`). Do **one chapter at a time**: write it, render its stills, look at the
    contact sheet, fix, move on. Rules specific to a long video are in `references/wide.md`: the world is **960 x 540**, a new picture or
-   beat at least every 6 to 12 seconds, 2 to 4 beans a shot. **No burned-in captions** (below). The callback lands on a `smear`; the
+   beat at least every 6 to 12 seconds, 2 to 4 characters a shot, and every shot shows what its sentence says (the picture test in step 6 of `~/.claude/skills/line-boil/SKILL.md`; beans only where they help). **No burned-in captions** (below). The callback lands on a `smear`; the
    closing-hook shots follow, and the last of them has `tr: 'iris'` on the speaker's face and a held loop to `VO_END()`, as in a Short.
 8. **Check.** `build.py check` must list the shots with no `[error]`; for a long video it also warns when there is no `musicMood` or only
    one. `build.py stills <project> t1,t2,...` with 2 or 3 times per chapter writes one `stills/sheet.jpg`: read that one image, not every
@@ -119,11 +119,11 @@ A 7-minute video renders in about 2.5 minutes on the user's computer (it is free
 
 Long videos from the big explainer channels do not burn subtitles into the picture. Viewers who want text turn on YouTube's captions, which
 **the `.srt` this tool writes is uploaded for**. Burned-in, word-by-word captions are a Shorts and Reels habit (vertical, sound-off, autoplay).
-So in a long video `CAP.on` is false: put numbers, names and key words on screen as **label shapes held by a bean**, not as subtitles. Only
+So in a long video `CAP.on` is false: put numbers, names and key words on screen as **label shapes** (on the object itself or held by a character), not as subtitles. Only
 if the user asks for burned-in captions set `CAP.on = true` at the top of `cast.js` (they sit in the bottom band).
 
 ## Cost control
 
 Your tokens are the only cost. Read this skill and the two line-boil references once. Write each chapter's shots in one Write call.
 Look at contact sheets, not single stills. Do not re-read files you just wrote. If you are on a cheaper model, keep each chapter to
-5 to 9 shots with simple scenes; the picture can be simple as long as the beans act, the scene changes and the joke lands.
+5 to 9 shots with simple scenes; the picture can be simple as long as it shows what is said, the characters act, the scene changes and the joke lands.

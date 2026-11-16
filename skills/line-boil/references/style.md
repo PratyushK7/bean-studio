@@ -58,27 +58,46 @@ Your job is to make that breath feel intentional:
   nothing after it feels like the video cut out (a Short too: its closing hook is the last shot). In a long video the channel outro
   then thanks the viewer and asks for the like, share and subscribe.
 
-## A cast of beans
+## Show what is said
 
-Every video is told by beans, and the channel's trick is *different beans for different ideas*. This is how an abstract topic
-becomes something you can draw and something that is funny.
+The picture carries the sentence. A viewer with the sound and captions off should be able to say which sentence each shot is.
 
-- **One bean per idea or role.** The viewer ("you"), the thing explained, what opposes it, the sceptic, the crowd. If you cannot
-  say what a bean *wants* in one line, it should be a prop instead.
-- **A costume that shows the idea.** Colour, shape and accessories carry the meaning so no label is needed: a swelling red `ball` for
-  something inflating, a `tiny` yellow bean that splits in two every beat for compounding, a `tall` thin bean for a deadline, a
-  spiky `rays` bean for a virus, a sleepy `wide` bean for procrastination, a `box` bean with a hat for an institution.
-- **Metaphor first.** Choose the physical metaphor before writing the shots (a queue, a leaky bucket, a tug of war, a stage with a
-  heckler), then cast the beans into it. The same metaphor should carry the whole video and return in the last line.
-- **Different at a glance.** No two beans share both colour and shape. Keep one stable colour per role for the whole video.
-- **Humour lives in the beans.** Reactions, deadpan stares, a bean that takes everything literally, a sceptic bean that is always
-  wrong the same way. Let the faces act on every beat (see Acting).
-- **Numbers and names** get a label shape held by a bean, a counter that ticks up, or a crowd of `tiny` beans, never a paragraph.
-- **Two to four beans per shot** at most; a crowd is one object. The red host bean is available as narrator-in-frame.
+- **The real thing first.** The nouns in the sentence are on screen as themselves. "Dinosaurs vanished" shows dinosaurs vanishing.
+  "A rock hit what's now Mexico" shows Mexico's coastline and the rock. "Plants died" shows plants wilting. Never replace a named thing
+  with a bean, and never cover it with a caption-only shot.
+- **The verb happens.** If the line says it hit, spread, shrank, starved or split, the shot shows that action, timed to the word with `at()`.
+- **Recognisable at phone size.** Silhouette first, then the 2 or 3 features a stranger knows it by: a T. rex is a big head, tiny arms,
+  a thick tail and two legs; a heart has its two lobes and the arteries on top; Earth has its continents. A blob with a label is a failure.
+- **Real shapes for real places.** A named country, coast or continent is its own outline, simplified but true, not a yellow blob.
+- **Scale and numbers become pictures.** "Wider than Everest is tall" puts the rock beside Everest. "Nothing over 25 kilos" shows a scale with a dog-sized animal on it.
+  "Three in four species" is four silhouettes with three going dark.
+- **Vary the shot.** Mix a wide scene, a close-up on the object, a map, a cutaway or diagram, a scale comparison, a montage and a reaction.
+  Never the same set and framing three shots in a row.
+- **The subject can act.** When the topic's thing should feel something (a nervous dinosaur, a smug asteroid), give it `face()`: the same
+  eyes, brows and mouth a bean has. Keep its real body.
+
+## Who is on screen (beans where they help)
+
+Beans are the channel's characters, but a video is about its topic, and the topic's own things are the stars.
+
+- **Use a bean for a role, not for a thing:** the viewer's stand-in ("you"), a reactor who says what the audience is thinking, a
+  sceptic who is wrong the same way every time, the host bean as narrator-in-frame, or an idea with no real-world look (inflation as a
+  swelling red bean, procrastination as a sleepy bean on a sofa, compounding as a tiny bean that splits in two every beat).
+- **Never a bean for a real thing:** an animal, a place, an object, a body part, a machine, a person's job or a historical figure. Draw
+  the real thing, and give it a face if it should act.
+- **The mix:** in most shots the subject is the focus. A bean is the focus in at most about a third of the shots, often as a small
+  reactor in a corner. Many shots need no character: a map, a cutaway, a close-up, a comparison.
+- **Metaphor, when you use one,** is a drawable situation (a queue, a leaky bucket, a tug of war), and it still shows the real subject
+  where the script names it. The same metaphor can carry the video and return in the last line.
+- **Characters are different at a glance.** No two share both colour and shape. Keep one stable colour per role for the whole video.
+- **Humour lives in the faces and the literal pictures:** a subject reacting to its own fate, a deadpan stare, an image that takes the
+  sentence literally. Let the faces act on every beat (see Acting).
+- **Numbers and names** get a label shape, a counter that ticks up, a map or a scale comparison, never a paragraph.
+- **Two to four characters per shot** at most; a crowd or a herd is one object.
 
 ## Mindful details (recognisable on sight)
 
-This file teaches a drawing style. It is not limited to beans: the same line-boil look applies to anything you draw (characters, objects, logos, places, screens, charts). Before drawing a thing, ask: **what would make a stranger recognise it instantly?**
+This file teaches a drawing style, and the same line-boil look applies to anything you draw (characters, objects, logos, places, screens, charts). Before drawing a thing, ask: **what would make a stranger recognise it instantly?**
 
 - **A real thing looks like itself.** Anything that stands for a real brand, product, place or person keeps its identity cues (signature colours, shape, symbol), drawn in the line-boil way. Example: an Instagram phone or bean gets the camera glyph and the purple-magenta-orange sweep, not a random yellow.
 - **Brand colours are the one palette exception.** Use them as flat fills with the usual ink outline, a gradient as 3 to 4 flat bands, on that one object only. Everything else stays RED, BLUE, YEL, PAPER, INK.

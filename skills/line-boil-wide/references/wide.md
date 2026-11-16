@@ -6,16 +6,16 @@ Everything in line-boil's `style.md` and `api.md` applies. These are the differe
 
 - The world is **960 x 540** (drawn at 2x). `W` and `H` are 960 and 540; y runs down. A Short is 540 x 960.
 - The frame is only 540 high, so characters are **smaller than in a Short**: a `tall` bean at size 1.1 is already a third of the
-  height. Use `size` 0.9 to 1.4 for a hero, 0.5 to 0.8 for a reactor, 1.5 to 2 only for a close-up. `tiny` beans can go to 1.5.
+  height. Use `size` 0.9 to 1.4 for a hero, 0.5 to 0.8 for a reactor, 1.5 to 2 only for a close-up. `tiny` beans can go to 1.5. A drawn subject (a T. rex, a volcano) follows the same rule: a third to a half of the height for the hero.
 - Put the **ground near y 430** (the `set*()` helpers return it). Keep faces and key props between y 60 and 430 and x 60 and 900.
-- A wide frame has room for **two or three beans side by side** with space between them; a crowd is one object (a row of `tiny` beans).
+- A wide frame has room for **two or three characters side by side** with space between them; a crowd is one object (a herd, a crowd, a row of `tiny` beans).
 - Camera moves are gentler than in a Short: `z` 1 to 1.06 over a shot, a pan of 40 to 80 px. A fast `smear` between chapters is fine.
 
 ## No burned-in captions
 
 The industry standard for long explainers (Kurzgesagt, Veritasium, MinuteEarth, TED-Ed, Vox, Wendover, CGP Grey and others: checked on
 frames from their videos) is **no subtitles in the picture**; closed captions are a track viewers switch on, and the `.srt` is uploaded for
-that. `CAP.on` is false for a wide project. Show numbers, names and key terms as on-screen labels (a sign or a label shape held by a bean,
+that. `CAP.on` is false for a wide project. Show numbers, names and key terms as on-screen labels (a sign, a label shape on the object or held by a character, a map,
 a counter that ticks up) for the second they matter. If the user asks for burned-in captions, `CAP.on = true` in `cast.js`: they then sit in
 the bottom band (y 476), up to five words at a time, and a close-up can move them with `cap: 'top'` or `cap: false`.
 
@@ -23,7 +23,7 @@ the bottom band (y 476), up to five words at a time, and a close-up can move the
 
 Write `<project>-plan.md` before the first shot. One row per chapter:
 
-| Chapter | Set and place | Time and colour | Beans | Props | Music mood | Sound / silence | The joke |
+| Chapter | Set and place | Time and colour | Subjects and characters | Props | Music mood | Sound / silence | The joke |
 |---|---|---|---|---|---|---|---|
 
 Then build the shots from it. The rules:
@@ -31,7 +31,7 @@ Then build the shots from it. The rules:
 1. **The scene follows the script.** Where the sentence happens is where the picture is: a theatre in the sunk-cost chapter, a gym in the
    present-bias chapter, a night sky for the 3 a.m. worry, a stage for a verdict, a desk for the data. Change the place or the dominant
    colour at least every chapter, and again inside a long chapter when the idea turns. Two neighbouring chapters never share both set and colour.
-2. **Use the set helpers**, then dress them with props and beans. They all work in this frame and return the ground y:
+2. **Use the set helpers**, then dress them with this topic's drawn subjects, props and (where they help) beans. They all work in this frame and return the ground y:
 
    | Set | Looks like | Use it for |
    |---|---|---|
@@ -72,8 +72,8 @@ Then build the shots from it. The rules:
 - A **new picture or a clear beat at least every 6 to 12 seconds**. A shot of 20 s or more is a warning in `build.py check`.
 - About **one shot per sentence or two**, so roughly 40 to 70 shots in 7 minutes. Reuse a set with a different pose and framing
   rather than building a new set every time, but change the set when the idea changes.
-- A joke every 10 to 15 seconds, in the beans' faces and the last line of a chapter. A running gag that returns.
-- Open every chapter with a clear signal (a bean walking in with a label shape: "1", "Bug 2", "Chapter 3") so a viewer who scrubs
+- A joke every 10 to 15 seconds, in the characters' faces (the subjects' own, via `face()`, or a bean's), literal pictures and the last line of a chapter. A running gag that returns.
+- Open every chapter with a clear signal (the chapter's subject or a character arriving with a label shape: "1", "Bug 2", "Chapter 3") so a viewer who scrubs
   knows where they are. `bigWord(text, cx, y, size, fill, seed)` is available for a short title card.
 - Close every chapter with a one-line takeaway, then a quick beat to reset. Vary the rhythm: a fast montage after a slow explanation.
 - Hold a face on the punchline for at least 6 drawings (0.5 s).

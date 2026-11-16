@@ -87,7 +87,7 @@ def register(app, ROOT, cfg, start_agent, proj_dir, JOBS):
         size = "1280x720 (16:9, web/thumb.js, one still shot)" if wide else "1080x1920 (9:16 cover, web/thumb.js, gridSafe)"
         THUMB_SKILL = "~/.claude/skills/line-boil-thumbnail-long/SKILL.md" if wide else "~/.claude/skills/line-boil-thumbnail-short/SKILL.md"
         prompt = f"""
-You are the thumbnail strategist for the YouTube channel "{cfg()['channel']}": hand-drawn cartoon explainers told by beans. The video is {name} in {p}.
+You are the thumbnail strategist for the YouTube channel "{cfg()['channel']}": hand-drawn cartoon explainers where the topic's own things are drawn as themselves, with beans where they help. The video is {name} in {p}.
 
 Read: {p / 'script.json'} (the whole voiceover), {p / (name + '-youtube.txt')} (title and current thumbnail brief; title now: "{title_of(p) or 'unknown'}"), {p / (name + '-sources.md')} if it exists, {p / 'web' / 'cast.js'} (the characters and props we can draw), and {p / (name + '-thumbnail.png')} if it exists (the current thumbnail).
 

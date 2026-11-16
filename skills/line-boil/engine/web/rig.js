@@ -238,6 +238,25 @@ function drawEye(c, P, ex, ey, side, look, s, seed) {
   }
 }
 
+// face(x, y, s, expr, o): the same acting eyes, brows and mouth a bean has, on ANYTHING you draw yourself (a T. rex's head, a planet,
+// a heart, a phone). (x, y) is the point between the eyes; s scales it (1 = a bean's face). expr is an EXPR name ('scared', 'smug', ...)
+// or an object of face props {eyes, mouth, brow, browY}. o: {look: [dx, dy], facing: 1 | -1, spread (eye gap, default 1), eye (eye size),
+// talk: true (the mouth flaps on the voiceover's words), blink (default true), seed, t, color (behind a 'grin', default RED)}.
+// It draws only the face: draw the subject first, then call face() on top of it. Returns {eyes: [[x,y],[x,y]], mouth: [x,y]}.
+function face(x, y, s = 1, expr = 'neutral', o = {}) {
+  const t = o.t !== undefined ? o.t : NOW, seed = o.seed || 7;
+  const P = Object.assign({}, DEFAULT_POSE, typeof expr === 'string' ? (EXPR[expr] || {}) : expr,
+    { x, y, size: 1, sx: 1, sy: 1, lean: 0, smear: null, facing: o.facing || 1, look: o.look || (EXPR[expr] && EXPR[expr].look) || [0, 0] });
+  const c = { size: s, eye: o.eye || 1, color: o.color || PAPER, seed };
+  if (o.blink !== false && P.eyes === 'open' && ((t + seed * 0.73) % 3.1) < 0.12) P.eyes = 'closed';
+  if (o.talk) P.mouth = talkMouth(t, seed) || P.mouth;
+  const gap = 28 * (o.spread || 1);
+  drawEye(c, P, -gap, 0, -P.facing, P.look, s, seed * 100 + 10);
+  drawEye(c, P, gap, 0, P.facing, P.look, s, seed * 100 + 20);
+  drawMouth(c, P, 2, 21 * (o.spread || 1) + 6, s, seed * 100 + 30);
+  return { eyes: [tp(c, P, -gap, 0), tp(c, P, gap, 0)], mouth: tp(c, P, 2, 27) };
+}
+
 function talkMouth(t, seed) {
   if (typeof WORDS === 'undefined') return null;
   const n = Math.floor(t * 12);
