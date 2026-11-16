@@ -177,8 +177,25 @@ def build(proj, args, bible, segments):
             o0 = out_t + (t0 - seg_start); dur = t1 - t0
             base = {"line": i, "chapter": m["chapter"], "chapter_start": m["chapter_start"], "location": m["location"], "flashback": m["flashback"], "shot": m["shot"], "look": m["look"]}
             if l.get("kind") == "card" or (gman["cards"].get(i) and m["location"] == "graphic"):
-                g = gman["cards"].get(i)
-                shots.append({**base, "kind": "graphic", "src": g["file"], "start": o0, "end": o0 + dur, "location": "graphic", "flashback": False}); prev_move = None; continue
+                g = gman["cards"].get(i); st = g.get("start") or 0.0
+                if st > 0.5:                                         # the graphic starts on its word: a picture carries the words before it
+                    lead = next((e["n"] for e in idx if e.get("shot") == g.get("lead_in")), None) if g.get("lead_in") else None
+                    lead = lead if lead is not None else next((s["pic"] for s in reversed(shots) if s.get("pic") is not None), None)
+                    lp = (proj / cam["hd_dir"] / f"{lead:03d}.png") if lead is not None else None
+                    lp = lp if lp is not None and lp.exists() else (vv.image_for(proj, lead) if lead is not None else None)
+                    if lp:
+                        la = vv.load_json(proj / "analysis" / f"{lead:03d}.json")
+                        lz = cam["max_zoom_hd"] if Image.open(lp).width >= 1.5 * R["width"] else cam["max_zoom_sd"]
+                        prev = shots[-1] if shots else None
+                        if prev and prev.get("pic") == lead and prev.get("move"):     # the same picture is on screen: carry on from its framing, pull back slowly
+                            z, cx, cy = prev["move"][2]; z1 = max(1.0, z - min(0.12, cam["zoom_per_s"] * st * 1.5))
+                            mv = ("continue", (z, cx, cy), clampc(z1, 0.5 + (cx - 0.5) * 0.6, 0.5 + (cy - 0.5) * 0.6))
+                        else:
+                            mv = cutin_move(la, lz, st, cam) or choose_move({**m, "size": "medium"}, la, st, prev_move, lz, cam)
+                        shots.append({**base, "kind": "still", "src": str(lp), "start": o0, "end": o0 + st, "move": mv, "pic": lead, "lead_in": True,
+                                      "location": next((x["location"] for x in reversed(shots) if x.get("pic") == lead), base["location"])})
+                    else: st = 0.0
+                shots.append({**base, "kind": "graphic", "src": g["file"], "start": o0 + st, "end": o0 + dur, "location": "graphic", "flashback": False}); prev_move = None; continue
             n = slot.get(i); pic = None
             if n is not None:
                 hd = proj / cam["hd_dir"] / f"{n:03d}.png"; pic = hd if hd.exists() else vv.image_for(proj, n)
@@ -229,6 +246,8 @@ def build(proj, args, bible, segments):
         p = shots[k - 1]
         if abs(p["end"] - s["start"]) > 0.05: s["trans"] = ["gap", 0]; continue        # a sample boundary
         if s["flashback"] != p["flashback"]: s["trans"] = tr["flashback"]
+        elif s.get("move") and s["move"][0] == "continue": s["trans"] = ["cut", 0]          # the same framing carries on: no visible cut
+        elif (s["kind"] == "graphic") != (p["kind"] == "graphic"): s["trans"] = tr["location_change"]   # into or out of a graphic: the soft focus pull
         elif s["chapter_start"] and s["line"] != p["line"]: s["trans"] = tr["chapter"]
         elif s.get("from_clip") or s.get("cut_in") or (s["line"] == p["line"]): s["trans"] = ["cut", 0]
         elif s["location"] and p["location"] and s["location"] != p["location"]: s["trans"] = tr["location_change"]

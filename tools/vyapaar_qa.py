@@ -118,11 +118,11 @@ def check(proj, video):
         if zr > cam["zoom_per_s"] * 1.6 + 1e-3: issues["warn"].append(f"line {s['line']}: zoom speed {zr:.3f}/s over the limit {cam['zoom_per_s']}/s")
         if pr_ > cam["pan_per_s"] * 2.2 + 1e-3 and name not in ("pan", "planned"): issues["warn"].append(f"line {s['line']}: pan speed {pr_:.3f}/s over the limit {cam['pan_per_s']}/s")
         if name == "pan" and pr_ > 0.12: issues["warn"].append(f"line {s['line']}: face-to-face pan at {pr_:.3f}/s is fast")
-        if prev == name and name not in ("hold",): issues["warn"].append(f"line {s['line']}: the same move ({name}) twice in a row")
+        if prev == name and name not in ("hold", "continue"): issues["warn"].append(f"line {s['line']}: the same move ({name}) twice in a row")
         pushes += name == "push"; prev = name
         key = s.get("pic")
         if key is not None:
-            if key in uses and abs(uses[key][0] - s["start"]) > 1 and uses[key][1] == name and not s.get("cut_in"):
+            if key in uses and abs(uses[key][0] - s["start"]) > 1 and uses[key][1] == name and not s.get("cut_in") and name != "continue":
                 issues["warn"].append(f"picture {key:03d} is used again at {s['start']:.0f} s with the same move ({name}): no new framing")
             uses[key] = (s["start"], name)
     ppm = pushes / max(plan["total"] / 60, 0.1)

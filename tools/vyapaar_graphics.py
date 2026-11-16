@@ -56,13 +56,18 @@ def jobs_for(proj, L, T, plan, only=None, lines_only=None):
             gid = sh["id"] if sh else f"G{i:03d}"
             if only and gid not in only: continue
             spec = spec_for(l, sh); dur = round(D[i - 1], 3)
+            start = 0.0; lead = spec.pop("lead_in", None); sc = spec.pop("start_cue", None)
+            if sc:                                                   # the graphic starts on this word; a picture carries the words before it
+                start = cue_time(l.get("hi", ""), sc, dur) or 0.0
+                start = start if start >= 1.0 and dur - start >= 2.5 else 0.0
+                dur = round(dur - start, 3)
             cues = list(spec.pop("cues", []) or ([spec.pop("cue_to")] if spec.get("cue_to") else []))
-            times = [cue_time(l.get("hi", ""), w, dur) for w in cues] if cues else None
+            times = [None if cue_time(l.get("hi", ""), w, D[i - 1]) is None else max(0.3, cue_time(l.get("hi", ""), w, D[i - 1]) - start) for w in cues] if cues else None
             spec.pop("facts", None); spec.pop("allow", None); spec.pop("allow_reason", None)
             h = hashlib.sha1(json.dumps([spec, dur, tok, times, fps, tpl], ensure_ascii=False, sort_keys=True).encode()).hexdigest()[:10]
             alpha = (tok.get("backdrop") or {}).get("mode") == "picture"
             mp4 = gd / f"{gid}-{h}.{'mov' if alpha else 'mp4'}"
-            out["cards"][i] = {"id": gid, "file": str(mp4), "dur": dur, "type": spec.get("type")}
+            out["cards"][i] = {"id": gid, "file": str(mp4), "dur": dur, "type": spec.get("type"), "start": start, "lead_in": lead}
             if not mp4.exists():
                 jobs.append({"id": gid, "spec": spec, "dur": dur, "fps": fps, "tokens": tok, "times": times, "out": str(mp4), "alpha": alpha,
                              "preview": str(gd / f"{gid}.{'png' if alpha else 'jpg'}")})

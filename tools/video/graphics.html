@@ -64,7 +64,7 @@ const TPL = {
       const t1 = at(0, .35), p = easeOut((t - t1) / T.motion.count_s);
       val.style.opacity = clamp((t - t1) / .25);
       val.textContent = (s.prefix || '') + (numeric ? fmt(s.value * (s.count === false ? 1 : p), s.format) : s.value) + (s.suffix || '');
-      appear(sub, t1 + (numeric ? T.motion.count_s : .5), t);
+      appear(sub, (TM && TM[1] != null) ? TM[1] : t1 + (numeric ? T.motion.count_s : .5), t);     // the sub-line can wait for its own sentence
     };
   },
   bill(s) {
