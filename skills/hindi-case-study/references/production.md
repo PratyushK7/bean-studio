@@ -247,7 +247,33 @@ It writes a one-frame-per-shot sheet and strips of the opening, the middle and t
 - The voice: Sarvam bulbul:v3 aditya was not soothing to the owner. Pick by ear from `voices/all-voices.mp3` before paying.
 - Subtitles are a separate `.srt`, never burned in.
 
-## 7. Rollback
+## 7. Remotion (optional tool, `tools/remotion/`)
+
+React-to-video, installed 2026-11-17 in its own folder with its own `package.json`; nothing in the pipeline depends on it.
+The video's graphics are still `tools/video/graphics.html` (10 templates, cues, number traceability, text QA).
+
+**Tested:** a Devanagari number card (Nirmala UI and Bahnschrift, the bible's colours) rendered as ProRes 4444 with alpha:
+shaping and edges are clean, 120 frames in about 26 s, about 33 MB for 4 s (ours: about 6 MB). `npx remotion studio` gives a
+live preview with a timeline.
+
+**Use it for what the template set does not do well**, in this order:
+1. **A new graphic type the ten templates lack** (a timeline, a route map, a split comparison, a spring-physics chart).
+   Prototype it in the Studio. If it earns a place in more than one video, port it into `graphics.html` so it keeps the cues,
+   the traceability check and the QA. A one-off may go in as an alpha .mov overlay instead.
+2. **Thumbnails** (`npx remotion still`, 1280x720): Devanagari text and the bible's palette from one component. Supported
+   by Remotion; not yet tried here.
+3. **Chapter title cards, an intro or an end screen** that is reused unchanged across videos.
+4. **Animated captions for a Short.** Burned-in subtitles conflict with the standing rule (a separate `.srt`, never burned
+   in), so use them only if the owner approves them for Shorts.
+
+**Not yet tested here:** compositing a Remotion alpha .mov through `vyapaar_render.py` (the renderer takes graphics from
+`graphics/` with a manifest; a Remotion file would need an adapter), Remotion stills for thumbnails, and any hardware
+acceleration. Do not claim them as working until a run proves them.
+
+**License:** free for individuals, for-profit companies of up to 3 employees and non-profits, commercial use included
+(LICENSE.md in remotion-dev/remotion). Re-check if the channel becomes a company with 4 or more people.
+
+## 8. Rollback
 
 Every replaced file was backed up in `tools/_backup-visual-upgrade-2026-11-15/`, and git has the rest.
 - A project without `visual-plan.json` runs the old path unchanged.
