@@ -71,6 +71,9 @@ Learned on the first full video (17 Nov 2026). Each of these cost real time once
 - **The ChatGPT Go plan allows about 120 images a day.** When the runner reports the limit, stop; it says when it resets. Schedule
   the run for just after, and test with one picture before releasing the batch.
 - **Pilot, then batch, then a second pass.** The runner has "send button missing" glitches; a second pass retries only what failed.
+- **Finished videos are named `v1.mp4`, `v2.mp4`...** The upload folder's ignore list keeps only those (everything else, test
+  projects, subtitles, renders in progress and `video*.mp4`, is ignored). `vyapaar_steps.py full` saves each finished render as the
+  next `v<N>.mp4` itself (a hard link, no extra disk), and the studio's Full video step reads them.
 - **Hero clips are not required.** A complete video is pictures with slow camera moves, graphics, voice and music. Add one or two
   clips at the hook or the reveal only if you want them, and only after the owner OKs the cost.
 - **Choose a design by looking, not by engine.** Remotion and the HTML graphics both render in Chromium; what differs is the

@@ -198,6 +198,16 @@ def review_status_lists_pictures_waiting_with_their_script_line():
     assert any("not measured yet" in f[1] for f in it["flags"]), "an unmeasured picture must say so"
 
 
+@test
+def steps_save_each_finished_video_as_the_next_v_number():
+    import vyapaar_steps as st
+    d = tmp_project(False); (d / "video.mp4").write_bytes(b"first")
+    assert st.publish_version(d).name == "v1.mp4"
+    (d / "video.mp4").unlink(); (d / "video.mp4").write_bytes(b"second render")
+    assert st.publish_version(d).name == "v2.mp4" and (d / "v1.mp4").read_bytes() == b"first", "an earlier final is never overwritten"
+    (d / "v10.mp4").write_bytes(b"x"); assert st.publish_version(d).name == "v11.mp4", "numbers are compared as numbers"
+
+
 if __name__ == "__main__":
     for name, st, why in results: print(f"{st:4s} {name}" + (f"\n     {why}" if why else ""))
     bad = [r for r in results if r[1] != "ok"]

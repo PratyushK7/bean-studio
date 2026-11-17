@@ -50,6 +50,16 @@ def studio_endpoints_refuse_bad_requests_and_start_nothing():
     assert len(server.JOBS) == jobs_before, "nothing may have started"
 
 
+@test
+def studio_shows_the_v_number_finals_with_their_qa():
+    sys.path.insert(0, str(ROOT / "app")); import pipeline as pl
+    d = tmp_project(True); (d / "qa").mkdir(); (d / "video.mp4").write_bytes(b"render")
+    (d / "qa" / "video-qa.json").write_text(json.dumps({"verdict": "PASS", "issues": {"fail": [], "warn": []}}), encoding="utf-8")
+    (d / "v1.mp4").write_bytes(b"render")                                   # the same bytes: the link to the checked render
+    v = next(x for x in pl.summary(d, hindi=True)["stages"] if x["key"] == "video")
+    assert v["state"].startswith("v1.mp4") and "pass" in v["state"], v
+
+
 if __name__ == "__main__":
     for name, st, why in results: print(f"{st:4s} {name}" + (f"\n     {why}" if why else ""))
     bad = [r for r in results if r[1] != "ok"]

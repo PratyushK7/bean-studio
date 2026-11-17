@@ -14,11 +14,12 @@ steps (all free unless marked):
   sample          a Gate 2 sample (the hook, a graphics stretch, the ending) with whichever voice matches the current script
   check-sample    Gate 2 QA of sample.mp4 (frozen, black, jumps, loudness, camera limits, grade, text clipping)
   approve-sample  Gate 2: records the approval and the exact render settings
-  full            the full video (refuses unless Gate 1 is open and Gate 2 approved a sample with these settings), then its QA
+  full            the full video (refuses unless Gate 1 is open and Gate 2 approved a sample with these settings), then its QA, then it is saved as
+                  the next v<N>.mp4 (v1.mp4, v2.mp4...): the finals are the only videos the upload folder keeps
 
 Model policy: none of these needs a model. The judgment (the visual plan, approving pictures, approving the sample) is Opus's or yours.
 """
-import json, os, subprocess, sys, time
+import json, os, re, shutil, subprocess, sys, time
 from pathlib import Path
 
 TOOLS = Path(__file__).resolve().parent
@@ -76,6 +77,17 @@ def sample_segments(proj):
     return f"1-7,{a}-{b},{max(b + 1, n - 7)}-{n}"
 
 
+def publish_version(proj, name="video.mp4"):
+    """the finished render is also saved as the next v<N>.mp4 (v1.mp4, v2.mp4...): the only videos the upload folder keeps. A hard link, so no extra disk."""
+    src = proj / name
+    nums = [int(m.group(1)) for f in proj.glob("v*.mp4") if (m := re.fullmatch(r"v(\d+)\.mp4", f.name))]
+    dst = proj / f"v{max(nums, default=0) + 1}.mp4"
+    try: os.link(src, dst)
+    except OSError: shutil.copy2(src, dst)
+    print(f"saved the finished video as {dst.name}")
+    return dst
+
+
 def archive(proj, name):
     """back up a finished render before a new one takes its name"""
     f = proj / name
@@ -114,6 +126,7 @@ def main():
         run(PY, t("vyapaar_render.py"), proj, "full", *va)
         if kind != "Sarvam": write_srt(proj, "preview-local-lines.json")
         run(PY, t("vyapaar_qa.py"), proj, "video.mp4")
+        publish_version(proj)
     else: sys.exit(f"unknown step {step!r}\n\n{__doc__}")
 
 

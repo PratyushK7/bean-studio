@@ -81,6 +81,16 @@ def tools_python():
     return str(c) if c.exists() else None
 
 
+def _qa_for(p, f):
+    """the QA record of a video; a v<N>.mp4 is a link to the render that was checked, so it borrows that render's record (the same size on disk)"""
+    own = _j(p / "qa" / f"{f.stem}-qa.json")
+    if own is not None: return own
+    for q in sorted((p / "qa").glob("*-qa.json"), key=lambda x: -x.stat().st_mtime) if (p / "qa").is_dir() else []:
+        twin = p / (q.name[:-len("-qa.json")] + ".mp4")
+        if twin.exists() and twin != f and twin.stat().st_size == f.stat().st_size: return _j(q, {})
+    return {}
+
+
 def _have_files(p):
     return {int(f.stem) for f in (p / "images").iterdir() if f.stem.isdigit() and f.suffix.lower() in IMG} if (p / "images").is_dir() else set()
 
@@ -115,9 +125,10 @@ def status_new(p):
     if g2.get("approved"): out["sample"] = (f"Gate 2 approved · {g2.get('at', '')}", False)
     elif (p / "sample.mp4").exists(): out["sample"] = ("made, not approved yet", False)
     else: out["sample"] = (None, False)
-    vids = sorted((f for f in p.glob("video*.mp4") if "-prev-" not in f.name and "oldgraphics" not in f.name), key=lambda f: f.stat().st_mtime)
+    finals = sorted((f for f in p.glob("v*.mp4") if re.fullmatch(r"v\d+\.mp4", f.name)), key=lambda f: int(f.stem[1:]))          # v1.mp4, v2.mp4...: the finished videos
+    vids = finals or sorted((f for f in p.glob("video*.mp4") if "-prev-" not in f.name and "oldgraphics" not in f.name), key=lambda f: f.stat().st_mtime)
     if vids:
-        v = vids[-1]; qa = _j(p / "qa" / f"{v.stem}-qa.json", {})
+        v = vids[-1]; qa = _qa_for(p, v)
         old = (p / "script.json").exists() and v.stat().st_mtime < (p / "script.json").stat().st_mtime
         verdict = (qa.get("verdict") or "not checked yet").lower()
         out["video"] = ((f"{v.name} is older than the script" if old else f"{v.name} · {verdict}"), old or verdict.startswith("fail"))
@@ -438,7 +449,8 @@ def register(app, ROOT, cfg, start_agent, JOBS, start_job):
         p = pdir(name); out = {"videos": [], "sheets": [], "review_sheets": []}
         for f in sorted(p.glob("*.mp4"), key=lambda f: -f.stat().st_mtime):
             if "-prev-" in f.name or "oldgraphics" in f.name or f.name.startswith(("test-", "sample-v")): continue
-            qa = _j(p / "qa" / f"{f.stem}-qa.json", {}); issues = qa.get("issues", {})
+            if not re.fullmatch(r"v\d+\.mp4", f.name) and any(re.fullmatch(r"v\d+\.mp4", g.name) and g.stat().st_size == f.stat().st_size for g in p.glob("v*.mp4")): continue     # the render a v<N>.mp4 links to is listed once, as v<N>
+            qa = _qa_for(p, f); issues = qa.get("issues", {})
             sj = p / "script.json"
             out["videos"].append({"file": f.name, "url": f"/media/{name}/{f.name}", "mb": round(f.stat().st_size / 1e6), "verdict": qa.get("verdict"),
                                   "stale": sj.exists() and f.stat().st_mtime < sj.stat().st_mtime,
