@@ -447,6 +447,8 @@
   "audio": {
    "voice_eq": "equalizer=f=220:t=q:w=1:g=1.5,equalizer=f=3400:t=q:w=1.5:g=-2,equalizer=f=7200:t=q:w=1:g=-2.5,aecho=0.8:0.85:20:0.06",
    "music_gain": 0.3,
+   "music_lufs": -26,
+   "crossfade": 2.5,
    "duck": "sidechaincompress=threshold=0.03:ratio=5:attack=30:release=450",
    "loudness": -14,
    "true_peak": -1.5

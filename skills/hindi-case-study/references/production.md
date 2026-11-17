@@ -272,9 +272,26 @@ It writes a one-frame-per-shot sheet and strips of the opening, the middle and t
 
 ## 6. Sound
 
-- Use real tracks only, in `audio/music`, and credit Kevin MacLeod (CC BY 4.0) in the description.
+**Music** (`audio/music-plan.json` + `audio/music-map.json`, written after the script is approved: SKILL.md section 12):
+- A mood for every emotional shift, with its reason, and `silence` under the sharpest lines. The script's `music` tags are only a fallback.
+- Tracks come from `audio/music`, then the channel library `channels/hindi/music` (17 Kevin MacLeod tracks, CC BY 4.0, credited in the
+  description: `CREDITS.md`). One mood has several tracks; each time the mood returns the next track plays, **continuing where it
+  stopped** instead of restarting.
+- **Levels were the dullness.** The first library tracks measured from -13 to -27 LUFS, and one flat gain made the quiet ones inaudible
+  and the loud ones heavy. The renderer measures every track (cached in `_loudness.json`), brings it to the bible's `music_lufs`
+  (-26), then adds the mood's `db` offset; ducking under the voice does the rest. Measure before assigning a gain.
+- Crossfade 2.5 s centred on the cue (bible `crossfade`), equal-power. QA's music line reports cues, tracks, moods and the longest
+  unbroken track, and warns above 150 s on one track or under five tracks in a video over 8 minutes.
 - `vyapaar_mix.py` remains the timing tool for ambience and effects; its synthetic placeholders are never delivered.
-- The voice: Sarvam bulbul:v3 aditya was not soothing to the owner. Pick by ear from `voices/all-voices.mp3` before paying.
+
+**Voices**:
+- The narrator is the locked Sarvam voice (aditya, pace 0.92). Every person who speaks has their own voice in `voice-cast.json`
+  (SKILL.md section 12). Sarvam voices are chosen by speaker and pace (no pitch or emotion dial in bulbul:v3); the free Kokoro voice
+  tells people apart by speaker, speed and a pitch factor.
+- A marked line (`say`) is split: the narrator's tag, then the person's words, with a 0.25 s beat between. Each voice is levelled
+  to the same mean volume before the polish. Line times still cover whole lines, so shots and graphics do not move.
+- Pick by ear from `voices/all-voices.mp3` (the 17 candidates) and the cast samples before paying. Never reuse a voice file made
+  before the cast: the studio flags it.
 - Subtitles are a separate `.srt`, never burned in.
 
 ## 7. Remotion (optional tool, `tools/remotion/`)

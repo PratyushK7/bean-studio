@@ -86,6 +86,18 @@ def check(proj, video):
     if not au: issues["fail"].append("no audio track")
     elif abs(vdur - adur) > 0.15: issues["warn"].append(f"audio {adur:.2f} s and video {vdur:.2f} s differ by {abs(vdur - adur):.2f} s")
     if abs(vdur - plan["total"]) > 0.3: issues["warn"].append(f"video is {vdur:.2f} s, the plan says {plan['total']:.2f} s")
+    mc = plan.get("music_cues")                                  # does the music follow the story, or does one track drone on?
+    if mc is not None and plan["total"] > 300:
+        stretch, longest, at = 0.0, 0.0, 0.0
+        for k, c in enumerate(mc):
+            same = k and mc[k - 1]["track"] == c["track"] and c["start"] - mc[k - 1]["end"] < 1.0
+            if not same: stretch, begin = 0.0, c["start"]
+            stretch += c["end"] - c["start"]
+            if stretch > longest: longest, at = stretch, begin
+        tracks = {c["track"] for c in mc}; moods = {c["mood"] for c in mc}; covered = sum(c["end"] - c["start"] for c in mc) / plan["total"]
+        if longest > 150: issues["warn"].append(f"music: one track plays for {longest:.0f} s without a change (from {at:.0f} s): vary it with the story")
+        if plan["total"] > 480 and len(tracks) < 5: issues["warn"].append(f"music: only {len(tracks)} different track(s) in {plan['total'] / 60:.0f} minutes")
+        issues["info"].append(f"music: {len(mc)} cue(s), {len(tracks)} track(s), {len(moods)} mood(s), under {covered * 100:.0f}% of the video; longest unbroken track {longest:.0f} s")
     # --- motion: freezes, duplicates, black, jumps
     d, means = frames_gray(v, fps)
     planned_static = []                                          # fades, sample gaps: allowed to be dark or still

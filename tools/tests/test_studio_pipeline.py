@@ -60,6 +60,24 @@ def studio_shows_the_v_number_finals_with_their_qa():
     assert v["state"].startswith("v1.mp4") and "pass" in v["state"], v
 
 
+@test
+def studio_cast_and_music_endpoints_read_the_project_and_refuse_bad_voices():
+    sys.path.insert(0, str(ROOT / "app")); import server
+    c = server.app.test_client(); H = {"X-Channel": "hindi"}; name = JEW.name
+    cast = c.get(f"/api/pipeline/{name}/cast", headers=H).get_json()
+    who = [x["who"] for x in cast["speakers"]]
+    assert who[0] == "narrator" and {"ramesh", "ankit", "nandu"} <= set(who), who
+    assert next(x for x in cast["speakers"] if x["who"] == "ankit")["lines"] >= 5 and "rohan" in cast["pool"]["sarvam"], "line counts and the tried pool"
+    assert cast["problems"] == [], cast["problems"]
+    m = c.get(f"/api/pipeline/{name}/music", headers=H).get_json()
+    assert len(m["cues"]) >= 30 and {"silence", "dread", "flashback"} <= {x["mood"] for x in m["cues"]} and m["moods"]["sad"]["tracks"], "the plan and the tracks per mood"
+    bad = c.post(f"/api/pipeline/{name}/cast", headers=H, json={"cast": {"ramesh": {"sarvam": {"speaker": "not-a-voice"}}}})
+    assert bad.status_code == 400, "only voices that were actually tried are accepted"
+    assert c.post(f"/api/pipeline/{name}/cast", headers=H, json={"cast": {"narrator": {}}}).status_code == 400, "the narrator is never reassigned"
+    s = next(x for x in c.get("/api/pipeline", headers=H).get_json()["projects"] if x["name"] == name)
+    assert [x["key"] for x in s["stages"] if x["key"] in ("music", "cast")] == ["music", "cast"]
+
+
 if __name__ == "__main__":
     for name, st, why in results: print(f"{st:4s} {name}" + (f"\n     {why}" if why else ""))
     bad = [r for r in results if r[1] != "ok"]

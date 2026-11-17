@@ -208,6 +208,54 @@ def steps_save_each_finished_video_as_the_next_v_number():
     (d / "v10.mp4").write_bytes(b"x"); assert st.publish_version(d).name == "v11.mp4", "numbers are compared as numbers"
 
 
+@test
+def cast_splits_a_line_into_the_narrators_words_and_the_persons():
+    import vyapaar_cast as vc
+    line = {"hi": "रमेश जी हंसकर कहते हैं, धनतेरस के एक दिन में तीस लाख बिका है, बेटा।", "say": {"who": "ramesh", "from": "धनतेरस के एक दिन"}}
+    assert vc.parts(line) == [("narrator", "रमेश जी हंसकर कहते हैं,"), ("ramesh", "धनतेरस के एक दिन में तीस लाख बिका है, बेटा।")]
+    assert vc.parts({"hi": "पापा, तिजोरी में दो करोड़ लगे हैं।", "say": {"who": "ankit"}}) == [("ankit", "पापा, तिजोरी में दो करोड़ लगे हैं।")], "no `from`: the whole line"
+    both = {"hi": "वो बोले, ठीक है। फिर चुप हो गए।", "say": {"who": "goyal", "from": "ठीक है", "to": "फिर चुप"}}
+    assert [w for w, _ in vc.parts(both)] == ["narrator", "goyal", "narrator"], "`to` hands the rest back to the narrator"
+    assert vc.parts({"hi": "सिर्फ narration।"}) == [("narrator", "सिर्फ narration।")]
+    try: vc.parts({"hi": "कुछ और।", "say": {"who": "x", "from": "यह है ही नहीं"}}); raise AssertionError("a missing `from` was accepted")
+    except ValueError: pass
+    assert vc.validate(JEW) == [], vc.validate(JEW)
+
+
+@test
+def cast_file_with_a_byte_order_mark_still_loads_and_a_broken_one_is_refused():
+    import vyapaar_cast as vc
+    d = tmp_project(False); (d / "voice-cast.json").write_bytes(b"\xef\xbb\xbf" + json.dumps({"ramesh": {"sarvam": {"speaker": "rahul"}}}).encode())
+    assert vc.load(d)["ramesh"]["sarvam"]["speaker"] == "rahul"
+    (d / "voice-cast.json").write_text("{not json", encoding="utf-8")
+    try: vc.load(d); raise AssertionError("a broken cast file was ignored")
+    except SystemExit: pass
+
+
+@test
+def sarvam_voice_gives_each_person_their_own_speaker_and_keeps_line_times():
+    """the Sarvam tool with a fake voice (no call, no cost): a person's words are spoken with their speaker, the narrator's with the narrator's, and every line gets a time"""
+    import vyapaar_voice as vv_
+    d = tmp_project(False); shutil.copy(JEW / "voice-cast.json", d / "voice-cast.json")
+    calls = []
+    def fake(text, cfg=None):
+        calls.append((text, dict(cfg or {})))
+        out = Path(tempfile.mkdtemp()) / "f.wav"
+        subprocess.run(["ffmpeg", "-v", "error", "-y", "-f", "lavfi", "-i", f"sine=f=220:d={max(0.6, len(text) * 0.05):.2f}", "-ar", "24000", "-ac", "1", str(out)], check=True)
+        return out.read_bytes()
+    vv_.speak = fake
+    old = sys.argv; sys.argv = ["vyapaar_voice.py", str(d)]
+    try: vv_.main()
+    finally: sys.argv = old
+    lines = json.loads((d / "script.json").read_text(encoding="utf-8"))["lines"]; vl = json.loads((d / "voice-lines.json").read_text(encoding="utf-8"))
+    assert len(vl) == len(lines) and all(vl[i]["start"] < vl[i]["end"] <= vl[i + 1]["start"] + 1e-6 for i in range(len(vl) - 1)), "every line has an ordered time"
+    assert vl[22]["who"] == ["goyal", "narrator"] and vl[0]["who"] == ["narrator"], (vl[22], vl[0])
+    quote = lines[22]["hi"][lines[22]["hi"].index("सेठ जी, कल"):]
+    got = next(c for c in calls if c[0].startswith(quote)); assert got[1].get("speaker") == "kabir" and got[1].get("pace") == 0.98, got[1]
+    assert not any("वो कहते हैं," in c[0] and c[1].get("speaker") == "kabir" for c in calls), "the narrator's tag is never read in the person's voice"
+    assert (d / f"{d.name}.srt").exists()
+
+
 if __name__ == "__main__":
     for name, st, why in results: print(f"{st:4s} {name}" + (f"\n     {why}" if why else ""))
     bad = [r for r in results if r[1] != "ok"]

@@ -281,6 +281,8 @@ const PL2 = {
   images:  ['Pictures', 'ChatGPT draws them through your BrowserOS neo browser, one fresh chat per picture, character sheets first. If ChatGPT says the daily image limit is hit, the run stops; run it again after the reset (it says when).', 'automatic', 'your ChatGPT plan'],
   review:  ['Check the pictures', 'Gate 1. A machine measures light, colour, blur, repeats and faces, then <b>you look at every picture</b> and approve it or send it back with a note. Nothing goes on until all are approved.', 'you (or Opus)', 'free'],
   upscale: ['Sharpen (upscale)', 'Makes the approved pictures 2x sharper on your graphics card (about 24 seconds each). Only approved pictures, so no time goes on a bad one.', 'automatic', 'free'],
+  music:   ['Music plan', 'The music follows what is said and felt, not the chapter: a mood for every emotional shift (about one every 20 to 30 seconds), each with its reason, and a bare voice under the sharpest reveals. Tracks rotate and continue where they stopped.', 'Opus', 'Claude usage'],
+  cast:    ['Voice cast', 'Every person in the story speaks in their own voice, the narrator in the locked channel voice. Choose each person\'s voice, pace and (free voice) pitch, then hear them before the full voice is made.', 'you', 'free · the Sarvam sample is paid'],
   voice:   ['Voice', 'Start with the free voice: it judges the story and pacing, not the delivery. When the cut is right, make the paid Sarvam voice and re-run the video: pictures are reused, only audio and timing change.', 'automatic', 'free · Sarvam is paid'],
   clips:   ['Hero clips (optional)', 'A few shots become short moving clips. Not needed: the video is complete with pictures and camera moves. They are paid and always ask first; use them where they buy attention: the first 15 seconds, then the big reveal.', 'you decide', 'paid, asks first'],
   sample:  ['Sample', 'Gate 2. A short cut of the hook, a graphics stretch and the ending is made and checked by a machine for freezes, jumps, loudness and text clipping. <b>You watch it</b> and approve it. The full video refuses to start without that.', 'automatic + you', 'free'],
@@ -360,6 +362,8 @@ function plActions2(p, s) {
     case 'review': setTimeout(plReview, 0, p.name); return `<div class="row" style="gap:8px;margin-bottom:8px">${plBtn('🔬 Measure the pictures', `plStep('${n}','check-pictures','Measuring the pictures and building the contact sheets.')`, 'sec')}
       <span class="muted">do this after new pictures arrive: it makes the automatic flags below</span></div><div id="plrev-${n}"></div>`;
     case 'upscale': return plBtn('🔍 Sharpen the approved pictures', `plStep('${n}','upscale','Sharpening: about 24 seconds a picture.')`) + `<div class="muted" style="margin-top:6px">${esc(s.state || 'Approve pictures first.')}</div>`;
+    case 'music': setTimeout(plMusic, 0, p.name); return plBtn('✍ Write the music plan (Opus)', `plWriteMusic('${n}')`) + `<div id="plmus-${n}" style="margin-top:10px"></div>`;
+    case 'cast': setTimeout(plCast, 0, p.name); return `<div id="plcast-${n}"></div>`;
     case 'voice': return `<div class="row" style="gap:8px;flex-wrap:wrap">${plBtn('🎙 Free voice (Kokoro, about 10 minutes)', `plStep('${n}','voice-free','Making the free voice.')`)}
       ${plBtn('💰 Pro voice (Sarvam, paid)', `plStep('${n}','voice-pro','Making the Sarvam voice.','This is a paid step (Sarvam, a few rupees for a 15 minute video). Make the Sarvam voice now?')`, 'sec')}</div>
       <div class="muted" style="margin-top:6px">${esc(s.state || 'No voice yet.')} The free voice is flat: it shows the story and pacing, not the delivery. The pro voice changes the timings, so the graphics are re-timed and the video re-rendered; the pictures are reused.</div>`;
@@ -412,6 +416,45 @@ async function plOutputs(n, which) {
       <div class="muted" style="margin-top:4px">${v.shots ? `<a href="${v.shots}?channel=${encodeURIComponent(CH)}" target="_blank">one frame of every shot</a> · ` : ''}${v.strips ? `<a href="${v.strips}?channel=${encodeURIComponent(CH)}" target="_blank">the opening, middle and ending</a>` : ''}</div>
       ${v.fail.length || v.warn.length ? `<details style="margin-top:4px"><summary class="muted">${v.fail.length} failures, ${v.warn.length} warnings</summary>${v.fail.concat(v.warn).map(w => `<div class="muted">• ${esc(w)}</div>`).join('')}</details>` : ''}</div>`).join('')
     || '<div class="muted">None yet.</div>') + (o.srt.length ? `<div class="muted">Subtitles: ${o.srt.map(esc).join(', ')} (separate file, never burned in)</div>` : '');
+}
+async function plWriteMusic(n) { await api(`/api/pipeline/${n}/music-plan`, {method: 'POST', body: {}}); toast('Opus is writing the music plan: follow it in the Activity tab.'); plWatch(); show('jobs'); }
+async function plMusic(n) {
+  const box = $(`#plmus-${n}`); if (!box) return;
+  let d; try { d = await api(`/api/pipeline/${n}/music`, {silent: true}); } catch (e) { return; }
+  if (!d.cues.length) { box.innerHTML = '<div class="muted">No music plan yet. Until there is one, only the few mood tags in the script are used.</div>'; return; }
+  const col = {curious: '#dff0ff', tense: '#ffe2d6', dread: '#e6d6f0', sad: '#dde3ee', bittersweet: '#f0e6d6', flashback: '#fdf0cf', hopeful: '#dff3df', warm: '#ffecc9', silence: '#eee'};
+  const tr = Object.entries(d.moods).filter(([m, v]) => v.tracks.length).map(([m, v]) => `<div class="muted"><b>${esc(m)}</b>: ${v.tracks.map(esc).join(' · ')}</div>`).join('');
+  box.innerHTML = `<div style="margin-bottom:8px"><b>${d.cues.length} cues</b> <span class="muted">a cue holds until the next one</span></div>
+    <div style="max-height:360px;overflow:auto;border:1px solid #eee;border-radius:8px;background:#fff">${d.cues.map(c => `<div class="row" style="gap:8px;padding:4px 8px;border-bottom:1px solid #f2f2f2;align-items:flex-start">
+      <span class="muted" style="width:46px">line ${c.line}</span><span class="chip" style="background:${col[c.mood] || '#eee'};min-width:84px;text-align:center">${c.mood === 'silence' ? '🔇 ' : ''}${esc(c.mood)}</span><span style="font-size:13px">${esc(c.why || '')}</span></div>`).join('')}</div>
+    <div style="margin-top:8px"><b>Tracks for each mood</b> (the same mood returning uses the next track)</div>${tr}`;
+}
+async function plCast(n) {
+  const box = $(`#plcast-${n}`); if (!box) return;
+  let d; try { d = await api(`/api/pipeline/${n}/cast`, {silent: true}); } catch (e) { return; }
+  const hz = d.pool.sarvam_pitch_hz || {}, sv = (d.pool.sarvam || []).slice().sort((a, b) => (hz[a] || 0) - (hz[b] || 0)), kv = d.pool.kokoro || [];
+  const opt = (list, cur, fmt) => list.map(x => `<option value="${esc(x)}" ${x === cur ? 'selected' : ''}>${esc(fmt ? fmt(x) : x)}</option>`).join('');
+  const row = sp => {
+    const e = d.cast[sp.who] || {}, s = e.sarvam || {}, k = e.kokoro || {}, id = `plc-${n}-${sp.who}`, lock = sp.who === 'narrator';
+    return `<tr style="border-top:1px solid #eee;vertical-align:top"><td style="padding:6px 8px 6px 0"><b>${esc(e.label || sp.who)}</b><div class="muted">${sp.lines} line${sp.lines === 1 ? '' : 's'}${sp.first ? ' · line ' + sp.first.line + ': ' + esc(sp.first.text) : ''}</div></td>
+      <td style="padding:6px"><select id="${id}-sv" ${lock ? 'disabled' : ''}>${opt(sv, s.speaker, x => x + (hz[x] ? ' · ' + hz[x] + ' Hz' : ''))}</select><br><span class="muted">pace</span> <input id="${id}-pace" size="4" value="${s.pace ?? ''}" ${lock ? 'disabled' : ''}></td>
+      <td style="padding:6px"><select id="${id}-kv" ${lock ? 'disabled' : ''}>${opt(kv, k.voice)}</select><br><span class="muted">speed</span> <input id="${id}-sp" size="4" value="${k.speed ?? ''}" ${lock ? 'disabled' : ''}> <span class="muted">pitch</span> <input id="${id}-pi" size="4" value="${k.pitch ?? ''}" ${lock ? 'disabled' : ''}></td></tr>`;
+  };
+  const probs = d.problems.length ? `<div style="padding:6px 10px;background:#fff3cd;border-radius:8px;margin-bottom:8px">${d.problems.map(x => '<div>' + esc(x) + '</div>').join('')}</div>` : '';
+  const aud = d.voices.map(f => `<div style="margin-top:6px"><span class="muted">${esc(f)}</span><br><audio controls preload="none" src="/api/pipeline/${n}/asset/voices/${encodeURIComponent(f)}?channel=${encodeURIComponent(CH)}"></audio></div>`).join('');
+  box.innerHTML = probs + (d.speakers.length < 2 ? '<div class="muted" style="margin-bottom:8px">No one speaks yet: mark dialogue lines with <code>say</code> in the script (the skill explains how), then choose their voices here.</div>' : '') +
+    `<table style="border-collapse:collapse;width:100%"><tr class="muted"><td></td><td>Sarvam voice (paid)</td><td>Free voice (Kokoro)</td></tr>${d.speakers.map(row).join('')}</table>
+    <div class="row" style="gap:8px;flex-wrap:wrap;margin-top:10px">${plBtn('💾 Save the cast', `plCastSave('${n}')`)} ${plBtn('🔊 Hear the free cast', `plStep('${n}','cast-sample-free','Making the free cast sample.')`, 'sec')}
+      ${plBtn('💰 Hear the Sarvam cast (paid, about ₹4)', `plStep('${n}','cast-sample-pro','Making the Sarvam cast sample.','This is a paid step: one short real line per person in Sarvam, about 1,500 characters (a few rupees). Make the sample?')`, 'sec')}</div>
+    <div class="muted" style="margin-top:6px">Lower Hz is a deeper, older voice; higher is younger or a woman's. The narrator stays the locked channel voice. Save first, then hear. Voices not heard here have not been heard by anyone: choose by ear.</div>${aud}`;
+}
+async function plCastSave(n) {
+  const d = await api(`/api/pipeline/${n}/cast`, {silent: true}), cast = {};
+  d.speakers.filter(sp => sp.who !== 'narrator').forEach(sp => {
+    const id = `plc-${n}-${sp.who}`, g = x => ($(`#${id}-${x}`) || {}).value;
+    cast[sp.who] = {label: (d.cast[sp.who] || {}).label || sp.who, sarvam: {speaker: g('sv'), pace: g('pace')}, kokoro: {voice: g('kv'), speed: g('sp'), pitch: g('pi')}};
+  });
+  const r = await api(`/api/pipeline/${n}/cast`, {method: 'POST', body: {cast}}); toast(`Saved ${r.saved} voices. Hear them, then make the voice again to use them.`); loadPipeline(); PL_OPEN[n] = 'cast';
 }
 let PL_TIMER = null;
 function plWatch() {                                        // while a job from this tab runs, show it here and refresh the steps when it ends

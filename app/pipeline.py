@@ -10,7 +10,7 @@ Who does what (shown on the page, and the model a stage's agent run uses): Opus 
 mechanical ones. Images come from the user's own ChatGPT extension; the studio only collects the finished downloads.
 register(app, ROOT, cfg, start_agent, JOBS, start_job) adds /api/pipeline*.
 """
-import json, os, re, shutil, subprocess, time
+import json, os, re, shutil, subprocess, sys, time
 from pathlib import Path
 from flask import abort, jsonify, request, send_file
 
@@ -23,12 +23,12 @@ STAGES = [("script", "Script"), ("prompts", "Image prompts"), ("images", "Pictur
           ("sound", "Sound"), ("render", "Video"), ("sheet", "Upload sheet")]          # the older, simpler path: projects without a visual plan
 # The art-directed documentary pipeline (references/production.md): a visual plan, pictures with a review gate, a sample with a second gate, then the full cut
 NEW_STAGES = [("script", "Script"), ("plan", "Visual plan"), ("prompts", "Image prompts"), ("images", "Pictures"), ("review", "Check the pictures"),
-              ("upscale", "Sharpen (upscale)"), ("voice", "Voice"), ("clips", "Hero clips"), ("sample", "Sample"), ("video", "Full video"), ("sheet", "Upload sheet")]
+              ("upscale", "Sharpen (upscale)"), ("music", "Music plan"), ("cast", "Voice cast"), ("voice", "Voice"), ("clips", "Hero clips"), ("sample", "Sample"), ("video", "Full video"), ("sheet", "Upload sheet")]
 OPTIONAL = {"clips"}                                         # never the "next step": the video is complete without them
-STEPS = {"plan-check", "prompts", "pictures", "check-pictures", "upscale", "voice-free", "voice-pro", "sample", "check-sample", "approve-sample", "full"}   # tools/vyapaar_steps.py
+STEPS = {"plan-check", "prompts", "pictures", "check-pictures", "upscale", "voice-free", "voice-pro", "cast-sample-free", "cast-sample-pro", "sample", "check-sample", "approve-sample", "full"}   # tools/vyapaar_steps.py
 SYNC_STEPS = {"plan-check"}                                  # quick enough to answer on the spot
-PAID_STEPS = {"voice-pro"}                                   # needs the owner's OK on the cost, sent as confirm_cost
-SUBS = {"qa", "review", "graphics"}                          # project subfolders whose pictures the page may show
+PAID_STEPS = {"voice-pro", "cast-sample-pro"}                                   # needs the owner's OK on the cost, sent as confirm_cost
+SUBS = {"qa", "review", "graphics", "voices"}                          # project subfolders whose pictures the page may show
 BUILT = {"script", "prompts", "images", "voice", "sound"}        # steps with a working button; the rest say "coming next" instead of pretending
 NEXT = {"script": "Write the script (Opus does it from your topic).",
         "prompts": "Make the image prompts from the script.",
@@ -113,9 +113,19 @@ def status_new(p):
     out["review"] = ((("Gate 1 open · " if used and appr == len(used) else "") + f"{appr} of {len(used)} approved", False) if review and used else (None, False))
     hd = sum(1 for e in used if (p / "images-hd" / f"{e['n']:03d}.png").exists())
     out["upscale"] = ((f"{hd} of {appr}", False) if appr else (None, False))
+    mp = _j(p / "audio" / "music-plan.json")
+    if mp and mp.get("cues"):
+        mm = _j(p / "audio" / "music-map.json", {}) or {}; moods = mm.get("moods", {})
+        ntr = len({t for c in mp["cues"] for t in moods.get(c["mood"], {}).get("tracks", [])})
+        out["music"] = (f"{len(mp['cues'])} cues · {len({c['mood'] for c in mp['cues']})} moods · {ntr} tracks", False)
+    else: out["music"] = (None, False)
+    cast = _j(p / "voice-cast.json", {}); people = [k for k in cast if not k.startswith("_")]
+    marked = any(l.get("say") for l in script.get("lines", []))
+    out["cast"] = ((f"{len(people)} voices + the narrator", False) if people else ((None, False) if marked or not nlines else (None, False)))
     vl, pl = _j(p / "voice-lines.json"), _j(p / "preview-local-lines.json")
-    if vl and (p / "voice.mp3").exists() and len(vl) == nlines: out["voice"] = ("Sarvam voice ready", False)
-    elif pl and (p / "preview-local.mp3").exists() and len(pl) == nlines: out["voice"] = ("free voice ready (Kokoro)", False)
+    pre_cast = lambda rows: marked and rows and not any(x.get("who") for x in rows)                  # a voice made before the people had voices
+    if vl and (p / "voice.mp3").exists() and len(vl) == nlines: out["voice"] = ("voice was made before the cast: make it again" if pre_cast(vl) else "Sarvam voice ready", bool(pre_cast(vl)))
+    elif pl and (p / "preview-local.mp3").exists() and len(pl) == nlines: out["voice"] = ("free voice was made before the cast: make it again" if pre_cast(pl) else "free voice ready (Kokoro)", bool(pre_cast(pl)))
     elif (p / "voice.mp3").exists() or (p / "preview-local.mp3").exists(): out["voice"] = ("voice is for an older script", True)
     else: out["voice"] = (None, False)
     cp, ca = _j(p / "clips-plan.json", {}), _j(p / "clips" / "approved.json", {})
@@ -143,6 +153,8 @@ NEXT_NEW = {"script": "Write the script (Opus does it from your topic).",
             "images": "Make the pictures in ChatGPT (runs by itself through BrowserOS neo).",
             "review": "Check the pictures: approve the good ones, send the bad ones back.",
             "upscale": "Sharpen the approved pictures (free, on your graphics card).",
+            "music": "Write the music plan: which mood plays under which lines (Opus, from the script).",
+            "cast": "Give each person in the story their own voice, then hear them.",
             "voice": "Make the voice: the free one first, the paid Sarvam one later.",
             "sample": "Make a short sample and check it before the full video.",
             "video": "Make the full video (free).",
@@ -438,7 +450,7 @@ def register(app, ROOT, cfg, start_agent, JOBS, start_job):
     def pipeline_asset(name, sub, fname):
         """a picture from qa/, review/ or graphics/ (contact sheets, shot sheets, graphic previews)"""
         p = pdir(name)
-        if sub not in SUBS or not re.fullmatch(r"[\w.-]+\.(jpg|png)", fname): abort(400)
+        if sub not in SUBS or not re.fullmatch(r"[\w.-]+\.(jpg|png|mp3)", fname): abort(400)
         f = p / sub / fname
         if not f.is_file(): abort(404)
         return send_file(f)
@@ -462,6 +474,63 @@ def register(app, ROOT, cfg, start_agent, JOBS, start_job):
         out["gate2"] = _j(p / "gate2.json", {})
         out["srt"] = [f.name for f in p.glob("*.srt")]
         return jsonify(out)
+
+    @app.post("/api/pipeline/<name>/music-plan")
+    def pipeline_music_plan(name):
+        """Opus writes audio/music-plan.json: a mood for every emotional shift, with the reason (the music director's job)"""
+        p = pdir(name)
+        if not (p / "script.json").exists(): abort(400, "this video has no script.json yet")
+        c = cfg()
+        prompt = (f'Use the hindi-case-study skill (read ~/.claude/skills/hindi-case-study/SKILL.md and references/production.md, "6. Sound") for the channel "{c["channel"]}". '
+                  f"The project folder is {p}. Write {p}/audio/music-plan.json: read the whole script, then put a mood cue on every emotional shift (about one every 20 to 30 seconds, never "
+                  "one per chapter), with a one-line reason each; use 'silence' to drop the music under the sharpest reveals. Moods and their tracks live in audio/music-map.json and the channel library "
+                  "channels/hindi/music; add tracks to the map only from that library. Do not touch the script, the pictures or other projects.")
+        return jsonify(start_agent(f"music plan · {name}", prompt, MODELS["script"], "feed"))
+
+    @app.get("/api/pipeline/<name>/music")
+    def pipeline_music(name):
+        p = pdir(name); mp = _j(p / "audio" / "music-plan.json", {}); mm = _j(p / "audio" / "music-map.json", {}) or {}
+        lib = _j(p.parent.parent / "music" / "_analysis.json", {})
+        return jsonify(cues=mp.get("cues", []), moods=mm.get("moods", {}), library={k: {"minutes": v.get("minutes"), "lufs": v.get("lufs")} for k, v in lib.items()})
+
+    @app.get("/api/pipeline/<name>/cast")
+    def pipeline_cast(name):
+        """who speaks in the script, the voice each person has, and the pool of voices that were actually tried"""
+        p = pdir(name); sys.path.insert(0, str(ROOT / "tools"))
+        import vyapaar_cast as vc
+        lines = _j(p / "script.json", {}).get("lines", []); cast = vc.load(p); pool = cast.pop("_pool", {})
+        first = {}
+        for i, l in enumerate(lines, 1):
+            try: ps = vc.parts(l)
+            except Exception: continue
+            for who, text in ps: first.setdefault(who, {"line": i, "text": text[:90]})
+        sp = vc.speakers(lines)
+        return jsonify(cast=cast, pool=pool, speakers=[{"who": w, "lines": sp.get(w, 0), "first": first.get(w)} for w in [vc.NARRATOR] + list(sp)],
+                       problems=vc.validate(p), voices=[f.name for f in (p / "voices").glob("cast-*.mp3")] if (p / "voices").is_dir() else [])
+
+    @app.post("/api/pipeline/<name>/cast")
+    def pipeline_cast_save(name):
+        """save the people's voices (the project's voice-cast.json); the narrator stays the channel's locked voice"""
+        p = pdir(name); b = request.get_json(silent=True) or {}; new = b.get("cast")
+        if not isinstance(new, dict): abort(400, "send the cast")
+        sys.path.insert(0, str(ROOT / "tools"))
+        import vyapaar_cast as vc
+        pool = vc.load(p).get("_pool", {}); out = {}
+        for who, e in new.items():
+            if not re.fullmatch(r"[a-z][a-z0-9_]{0,30}", who) or who == vc.NARRATOR: abort(400, f"bad name {who!r}")
+            sv, kk = e.get("sarvam") or {}, e.get("kokoro") or {}
+            if sv.get("speaker") and pool.get("sarvam") and sv["speaker"] not in pool["sarvam"]: abort(400, f"{sv['speaker']} is not one of the tried Sarvam voices")
+            if kk.get("voice") and pool.get("kokoro") and kk["voice"] not in pool["kokoro"]: abort(400, f"{kk['voice']} is not one of the Kokoro voices")
+            def num(x, lo, hi, d):
+                try: return round(min(hi, max(lo, float(x))), 2)
+                except (TypeError, ValueError): return d
+            out[who] = {"label": str(e.get("label") or who)[:80],
+                        "sarvam": {"speaker": sv.get("speaker"), "pace": num(sv.get("pace"), 0.6, 1.4, 0.95)},
+                        "kokoro": {"voice": kk.get("voice"), "speed": num(kk.get("speed"), 0.7, 1.3, 1.0), "pitch": num(kk.get("pitch"), 0.7, 1.4, 1.0)}}
+        f = p / "voice-cast.json"
+        if f.exists(): shutil.copy2(f, p / "voice-cast-before.json")
+        f.write_text(json.dumps(out, ensure_ascii=False, indent=1), encoding="utf-8")
+        return jsonify(ok=True, saved=len(out))
 
     @app.post("/api/pipeline/<name>/open")
     def pipeline_open(name):

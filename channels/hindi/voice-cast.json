@@ -1,0 +1,13 @@
+{
+ "_pool": {
+  "sarvam": ["aditya", "rahul", "rohan", "amit", "kabir", "varun", "ritu", "priya", "neha", "kavya"],
+  "kokoro": ["hm_omega", "hm_psi", "hf_alpha", "hf_beta"],
+  "sarvam_pitch_hz": {"varun": 87, "kabir": 106, "aditya": 119, "amit": 128, "rahul": 131, "rohan": 178, "neha": 180, "priya": 225, "kavya": 229, "ritu": 235},
+  "_note": "Sarvam speakers that were actually generated and measured on 2026-11-17 (median pitch of each candidate in voices/all-voices.mp3). Lower is deeper and older, higher is younger or a woman's voice. Nobody has auditioned them for fit here: choose by ear. A new Sarvam speaker name is only added after one real sample was made."
+ },
+ "narrator": {
+  "label": "Narrator (the locked channel voice)",
+  "sarvam": {"speaker": "aditya", "pace": 0.92, "temperature": 0.7},
+  "kokoro": {"voice": "hm_omega", "speed": 1.0, "pitch": 1.0}
+ }
+}

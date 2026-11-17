@@ -111,6 +111,18 @@ def check(doc, research_text=None):
     def at(i): return f"{mmss(times[i][0])} (line {i + 1})"
     def first_lines(idx, n=8): return ", ".join(str(i + 1) for i in idx[:n]) + (" ..." if len(idx) > n else "")
 
+    # --- who speaks: a line stays one line; a person's words are marked with `say` so they can have their own voice (tools/vyapaar_cast.py)
+    people = {}
+    for i, ln in enumerate(lines):
+        sy = ln.get("say")
+        for m in ([] if not sy else sy if isinstance(sy, list) else [sy]):
+            if not m.get("who"): say("FAIL", f"line {i + 1}: a `say` mark with no `who`"); continue
+            if m.get("from") and m["from"] not in (ln.get("hi") or ""): say("FAIL", f"line {i + 1}: `say.from` ({m['from'][:24]}...) is not in the line, so the person's words cannot be found")
+            people.setdefault(m["who"], []).append(i + 1)
+    if people: say("INFO", "people with their own voice: " + ", ".join(f"{w} ({len(v)} line{'s' if len(v) > 1 else ''})" for w, v in people.items()))
+    quoted = [i for i, ln in enumerate(lines) if not ln.get("say") and re.search(r"(कहते हैं|कहता है|कहती है|बोला|बोले|बोलता है|बोलते हैं|पूछते हैं|पूछता है|पूछा|टोकते हैं|जवाब देता है)\s*,\s*\S", norm(ln.get("hi")) or "")]
+    if quoted: say("WARN", f"lines {first_lines(quoted)} look like a person speaking but have no `say` mark, so the narrator would read their words; mark them (who, and where their words start) or rewrite as reported speech")
+
     # --- runtime and the hook
     say("PASS" if 10 <= mins <= 25 else "WARN", f"runtime {mins:.1f} min at {doc.get('wpm') or WPM:.0f} wpm ({sum(len(words(l.get('hi'))) for l in lines)} words); aim for 14 to 18 min (10 to 15 for a short topic)")
     chap_i = [i for i, ln in enumerate(lines) if ln.get("chapter")]
@@ -339,6 +351,8 @@ def main():
     if not tr:                              # a project script: the engine and the beat sheet come first (SKILL.md steps 4 and 5)
         for kind, step in (("engine", 4), ("beats", 5)):
             if not list(proj.glob(f"*-{kind}.md")): out.insert(0, ("FAIL", f"no <slug>-{kind}.md: write the {kind} before the lines (SKILL.md step {step})"))
+    if not tr and not (proj / "audio" / "music-plan.json").exists():
+        out.append(("INFO", "no audio/music-plan.json yet: after the script is approved, write the music plan (a mood for every emotional shift, with the reason; SKILL.md step 12)"))
     print(f"\n  {doc.get('title', path)}  [{doc.get('format', '?')}]")
     for lvl, msg in out: print(f"  {lvl:4}  {msg}")
     fails = sum(1 for l, _ in out if l == "FAIL"); warns = sum(1 for l, _ in out if l == "WARN")

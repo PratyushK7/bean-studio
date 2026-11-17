@@ -11,6 +11,8 @@ steps (all free unless marked):
   upscale         WaveSpeed's local ESRGAN 2x for the APPROVED pictures only
   voice-free      the free local voice (Kokoro): judges the story and pacing, never the delivery
   voice-pro       the channel's paid voice (Sarvam): needs the owner's OK on the cost
+  cast-sample-free  one real line per person in the free voice (Kokoro): hear the cast before the full voice
+  cast-sample-pro   the same in Sarvam (PAID: about 1,500 characters billed)
   sample          a Gate 2 sample (the hook, a graphics stretch, the ending) with whichever voice matches the current script
   check-sample    Gate 2 QA of sample.mp4 (frozen, black, jumps, loudness, camera limits, grade, text clipping)
   approve-sample  Gate 2: records the approval and the exact render settings
@@ -115,6 +117,8 @@ def main():
     elif step == "voice-free":
         run(PY, PREVIEW, proj); write_srt(proj, "preview-local-lines.json")
     elif step == "voice-pro": run(PY, t("vyapaar_voice.py"), proj)
+    elif step == "cast-sample-free": run(PY, PREVIEW, proj, "--cast-sample")
+    elif step == "cast-sample-pro": run(PY, t("vyapaar_voice.py"), proj, "--cast-sample")
     elif step == "sample":
         va, kind = voice_args(proj); seg = sample_segments(proj); print(f"sample of lines {seg} with the {kind} voice", flush=True)
         run(PY, t("vyapaar_render.py"), proj, "sample", "--segments", seg, *va)

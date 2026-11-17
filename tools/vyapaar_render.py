@@ -404,6 +404,41 @@ def music_sections(L, T, lines_sel):
     return out
 
 
+MUSIC_CUES = []                                          # what the last audio() put under the picture: {line, start, end, mood, track, from_s, db}
+
+
+def music_moods(proj, mm):
+    """{mood: {"tracks": [...], "db": offset}} from music-map.json: the new form {"moods": {...}} or the older flat {mood: file}"""
+    if "moods" in mm: return {k: {"tracks": list(v.get("tracks", [])), "db": v.get("db", 0)} for k, v in mm["moods"].items()}
+    return {k: {"tracks": [v], "db": 0} for k, v in mm.items() if not k.startswith("_") and isinstance(v, str)}
+
+
+def find_track(proj, name):
+    """a mood's track: the project's audio/music first, then the channel's music library (channels/<channel>/music)"""
+    for d in (proj / "audio" / "music", proj.parent.parent / "music"):
+        if (d / name).exists(): return d / name
+    return None
+
+
+_LUFS = {}
+def track_lufs(path):
+    """integrated loudness of a track (first 150 s), cached next to it: the renderer levels every track to one bed level before the mood's offset"""
+    cache = path.parent / "_loudness.json"
+    if not _LUFS.get(str(path.parent)):
+        try: _LUFS[str(path.parent)] = json.loads(cache.read_text(encoding="utf-8"))
+        except Exception: _LUFS[str(path.parent)] = {}
+    d = _LUFS[str(path.parent)]
+    if path.name not in d:
+        try: d[path.name] = float(json.loads((path.parent / "_analysis.json").read_text(encoding="utf-8"))[path.name]["lufs"])      # measured when the track joined the library
+        except Exception: pass
+    if path.name not in d:
+        err = subprocess.run(["ffmpeg", "-hide_banner", "-i", str(path), "-t", "150", "-af", "loudnorm=print_format=json", "-f", "null", "-"], capture_output=True, text=True).stderr
+        m = re.search(r'"input_i" : "(-?[\d.]+)"', err); d[path.name] = float(m.group(1)) if m else -20.0
+        try: cache.write_text(json.dumps(d, indent=1), encoding="utf-8")
+        except OSError: pass
+    return d[path.name]
+
+
 def audio(proj, args, bible, segs, L, T, total, out_wav):
     A = bible["render"]["audio"]; mm = vv.load_json(proj / "audio" / "music-map.json", {}) or {}
     ins, fc, parts, mus, used = [], [], [], [], []
@@ -412,24 +447,36 @@ def audio(proj, args, bible, segs, L, T, total, out_wav):
         a, b = s["src"]; ins += ["-i", str(voice)]
         fc.append(f"[{len(ins) // 2 - 1}:a]atrim={a}:{b},asetpts=PTS-STARTPTS,{A['voice_eq']},afade=t=in:d=0.05,afade=t=out:st={max(0, b - a - 0.3)}:d=0.3,adelay={int(s['out'] * 1000)}:all=1[v{k}]")
         parts.append(f"[v{k}]")
-    # music: the script's moods, a real track per mood, crossfaded at each change, clipped to each segment
-    cur_mood, mood_at = None, {}
-    for i, l in enumerate(L, 1):
-        cur_mood = l.get("music") or cur_mood; mood_at[i] = cur_mood
+    # music: a mood per line (audio/music-plan.json, else the script's `music` tags), a track per mood level-matched to one bed level,
+    # tracks rotated when a mood returns and CONTINUED from where they stopped (never restarted), crossfaded across each change
+    plan = vv.load_json(proj / "audio" / "music-plan.json")
+    cues = {c["line"]: c["mood"] for c in plan.get("cues", [])} if plan else {i: l["music"] for i, l in enumerate(L, 1) if l.get("music")}
+    moods, target, xf = music_moods(proj, mm), A.get("music_lufs", -26), A.get("crossfade", 2.5)
+    cur_mood, mood_at, rot, pos, details = None, {}, {}, {}, []
+    for i in range(1, len(L) + 1):
+        cur_mood = cues.get(i, cur_mood); mood_at[i] = cur_mood
     for k, s in enumerate(segs):
-        a, b = s["lines"]; i = a
+        a, b = s["lines"]; i = a; first = True
         while i <= b:
             mood = mood_at.get(i); j = i
             while j + 1 <= b and mood_at.get(j + 1) == mood: j += 1
-            f = mm.get(mood) if mood else None
-            if f and (proj / "audio" / "music" / f).exists():
-                st = T[i - 1]["start"]; en = T[j]["start"] if j < len(T) and j < b else s["src"][1]
-                o = s["out"] + (st - s["src"][0]); d = en - st
-                ins += ["-stream_loop", "-1", "-i", str(proj / "audio" / "music" / f)]
-                fc.append(f"[{len(mus) + len(segs)}:a]aformat=sample_rates=44100:channel_layouts=stereo,atrim=0:{d + 1.5},asetpts=PTS-STARTPTS,volume={A['music_gain']},"
-                          f"afade=t=in:d=1.5,afade=t=out:st={max(0, d - 0.5)}:d=2.0,adelay={int(o * 1000)}:all=1[m{len(mus)}]")
-                mus.append(f"[m{len(mus)}]"); used.append(f)
+            m = moods.get(mood) if mood else None
+            if m and m["tracks"]:
+                n = rot.get(mood, 0); rot[mood] = n + 1; name = m["tracks"][n % len(m["tracks"])]; path = find_track(proj, name)
+                if path:
+                    st = T[i - 1]["start"]; en = T[j]["start"] if j < len(T) and j < b else s["src"][1]
+                    o = s["out"] + (st - s["src"][0]); d = en - st
+                    lead = 0.0 if first else xf / 2; tail = xf / 2 if j < b or en < s["src"][1] - 0.01 else 0.5      # a crossfade centred on the cue; the last piece of a segment just fades out
+                    piece = d + lead + tail; p0 = pos.get(name, 0.0)
+                    db = max(-24.0, min(24.0, target + m.get("db", 0) - track_lufs(path))); pos[name] = p0 + d
+                    ins += ["-stream_loop", "-1", "-i", str(path)]
+                    fc.append(f"[{len(mus) + len(segs)}:a]aformat=sample_rates=44100:channel_layouts=stereo,atrim=start={p0:.2f}:end={p0 + piece:.2f},asetpts=PTS-STARTPTS,volume={db:.1f}dB,"
+                              f"afade=t=in:d={min(xf, piece / 2):.2f}:curve=qsin,afade=t=out:st={max(0, piece - xf):.2f}:d={min(xf, piece / 2):.2f}:curve=qsin,adelay={int(max(0, o - lead) * 1000)}:all=1[m{len(mus)}]")
+                    mus.append(f"[m{len(mus)}]"); used.append(name); first = False
+                    details.append({"line": i, "start": round(o, 1), "end": round(o + d, 1), "mood": mood, "track": name, "from_s": round(p0, 1), "db": round(db, 1)})
+            else: first = False
             i = j + 1
+    MUSIC_CUES[:] = details
     fc.append("".join(parts) + f"amix=inputs={len(parts)}:normalize=0,aformat=sample_rates=44100:channel_layouts=stereo,asplit[v][sc]")
     if mus:
         fc.append("".join(mus) + f"amix=inputs={len(mus)}:normalize=0[m]")
@@ -490,7 +537,7 @@ def main():
     tracks = audio(proj, a, bible, segs, L, T, total, wav)
     subprocess.run(["ffmpeg", "-loglevel", "error", "-y", "-f", "concat", "-safe", "0", "-i", str(lst), "-i", str(wav), "-map", "0:v", "-map", "1:a",
                     "-c:v", "copy", "-c:a", "aac", "-b:a", "192k", "-shortest", "-movflags", "+faststart", str(out)], check=True)
-    plan_out = {"mode": a.mode, "settings": h, "version": VERSION, "fps": R["fps"], "total": total, "segments": segs, "music": tracks,
+    plan_out = {"mode": a.mode, "settings": h, "version": VERSION, "fps": R["fps"], "total": total, "segments": segs, "music": tracks, "music_cues": list(MUSIC_CUES),
                 "shots": [{k: v for k, v in s.items()} for s in shots], "script": a.script or "script.json", "index": a.index}
     (out.with_name(out.stem + "-plan.json")).write_text(json.dumps(plan_out, ensure_ascii=False, indent=1), encoding="utf-8")
     print(f"wrote {out} and {out.stem}-plan.json. Next: python tools/vyapaar_qa.py {proj} {out.name}")

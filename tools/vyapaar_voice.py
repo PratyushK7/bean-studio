@@ -1,6 +1,10 @@
 """Decoding Vyapaar voice step: script.json -> voice.mp3 (polished, -14 LUFS), voice-lines.json (start/end of every script line) and <slug>.srt.
 
-    python tools/vyapaar_voice.py <project folder>
+    python tools/vyapaar_voice.py <project folder>                  # the whole script (PAID: Sarvam, billed per character)
+    python tools/vyapaar_voice.py <project folder> --cast-sample    # a short real line per person, to choose voices by ear (PAID, about 1,500 characters)
+
+People speak in their own voices: a script line marked with `say` is split into the narrator's words and the person's words (see vyapaar_cast.py), each read
+with the speaker and pace from voice-cast.json. Every voice is levelled to the same loudness. Line times (voice-lines.json) still cover whole lines.
 
 The locked voice (chosen by ear on 2026-11-10, test "T3"): Sarvam bulbul:v3, speaker aditya, pace 0.92, temperature 0.7.
 The script is read in chunks of a few lines (so a sentence keeps the tone of the one before it), a chunk never crosses a chapter.
@@ -9,11 +13,13 @@ Needs only ffmpeg and the standard library. The key is read from tools/.secrets/
 """
 import base64, json, re, subprocess, sys, tempfile, urllib.error, urllib.request
 from pathlib import Path
+import vyapaar_cast as vc
 
 ROOT = Path(__file__).resolve().parents[1]
 VOICE = {"speaker": "aditya", "pace": 0.92, "temperature": 0.7, "model": "bulbul:v3"}
 CHUNK_CHARS = 800            # aim for this many characters per request (Sarvam takes more; shorter keeps the line matching reliable)
-GAP, CHAPTER_GAP = 0.7, 1.2  # seconds between chunks (a chunk ends on a sentence); between chapters
+GAP, CHAPTER_GAP, SAME_LINE_GAP = 0.7, 1.2, 0.25  # seconds between chunks (a chunk ends on a sentence); between chapters; between the narrator's tag and the person's words in one line
+LEVEL_DB = -21.0            # every voice's mean level before the polish: Sarvam speakers come out at different loudness
 POLISH = ("highpass=f=70,equalizer=f=180:t=q:w=1:g=2.5,equalizer=f=3200:t=q:w=1.2:g=2,"
           "acompressor=threshold=-21dB:ratio=3:attack=8:release=120:makeup=3,loudnorm=I=-14:TP=-1.5:LRA=7")
 
@@ -26,9 +32,9 @@ def duration(f):
     return float(subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", str(f)], capture_output=True, text=True).stdout)
 
 
-def speak(text):
+def speak(text, cfg=None):
     key = (ROOT / "tools/.secrets/sarvam_key.txt").read_text(encoding="utf-8").strip()
-    payload = {"text": text, "target_language_code": "hi-IN", **VOICE}
+    payload = {"text": text, "target_language_code": "hi-IN", **{**VOICE, **(cfg or {})}}
     req = urllib.request.Request("https://api.sarvam.ai/text-to-speech", json.dumps(payload).encode(),
                                  {"Content-Type": "application/json", "api-subscription-key": key})
     try:
@@ -36,6 +42,16 @@ def speak(text):
     except urllib.error.HTTPError as e:
         sys.exit(f"Sarvam refused the request ({e.code}): {e.read()[:300].decode('utf-8', 'replace')}")
     return b"".join(base64.b64decode(a) for a in r["audios"])
+
+
+def level(wav):
+    """bring one voice file to LEVEL_DB mean volume (in place), so a deep voice and a bright one sit at the same loudness"""
+    err = ff("-i", str(wav), "-af", "volumedetect", "-f", "null", "-", text=True).stderr
+    m = re.search(r"mean_volume: (-?[\d.]+) dB", err)
+    if not m: return
+    out = wav.with_suffix(".lv.wav")
+    ff("-i", str(wav), "-af", f"volume={max(-12.0, min(12.0, LEVEL_DB - float(m.group(1)))):.1f}dB", "-ar", "24000", "-ac", "1", str(out))
+    if out.exists() and out.stat().st_size > 1000: out.replace(wav)
 
 
 def silences(wav):
@@ -75,40 +91,70 @@ def srt_time(x):
     return "%02d:%02d:%02d,%03d" % (int(x // 3600), int(x % 3600 // 60), int(x % 60), round((x % 1) * 1000) % 1000)
 
 
+def cast_sample(proj, lines, cast):
+    """one real line per person (their first words in the script; the narrator's first sentence), so the voices can be judged by ear before the full script is paid for"""
+    tmp = proj / "voices"; tmp.mkdir(exist_ok=True); first = {}
+    for l in lines:
+        for who, text in vc.parts(l): first.setdefault(who, text)
+    order = [vc.NARRATOR] + [w for w in first if w != vc.NARRATOR]; files = []; total = 0
+    for who in order:
+        text = first.get(who, "")[:170].rsplit(" ", 1)[0] if len(first.get(who, "")) > 170 else first.get(who, "")
+        if not text: continue
+        cfg = {**VOICE, **vc.sarvam_cfg(cast, who)}; wav = tmp / f"cast-{who}.wav"; wav.write_bytes(speak(text, cfg)); level(wav); total += len(text)
+        print(f"  {who}: {cfg['speaker']} pace {cfg.get('pace')}: {text[:60]}", flush=True); files.append(wav)
+    lst = tmp / "cast-list.txt"; gap = tmp / "cast-gap.wav"; ff("-f", "lavfi", "-i", "anullsrc=r=24000:cl=mono", "-t", "1.0", str(gap))
+    lst.write_text("".join(f"file '{f.as_posix()}'\nfile '{gap.as_posix()}'\n" for f in files), encoding="utf-8")
+    ff("-f", "concat", "-safe", "0", "-i", str(lst), "-c:a", "libmp3lame", "-q:a", "3", str(tmp / "cast-sample.mp3"))
+    print(f"done: {tmp / 'cast-sample.mp3'} ({len(files)} voices, {total} characters billed)")
+
+
 def main():
     proj = Path(sys.argv[1]).resolve()
     script = json.loads((proj / "script.json").read_text(encoding="utf-8"))
-    lines = script["lines"]
-    # chunks: consecutive lines, never across a chapter start, about CHUNK_CHARS long
+    lines = script["lines"]; cast = vc.load(proj)
+    problems = vc.validate(proj)
+    bad = [x for x in problems if x.startswith("line ")]
+    if bad: sys.exit("the dialogue marks do not match the script:\n  " + "\n  ".join(bad))
+    for x in problems: print("  note:", x, flush=True)
+    if "--cast-sample" in sys.argv: return cast_sample(proj, lines, cast)
+    # units: the narrator's words and each person's words, in order; a chunk is a run of one voice, never across a chapter start, about CHUNK_CHARS long
+    units = [(i, k, who, text) for i, l in enumerate(lines) for k, (who, text) in enumerate(vc.parts(l))]
     chunks, cur = [], []
-    for i, l in enumerate(lines):
-        if cur and (l.get("chapter") or sum(len(lines[j]["hi"]) for j in cur) + len(l["hi"]) > CHUNK_CHARS):
+    for u in units:
+        i, k, who, text = u
+        if cur and ((k == 0 and lines[i].get("chapter")) or who != cur[0][2] or sum(len(x[3]) for x in cur) + len(text) > CHUNK_CHARS):
             chunks.append(cur); cur = []
-        cur.append(i)
+        cur.append(u)
     if cur: chunks.append(cur)
-    print(f"{len(lines)} lines in {len(chunks)} chunks; voice {VOICE['speaker']} pace {VOICE['pace']} temperature {VOICE['temperature']}", flush=True)
+    who_n = {}
+    for u in units: who_n[u[2]] = who_n.get(u[2], 0) + 1
+    print(f"{len(lines)} lines in {len(chunks)} chunks; voices: " + ", ".join(f"{w} = {({**VOICE, **vc.sarvam_cfg(cast, w)})['speaker']}" for w in who_n), flush=True)
 
     tmp = Path(tempfile.mkdtemp(prefix="vyapaar_voice_"))
-    parts, times, t = [], [None] * len(lines), 0.0
-    for ci, idx in enumerate(chunks):
+    parts, spans, t = [], {}, 0.0
+    for ci, ch in enumerate(chunks):
+        who = ch[0][2]; cfg = {**VOICE, **vc.sarvam_cfg(cast, who)}
         wav = tmp / f"c{ci:03d}.wav"
-        wav.write_bytes(speak(" ".join(lines[i]["hi"] for i in idx)))
+        wav.write_bytes(speak(" ".join(u[3] for u in ch), cfg)); level(wav)
         d = duration(wav)
-        ends = boundaries([lines[i]["hi"] for i in idx], d, silences(wav))
+        ends = boundaries([u[3] for u in ch], d, silences(wav))
         start = 0.0
-        for i, e in zip(idx, ends): times[i] = (t + start, t + e); start = e
+        for u, e in zip(ch, ends):
+            a, b = t + start, t + e; sp = spans.setdefault(u[0], [a, b]); sp[0] = min(sp[0], a); sp[1] = max(sp[1], b); start = e
         parts.append(wav); t += d
-        gap = CHAPTER_GAP if ci + 1 < len(chunks) and lines[chunks[ci + 1][0]].get("chapter") else GAP
-        if ci + 1 < len(chunks):
+        nxt = chunks[ci + 1][0] if ci + 1 < len(chunks) else None
+        if nxt:
+            gap = SAME_LINE_GAP if nxt[0] == ch[-1][0] else (CHAPTER_GAP if nxt[1] == 0 and lines[nxt[0]].get("chapter") else GAP)
             sil = tmp / f"g{ci:03d}.wav"; ff("-f", "lavfi", "-i", f"anullsrc=r=24000:cl=mono", "-t", str(gap), str(sil)); parts.append(sil); t += gap
-        print(f"  chunk {ci + 1}/{len(chunks)}: {d:.1f} s", flush=True)
+        print(f"  chunk {ci + 1}/{len(chunks)} ({who}): {d:.1f} s", flush=True)
+    times = [spans[i] for i in range(len(lines))]
 
     lst = tmp / "list.txt"; lst.write_text("".join(f"file '{p.as_posix()}'\n" for p in parts), encoding="utf-8")
     raw = tmp / "raw.wav"; ff("-f", "concat", "-safe", "0", "-i", str(lst), "-ar", "24000", "-ac", "1", str(raw))
     r = ff("-i", str(raw), "-af", POLISH, "-c:a", "libmp3lame", "-q:a", "2", str(proj / "voice.mp3"), text=True)
     if r.returncode: sys.exit("ffmpeg polish failed: " + r.stderr[-300:])
     # loudnorm only trims or lifts a little: the polished file has the same timeline as raw.wav
-    json.dump([{"i": i, "start": round(a, 3), "end": round(b, 3), "chapter": lines[i].get("chapter")} for i, (a, b) in enumerate(times)],
+    json.dump([{"i": i, "start": round(a, 3), "end": round(b, 3), "chapter": lines[i].get("chapter"), "who": sorted({w for w, _ in vc.parts(lines[i])})} for i, (a, b) in enumerate(times)],
               open(proj / "voice-lines.json", "w", encoding="utf-8"), ensure_ascii=False, indent=1)
     # the .srt: each line split into cues of at most 9 words (never burned into the video), times shared by length
     cues = []

@@ -95,6 +95,9 @@ The viewer hears each sentence once, at about 155 words a minute, in one narrato
    - Dialogue sounds like that person (age, town, trade), not like the narrator, and never states the theme of the video ("मैं
      सीखने जा रहा हूं कि वो जीतते कैसे हैं" is the writer talking, not a son).
    - Real people say only their documented words.
+   - **Mark every quote with `say`** (who speaks, and where their words start) so each person is read in their own voice. The
+     narrator reads the tag ("रमेश जी हंसकर कहते हैं,") and the person reads the words; the line stays one line, so the shots, the
+     graphics and the timings keep their numbers. Full form in section 12.
 5. **Time runs in a straight line.**
    - The story has one "now" and at most one flashback.
    - Stamp every jump ("दो साल पहले", "उसी रात", "अगली सुबह").
@@ -485,8 +488,11 @@ Run all of them, and write what each one changed into `<slug>-check.txt`.
 - `facts`: research ids (F3, M2) on every line that states a fact or a model number.
 - `open` / `close`: loop ids from the ledger (a string or a list).
 - `tag`: `rehook`, `interrupt`, `reveal`, `reversal`, `payoff` or `gain`.
-- Sound plan (optional): `music` (`tense`, `warm`, `curious`, `sad`, `hopeful`) on the line where a mood starts; `amb` for a
-  looping bed; `sfx` (`"coin@1.0"`) on money moments and reveals only. Never under every line.
+- `say` (on every line where a person speaks): `{"who": "ramesh", "from": "धनतेरस के एक दिन"}`. `from` is where their words start; the
+  narrator reads everything before it. Add `to` where they stop and the narrator resumes, or leave `from` out when the whole line is
+  theirs. A list of marks covers a line with two speakers. `who` is a short lowercase name that matches `voice-cast.json`.
+- Sound plan (optional): `amb` for a looping bed; `sfx` (`"coin@1.0"`) on money moments and reveals only, never under every line.
+  `music` tags are only a fallback: the real music is planned after the script is approved, in `audio/music-plan.json` (section 12).
 
 **Shot plan:** roughly 70 to 80% `still` and 20 to 30% `card`, with a card on every money-math line, never two cards in a row,
 and a new picture every one to three lines. The edit rules (shot lengths, camera moves, the render checks) are in
@@ -602,13 +608,46 @@ Hand back:
 
 Nothing here publishes. The last line of every run is the question: **ship it, or change it?**
 
+## 12. After the script is approved: the voice cast and the music plan
+
+Both are decided once the story is fixed and before the voice is paid for. Neither changes a word of the script.
+
+**The voice cast** (`<project>/voice-cast.json`, the channel's narrator and pool in `channels/hindi/voice-cast.json`):
+- One entry per person who speaks (every `who` in the script's `say` marks). Each has a Sarvam voice (speaker and pace) and a free
+  Kokoro voice (voice, speed and pitch). The narrator is the locked channel voice and is never reassigned.
+- **Separate people by pitch and age, not by name.** The pool lists only Sarvam speakers that were actually generated, with their
+  measured median pitch (Varun 87 Hz, Kabir 106, Aditya 119, Amit 128, Rahul 131, Rohan 178, Neha 180, Priya 225, Kavya 229, Ritu 235):
+  an old man gets a low voice and a slower pace, a young one the high male voice, a woman one of the four women's voices.
+  Two people who never share a scene may share a voice; two in the same scene never do.
+- Sarvam bulbul:v3 has no pitch dial and no emotion dial, so a voice is chosen by speaker and pace. Kokoro has two Hindi male voices,
+  so its people are told apart by a pitch factor (above 1 higher and younger, below 1 lower and older).
+- **Hear before paying.** `preview.py <project> --cast-sample` (free) and `vyapaar_voice.py <project> --cast-sample` (paid, about
+  1,500 characters) make one real line per person. A voice nobody has heard is a guess: the owner chooses by ear.
+- Bean Studio's Pipeline tab has a Voice cast panel for all of this.
+
+**The music plan** (`<project>/audio/music-plan.json`): the music follows what is said and felt, not the chapter.
+- Read the whole script and put a cue `{"line": 33, "mood": "sad", "why": "..."}` on every emotional shift: about one every 20 to
+  30 seconds, never one per chapter, always with the reason. A cue holds until the next. Moods: `curious`, `tense`, `dread`, `sad`,
+  `bittersweet`, `flashback`, `hopeful`, `warm`, `silence`.
+- **Drop the music (`silence`) under the sharpest lines**: the number that answers the central question, the line that lands the
+  loss. A bare voice is the loudest thing in the video. Bring it back on the next cue.
+- Match the music to the line, not to the topic: a joke in a sad chapter gets a lighter cue; the lowest point is `dread` or `sad`,
+  never `curious`. Light follows the feeling map, and so does the music.
+- `audio/music-map.json` lists several tracks per mood from the channel library `channels/hindi/music/` (Kevin MacLeod, CC BY 4.0;
+  credit them in the description, see `CREDITS.md`). The renderer levels every track to one bed level, rotates the tracks when a mood
+  returns, continues a track where it stopped, and crossfades 2.5 s across each change. QA warns when one track plays over 150 s or a
+  long video uses fewer than five tracks.
+- Add a track to the library only after downloading it, checking it is real audio, and measuring it (`_analysis.json`); say honestly
+  that nobody has auditioned it.
+
 ## Where this sits in the workflow
 
 ```
 1 Topic and angle  ->  2 Script (this skill)  ->  GATE A: the owner reads script.md and hears preview-local.mp3 (free)
 3 Visual plan (visual-plan.json against channels/hindi/visual-bible.json) -> validate -> structured prompts + reference manifest
 4 Pictures (sheets first) -> GATE 1: vyapaar_review.py contact sheets, approve/reject per picture -> upscale approved only
-5 Voice: a 60 s sample of the hook in the chosen voice (cheap), then the full voice (paid: the owner OKs the cost first)
+4b Voice cast + music plan (section 12): choose each person's voice, hear them (free, then a paid sample), write audio/music-plan.json
+5 Voice: the free voice first (people in their own voices); the paid Sarvam voice after the cut is right (the owner OKs the cost first)
 6 Optional clips: select -> make (paid, --approve-cost) -> check -> approve
 7 Sample render (vyapaar_render.py sample) -> GATE 2: vyapaar_qa.py + the owner's look -> approve -> full render -> QA
 8 Packaging: title, thumbnail, description (music credits), chapters
