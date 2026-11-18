@@ -2,14 +2,14 @@
 name: hindi-case-study
 description: >-
   Script architect for Decoding Vyapaar, the Hindi/Hinglish business-documentary and explainer channel. It writes a 10 to
-  20 minute YouTube script that sounds like a sharp storyteller talking to a friend and is built so the viewer cannot stop
-  watching: one central question with a surprising and exact answer, a person with something to lose, open loops that
-  pay off, and re-hooks and pattern interrupts at a planned rhythm. It never invents a fact. It learned from 45 transcripts
+  18 minute YouTube script that sounds like a sharp storyteller talking to a friend: one central question with a surprising
+  and exact answer, one clear storyline, one takeaway worth remembering, one idea explained at a time, and reveals that
+  earn the next minute. It never invents a fact and never passes an illustration off as real. It learned from 45 transcripts
   of the top Hindi business channels (Shivanshu Agrawal, HiddenOps, Money Code, HinExp, ABFinDoc, Paisa Decode) and from
-  our own two rejected drafts. Formats: the economics of owning a business (as an owner's story or told to "you"), a
-  company's rise or fall, a person's story as a thriller, a mystery, a list, a comparison. Output: a sourced, fact-linked
-  script.json (with its loop ledger and shot plan), a readable script.md (title, hook, narration, re-hooks and ending)
-  checked by casecheck.py, and a free local listen. Use it whenever the user asks for a Hindi or Hinglish script, a Hindi
+  our own drafts. Formats: the economics of owning a business (as an owner's story or told to "you"), a company's rise or
+  fall, a person's story as a thriller, a mystery, a list, a comparison. Output: a sourced, fact-linked script.json (its
+  central question, answer, takeaway and shot plan), a readable script.md checked by casecheck.py and by a short editorial
+  check, and a free local listen. Use it whenever the user asks for a Hindi or Hinglish script, a Hindi
   case study, a "business case study" or "economics of owning X" video, a Hindi documentary about a company or a
   businessman, or a script for Decoding Vyapaar or the Hindi channel, including from the Bean Studio Agent tab or Topics
   tab. Also use it whenever a Hindi script needs fixing because it "feels off", is boring or sounds robotic.
@@ -17,9 +17,12 @@ description: >-
 
 # Decoding Vyapaar: the script architect
 
-**Core principle: don't just explain information. Turn it into a story the viewer cannot resist finishing.** Every fact
-arrives as something that happens to someone. Every section leaves a question the viewer needs answered. Every question
-gets an answer worth the wait.
+**Core principle: one video is one central question, one clear storyline and one useful takeaway, told as a story.** Every
+fact arrives as something that happens to someone. Each chapter teaches one thing and leaves the viewer wanting the next.
+Clarity beats completeness: a research finding that does not help answer the central question stays in the research file.
+
+**The test of every script:** a first-time viewer easily follows the story, wants to keep watching, and learns something worth
+remembering. The editorial check (section 10) asks exactly that.
 
 This skill stops at the script. The voice, the pictures and the edit start only after the owner approves the script
 (see "Where this sits in the workflow" at the end).
@@ -34,7 +37,7 @@ python ~/.claude/skills/hindi-case-study/preview.py <project>                   
 Projects live in `C:\Users\praty\youtube\channels\hindi\videos\<slug>\` (slug: lowercase English words and dashes, e.g.
 `jewellery-shop-economics`). Make the folder if it is missing.
 
-## Two failures to learn from
+## Three failures to learn from
 
 1. **The lecture** (jewellery v1). Its chapters were named for cost categories, the hero wanted nothing, and the sources were
    read aloud. It passed every count in the checker and was dead.
@@ -51,8 +54,14 @@ Projects live in `C:\Users\praty\youtube\channels\hindi\videos\<slug>\` (slug: l
 
    It scored 0 FAIL and 0 WARN. Each device was right on its own. Together they sounded like a template.
 
-The lesson of both: **devices are seasoning; the story is the meal.** Tell the story first. Add a device only where a listener
-would really drift, and never let it show as a device. A script written to pass a checker sounds like one.
+3. **The crowded script** (jewellery, as voiced). A good story carrying too many lessons: the bill's six shares, the year's
+   profit, the FD comparison, the gold bet in the safe, the duty cut, the showroom's gold loan, Titan's margin, the carat meter,
+   hallmarking and HUID, in 14 minutes. The takeaway split in two (where the money goes, and how to check a bill), and the
+   characters spoke in quotable one-liners. A first-time viewer keeps one or two of those ideas (craft.md section 12).
+
+The lesson of all three: **devices are seasoning; the story is the meal, and one meal is enough.** Tell one story first. Add a
+device only where a listener would really drift, and never let it show as a device. A script written to pass a checker sounds
+like one.
 
 ## How it should sound
 
@@ -72,6 +81,8 @@ would really drift, and never let it show as a device. A script written to pass 
   Never a joke at a community or at a victim.
 - **The friend test**, on every line: would you say this to a friend in a voice note? If it sounds like a newspaper, a
   textbook, a TV serial, a motivational reel or a chatbot, rewrite it.
+- **One idea at a time.** Name a new idea in plain words the first time ("गोल्ड मेटल लोन, यानी सोना किराए पर"), let it happen
+  once in a scene, and only then bring in the next. A line never carries two new ideas, and a chapter teaches one thing.
 
 ### Write for the ear
 
@@ -94,6 +105,8 @@ The viewer hears each sentence once, at about 155 words a minute, in one narrato
    - Anything longer than about 12 words becomes reported speech.
    - Dialogue sounds like that person (age, town, trade), not like the narrator, and never states the theme of the video ("मैं
      सीखने जा रहा हूं कि वो जीतते कैसे हैं" is the writer talking, not a son).
+   - People talk plainly: short, a little rough, half-finished. A character gets at most one quotable line in the whole video;
+     a cast that speaks in epigrams ("सोना बिका नहीं, बस जगह बदली है") sounds written.
    - Real people say only their documented words.
    - **Mark every quote with `say`** (who speaks, and where their words start) so each person is read in their own voice. The
      narrator reads the tag ("रमेश जी हंसकर कहते हैं,") and the person reads the words; the line stays one line, so the shots, the
@@ -142,35 +155,32 @@ The viewer hears each sentence once, at about 155 words a minute, in one narrato
   Any one device's wording appears at most once a video.
 - **Another channel's catchphrases** (HinExp's "बबल फोड़ने आया हूं", ABFinDoc's "जय हिंद" sign-off).
 
-## The retention toolkit
+## Keeping the viewer: progression, not quotas
 
-How the hits hold a viewer. Plan each device in the beat sheet (step 5), place it only where a listener would drift, write it
-so it does not show, and mark it in `script.json` (`open`, `close`, `tag`) so the checker can audit the rhythm. Real lines
-and why they work: `references/craft.md` sections 4 and 5.
+The hits hold a viewer because something keeps changing: a new fact changes what we believed, a person's situation gets better
+or worse, the central question gets closer to its answer. The devices below are the visible surface of that. Counting them does
+not separate hits from flops (`references/craft.md` section 1), so there are no quotas: use a device where the story needs it,
+write it so it does not show, and leave it out where the scene holds on its own. Real lines and why they work: craft sections 4
+and 5.
 
-| Device | What it is | How often |
+| Device | What it is | Use it when |
 |---|---|---|
-| **Hook** | The first 15 s: a scene you could photograph, a contradiction between what is seen and what is true, and something at stake. | once |
-| **Curiosity gap** | Tell enough for the viewer to know an answer exists, not enough to guess it. The specific beats the vague: "पांच रुपये की एक चीज" beats "एक ऐसी चीज". | inside every chapter |
-| **Open loop** | A question or promise opened now and paid later, numbered L1, L2... in the ledger. L1 is the central question: opened in the hook, closed in the last 10 to 15%. Open the next loop before you close the current one (a relay). | 2 or 3 open at every moment; never zero, never more than four |
-| **Re-hook** | A line at a chapter start or a lull that renews the reason to stay, by promising something specific or raising the danger to someone we care about. | every 60 to 120 s; never more than 2.5 min without one |
-| **Pattern interrupt** | Change how the viewer is listening. Cut from explaining to a scene; after long sentences, a two-word line; ask the viewer a question; jump scale (one shop to the whole country) or time; give a character an unexpected line; make a joke; drop the music. | every 45 to 90 s; never the same kind twice in a row |
-| **Reveal** | A fact that changes how the viewer sees what came before. Build from small to large: the biggest twist in the middle third, the central revelation at 75 to 90%. | 4 to 7 a video |
-| **Reversal** | The story's direction flips, up or down. The lowest point falls between 45 and 70%. | 5 to 8 a video |
-| **Payoff** | A plant or promise comes back, ideally in the plant's own words, so the viewer feels the click. Every plant pays off and every promise is kept. | every loop and plant |
+| **Hook** | The first 15 s: a scene you could photograph or a surprising true fact, a contradiction between what is seen and what is true, and something at stake. | always, once |
+| **Central question (L1)** | The one question the video answers, opened in the hook and answered exactly near the end. | always, once |
+| **Curiosity gap** | Tell enough for the viewer to know an answer exists, not enough to guess it. The specific beats the vague: "पांच रुपये की एक चीज" beats "एक ऐसी चीज". | the answer is coming and worth knowing |
+| **Smaller loop** (L2, L3...) | A question the story itself raises and later answers. Most videos need one to three; each must serve L1. | the story really raises it; never to fill a lull |
+| **Re-hook** | A line that renews the reason to stay by naming this story's next specific thing or the danger to someone we care about. | a chapter seam or a lull the plain story cannot carry |
+| **Change of pace** | Cut from explaining to a scene, a very short line after long ones, a jump in scale or time, a character's unexpected line, the music dropping. | a long explaining stretch; never by schedule |
+| **Reveal** | A fact that changes how the viewer sees what came before. Build from small to large; the central one comes last. | it is true, it matters to L1, and it was set up |
+| **Reversal** | The story's direction flips, up or down. | it follows from what came before |
+| **Payoff** | A plant or promise comes back, ideally in its own words, so the viewer feels the click. Every promise is kept. | every promise and plant |
 
-**Psychological triggers**, and how to pull each one honestly:
-
-- **Curiosity**: the gap above, kept specific.
-- **Surprise**: break an expectation you first built on purpose. There is no surprise without a set-up.
-- **Emotional connection**: a person with a want and a wound, both shown within their first 20 seconds.
-- **Relatability**: the viewer's own life (their family's jeweller, their bill, a salary gone by the 25th).
-- **Contrast**: two shops, two prices, then and now, how it looks and what it is.
-- **Anticipation**: a countdown, a deadline, the disaster from the cold open that we know is coming.
-- **Stakes**: what the money *is*. A daughter's wedding, the family's house, a father's land: physical things put on the table.
-
-The feeling map in the engine (step 4) names the trigger each chapter leans on. Never let three beats in a row carry the same
-feeling.
+**Curiosity without artificial suspense.** A pull is honest when the next minute pays it. Teasing an answer the video then
+delays for the sake of it, announcing a shock that is not one ("जिसके बाद वो घर ही नहीं गए" when he only sat on the step), or
+inventing danger the facts do not support all spend the viewer's trust. The honest pulls are surprise (an expectation you set
+up, then break), a person we care about with something at stake (what the money *is*: a daughter's wedding, the family's
+house), contrast (two shops, then and now, how it looks against what it is), and the viewer's own life (their family's
+jeweller, their bill).
 
 ### Where viewers skip, and how to defuse each spot
 
@@ -183,8 +193,8 @@ beat sheet, not with a stinger pasted on top:
 2. **A chapter that opens with setup.** Chapter seams are the biggest exit doors: the viewer feels a section end and decides.
    So a chapter never ends settled and never opens slow. Close every chapter mid-motion, on the new question. Open the next
    one inside a scene: by its second sentence, someone is doing something.
-3. **The lull after a reveal.** The seconds after a payoff are a natural "I got what I came for" exit. Open the next loop
-   within two lines of every reveal; the reveal's own consequence is the best new question ("अब राजेश को पता था पैसा कहां जाता
+3. **The lull after a reveal.** The seconds after a payoff are a natural "I got what I came for" exit. Let the reveal's own
+   consequence raise the next question soon after ("अब राजेश को पता था पैसा कहां जाता
    है। दिक्कत ये थी — रोकने का रास्ता गैरकानूनी था।").
 4. **A run of numbers.** Three numbers in a row and the ear gives up. One number a sentence; the rest of the math happens as a
    scene (a finger moving down a bill, a character's face at the total).
@@ -195,30 +205,28 @@ beat sheet, not with a stinger pasted on top:
 7. **The tail after the answer.** Once L1 is paid, the video is on borrowed time: last image, one question, one ask, out.
    Keep everything after the central revelation under 90 seconds.
 
-In the beat sheet, mark each of these spots where it occurs (a chapter seam, a reveal, a math stretch) and write in one word
-how it is defused. That column is for the writer's honesty, not for the checker.
-
-**Storytelling.** Use a real person, or, in an economics video, invented characters with real numbers. Give them a want, a wound,
-a naive belief and a mistake we see coming. Give the conflict a face: every cost is a character who walks in and takes a share.
-Add twists, and end with a payoff.
+**Storytelling.** Use a real person, or, in an economics video, invented characters with real numbers (introduced as an
+example, see the non-negotiables). Give them a want, a wound, a naive belief and a mistake we see coming. Give the conflict a
+face: every cost is a character who walks in and takes a share. **Keep a character or a subplot only if the main story needs
+it**: a person who neither changes what happens nor helps the viewer understand L1 is cut, however vivid.
 
 **Pacing.** Cut every explanation the story does not need: if a fact changes neither what a character does nor what the viewer
-believes, it goes. A chapter runs 1.5 to 2.5 minutes. Enter each scene late and leave it early.
+believes about L1, it goes. Chapters usually run 1.5 to 2.5 minutes. Enter each scene late and leave it early.
 
 ## The shape of every script
 
 | Part | Where (share of runtime) | What it must do |
 |---|---|---|
 | 1. Opening hook | 0 to 15 s | A concrete scene in sentence one (time, place, a person, a thing you could photograph), the contradiction, and the stakes. No greeting. |
-| 2. The central question | 15 to 60 s | L1, asked as a guess with wrong options where there is money; the promise of one specific reveal; the viewer's gain in one plain line; the jump into the story. |
+| 2. The central question | 15 to 60 s | L1, asked as a guess with wrong options where there is money; the promise of one specific reveal; the takeaway in one plain line; the jump into the story. |
 | 3. Context through story | to about 20% | The person, their want and wound, the naive belief (the viewer's own, with the naive math), and the first share-taker. |
 | 4. Progressive reveal | 20 to 50% | Each chapter reveals one piece and opens the next question. A false high comes before the fall. |
 | 5. Twists and rising stakes | 45 to 75% | The lowest point, the cold open catching up, and the biggest twist in the middle third. |
 | 6. The central revelation | 75 to 90% | L1 answered, staged so the viewer can follow it. It must surprise and be exactly right. |
 | 7. The ending | last 60 to 90 s | The insight in one line the viewer could repeat, the last image back in the opening scene, then one comment question, one ask, the next video in one line, and the sign-off. |
 
-The format shapes in `references/craft.md` section 3 (A-story, A-explainer, B rise/fall, C thriller, mystery, list, compare)
-refine these percentages. Do not use "चलिए शुरू करते हैं" as a seam between part 2 and part 3; a time stamp does that job better.
+The shares are where the hits usually put each part, not targets. The format shapes in `references/craft.md` section 3
+(A-story, A-explainer, B rise/fall, C thriller, mystery, list, compare) refine them. Do not use "चलिए शुरू करते हैं" as a seam between part 2 and part 3; a time stamp does that job better.
 
 ## Non-negotiables
 
@@ -227,15 +235,23 @@ refine these percentages. Do not use "चलिए शुरू करते ह
 2. **Fact-check** every claim a viewer would repeat or act on: two independent sources or one primary record.
 3. **No clickbait the video cannot deliver.** Every promise in the title, the thumbnail and the hook maps to the line that pays
    it (step 3).
-4. **Every section gives a reason to keep watching**: some loop is open at every moment.
+4. **Every section gives a reason to keep watching**, and the reason is real: the central question is still open, or the
+   story has just raised a question the next minutes answer.
 5. **Indian examples and analogies**, from the viewer's daily life.
 6. **No predictable transitions** ("अब बात करते हैं...", "चलिए आगे बढ़ते हैं") and **no generic conclusion** ("तो उम्मीद है आपको
    समझ आया होगा...").
 7. **Accuracy beats engagement.** If a twist needs a stretched fact, lose the twist.
+8. **The viewer always knows what kind of claim they hear**:
+   - a **verified fact** is said plainly
+   - an **estimate** or model number is said as one, in varied words ("करीब", "मोटा-मोटा", "मान लीजिए")
+   - an **illustrative scenario** (invented people, their scenes and their words) is introduced once as an example, early and
+     in one natural line, before its first person speaks: "रमेश जी की दुकान एक मिसाल है, पर उसका हर नंबर असली बाजार से है।"
+     It is never a legal disclaimer and never repeated; after it, tell the story straight. List the invented people in
+     `invented` (section 9).
 
 Channel rules:
 - No greeting and no channel intro. No ask before the last 90 seconds.
-- Invented characters are never called fictional; give no disclaimer and tell it straight.
+- Invented people, scenes and dialogue are never presented as real events (rule 8).
 - Real people say only their documented words. A reconstruction is marked as one ("उस दिन माहौल कुछ ऐसा रहा होगा").
 - Allegations are attributed, and the other side is given.
 - No politics, religion, caste or community generalisations, and no buy/sell advice.
@@ -312,6 +328,9 @@ topic).
 
 Real people: use their documented words only. Dramatise with the scene, not with invented quotes.
 
+End the research file with **"Not in this video"**: the good findings that do not help answer L1. Writing them down makes them
+easy to leave out, and they are the next video's material.
+
 Two checks that v3 of the jewellery script failed:
 - **The window.** Every percent change has a window. Match it to the scene's date. A quarterly-average year-on-year figure
   is not "since last Dhanteras". In v3, the +45% was a July–September average; Dhanteras to Dhanteras was +6 to 9%.
@@ -337,46 +356,49 @@ Write it in short English notes:
    serves it, and one that does not gets cut.
 2. **L1 and its answer.** Show the exact answer with the arithmetic from the research file, two or three wrong guesses the viewer
    will make, and why the truth surprises. If it does not surprise, the angle is wrong: find a sharper one before writing.
-3. **The viewer's gain**: the one thing they will be able to do or see for themselves by the end, concrete and checkable (read a
-   bill, spot a trick, run a number on their own shop). It is promised in the first 60 seconds and paid in the close.
+3. **The takeaway** (`gain`): the one thing the viewer will remember, and can do or see for themselves, by the end: concrete and
+   checkable (read a bill, spot a trick, run a number on their own shop). One, not two. It is promised early and paid in the
+   close.
+   **The ideas the viewer must learn to get there**, in order: usually three to five, one per chapter at most. Anything else
+   goes to "Not in this video".
 4. **The shape** (craft section 3) and one line on why. For format A, prefer A-story.
 5. **The person.** Their want (one line of their own dialogue), their wound (a pain from the viewer's own life), their naive
    belief (the viewer's belief, with the naive math), the mistake we see coming, and one habit that makes them specific. A real
    person's wound and want must be documented.
-6. **The stakes**: two to four physical things put on the table, each with the moment it is put down.
+6. **The stakes**: the physical things put on the table, each with the moment it is put down.
 7. **The opposition, with faces**: every share of the money as a character with a place and one line, plus the rival and the
-   system (duty, permits, the bank).
+   system (duty, permits, the bank). Only the ones the story needs.
 8. **The time line**: the story's "now", the one flashback if there is one, and every real date the script mentions in
    relation to that now. If a real event falls outside the story's frame, either it enters as a flashback or it is cut.
-9. **The turns**: five to eight reversals, each marked up or down and each revealing one money fact. The lowest point falls
-   between 45 and 70%.
-10. **Plants and payoffs**: three to five small things put down early (an object, a line, a number) and where each pays off.
-11. **The feeling map**: six to eight feelings in order, each with the beat that causes it and the trigger behind it.
+9. **The turns**: the moments the story changes direction, each marked up or down and each revealing one idea from item 3.
+10. **Plants and payoffs**: the small things put down early (an object, a line, a number) and where each pays off.
+11. **The feeling map**: the feelings in order, each with the beat that causes it. The feeling should not sit still for long.
+12. **Who is real**: each person, real (documented words only) or invented (introduced once as an example).
 
 If the user is present and asked to see the plan, show the throughline, L1 and its answer, and the shape, then wait. Otherwise
 go on.
 
 ## 5. The beat sheet and the loop ledger: `<slug>-beats.md`
 
-**The beat sheet** has one row per beat. A beat lasts 15 to 40 seconds, which gives 25 to 45 beats for 10 to 15 minutes.
-Columns: time, **event** (what happens, to whom, where), **feeling and trigger**, **fact** (its research id, or a dash),
-**loops open** after the beat, and **device** (re-hook, interrupt, reveal, reversal, payoff, or none).
+**The beat sheet** has one row per beat. A beat usually lasts 15 to 40 seconds. Columns: time, **event** (what happens, to
+whom, where), **feeling**, **idea** (which of the engine's ideas it teaches, or a dash), **fact** (its research id, or a dash),
+and **device** (a reveal, reversal or payoff; usually none).
 
 - **Every beat is an event.** "Explain making charges" is not a beat. "The father puts his finger on 'making 12%' and asks
   what it is" is. No fact appears without an event, and a beat holds at most two facts.
 - **Beats chain with "लेकिन" or "इसलिए", never "और फिर".** Read the event column top to bottom joining each row to the next
   with one of the three. If only "and then" fits, the second beat is a list item, not a story beat: cut it, or find what in
   the first beat forces it. (A story is causes; a Wikipedia page is "and then".)
-- **The relay**: after every beat at least one loop is open, and a new one opens before an old one closes.
-- **The feeling changes** at least every two beats.
-- **Chapters (5 to 9) are named for what happens** ("The Night the Duty Fell"), never for a category ("Investment", "Revenue",
-  "Profit", "Introduction", "Conclusion").
-- **The device column follows the cadence of the toolkit.** In any 90-second window with no reversal, write which device carries
-  it. If the honest answer is "nothing", the beat is cut or rebuilt; do not paper over it with a stinger.
+- **One new idea at a time.** Read the idea column: a beat teaches at most one new idea, and the next idea waits until the last
+  one has happened in a scene.
+- **Chapters (usually 5 to 8) are named for what happens** ("The Night the Duty Fell"), never for a category ("Investment",
+  "Revenue", "Profit", "Introduction", "Conclusion").
+- **A stretch where nothing changes** (no new fact, no turn for the person, no step toward L1) is cut or rebuilt. Do not paper
+  over it with a stinger.
 
-**The loop ledger** is a table: id, the question in the viewer's words, the beat that opens it, the beat that closes it, and how
-it closes (which plant's words come back). L1 is the central question. A loop that never closes is a broken promise. A loop
-closed within a few seconds of opening is not a loop.
+**The loop ledger** is a short table: id, the question in the viewer's words, the beat that opens it, the beat that closes it,
+and how it closes. L1 is the central question. Add a smaller loop only when the story itself raises the question. A loop that
+never closes is a broken promise; one closed within a few seconds is not a loop.
 
 ## 6. Three hooks: `<slug>-hooks.md`
 
@@ -385,11 +407,12 @@ Write three hooks in different shapes from craft section 4. Every one needs:
 - a contradiction
 - rupees or a life at stake
 - L1 as a guess with wrong options where there is money
-- the promise of one specific reveal
-- the viewer's gain in one plain line within 60 seconds
+- the promise of one specific reveal, which the video really delivers
+- the takeaway in one plain line within the first minute or so
 
 And three hard rules, because the first 30 seconds decide more than the rest of the script together:
-- **The first five words hold something concrete**: a time, a place, a rupee amount or a person doing something — never a
+- **The first five words hold something concrete**: a time, a place, a rupee amount, a person doing something or a surprising
+  true fact — never a
   generality the voice has to climb out of ("रात के ग्यारह बजे, दुकान का शटर आधा गिरा है" starts; "भारत में सोने का बाज़ार
   बहुत बड़ा है" is a skip).
 - **No sentence in the first 30 seconds could open any other video.** Read each one alone: if it would fit a different
@@ -415,8 +438,10 @@ Write `script.json` directly from the beat sheet, beat by beat, in two passes:
 
 1. **Tell the story plainly**, as if to a friend, with no devices: the events, the people, the money, in order. Read it back. If
    the plain version is not interesting, no device will save it; go back to the engine.
-2. **Season it.** Add a device only at the lulls the beat sheet marks: a re-hook at chapter starts, an interrupt in long
-   explaining stretches, the loop openings and closings. Then mark each one on its line (`open`, `close`, `tag`).
+2. **Season it, lightly.** Where the plain version really drags, add what fixes it: a scene in place of an explanation, a
+   sharper reveal, a re-hook that names the next specific thing. Where it does not drag, add nothing. Mark L1's opening and
+   answer (`open`, `close`) and any real reveal, reversal or payoff (`tag`); the marks are notes for the reader of script.md,
+   not targets.
 
 While writing, keep these in hand:
 - **Every cost walks in** as a share-taker in a scene, with a face and one line, plus the running count of what is left (said as
@@ -425,34 +450,36 @@ While writing, keep these in hand:
   must be believed.
 - **Talk to the viewer** at the guesses, the predictions, the challenge to their naive math, and the close. A story narrated
   with no "आप" in it for five minutes has lost the friend.
-- **Humour once a chapter**, from a character's mistake or a sharp observation. **One image a chapter** that sticks.
+- **Humour where it comes naturally**, from a character's mistake or a sharp observation, and **an image that sticks** in most
+  chapters. Never force either.
 
 ## 8. Revision passes
 
 Run all of them, and write what each one changed into `<slug>-check.txt`.
 
-1. **Throughline**: say the video in the one-sentence throughline. Name each chapter's contribution to it in five words. A
-   chapter that cannot be named is cut or merged.
+1. **Throughline and focus**: say the video in the one-sentence throughline. Name each chapter's contribution to it in five
+   words, and the one idea it teaches. A chapter that cannot be named is cut or merged; a character or subplot that serves
+   no chapter is cut.
 2. **Time line**: list every time anchor in order (the checker prints them as INFO). There is one now, at most one flashback,
    every jump is stamped, and nothing is ambiguous to a listener.
-3. **Table read**: read every line aloud as the narrator, at speaking pace. Mark every place you stumble, every quote where you
-   cannot tell who speaks, every number you cannot recall ten seconds later, and every word nobody says. Fix them all.
-4. **Friend test**: would you send each line to a friend as a voice note? Rewrite the newspaper, textbook, serial and chatbot
-   lines.
-5. **Bored viewer, every 30 seconds**: name the open question, the feeling and the new picture in that window. A window with
-   none of the three is cut or rewritten. Then name the three windows where you would most likely skip, and fix those three
-   first.
-6. **Loop ledger**: every loop closes, every promise in the promise list is kept, and L1 is answered with the exact number. That
-   number matches the research arithmetic.
-7. **Number diet**: list every number in order. Cut each number the story does not need. Check the three payoff numbers: are
+3. **Table read**: read every line aloud as the narrator, at speaking pace, as a friend's voice note. Mark every stumble, every
+   quote where you cannot tell who speaks, every number you cannot recall ten seconds later, every word nobody says, and every
+   newspaper, textbook, serial or chatbot line. Fix them all.
+4. **First-time viewer, every 30 seconds**: in each window, does something change (a fact, the person's situation, a step
+   toward L1), and could someone new to the trade follow it? A window that fails either is cut or rewritten. Then name the
+   three windows where you would most likely skip, and fix those three first.
+5. **Promises**: every loop closes, every promise in the promise list is kept, and L1 is answered with the exact number. That
+   number matches the research arithmetic. Cut any suspense line the next minute does not pay.
+6. **Number diet**: list every number in order. Cut each number the story does not need. Check the three payoff numbers: are
    they introduced early and repeated?
-8. **Repetition and template sweep**: repeated phrases (the checker lists them), repeated information, device lines that could
+7. **Repetition and template sweep**: repeated phrases (the checker lists them), repeated information, device lines that could
    sit in any video, the "never write" list, told feelings, sources read aloud.
-9. **Fact pass**: every factual line carries its `facts` ids. Each id's status is right and is said honestly (an estimate as an
-   estimate, a legend as a legend). Fix anything that drifted while writing.
-10. **Side by side**: read our first 90 seconds next to the first 90 seconds of the closest hit in craft.md (same shape), then one
-    middle stretch next to theirs. If a stranger would pick theirs, rewrite ours and say what changed.
-11. **The free listen**: `preview.py` renders the whole script with a free local voice. It is flat and has no emotion, so it
+8. **Fact pass**: every factual line carries its `facts` ids. Each id's status is right and is said honestly (an estimate as an
+   estimate, a legend as a legend), and the invented people are introduced as an example before they first speak. Fix
+   anything that drifted while writing.
+9. **Side by side**: read our first 90 seconds next to the first 90 seconds of the closest hit in craft.md (same shape), then one
+   middle stretch next to theirs. If a stranger would pick theirs, rewrite ours and say what changed.
+10. **The free listen**: `preview.py` renders the whole script with a free local voice. It is flat and has no emotion, so it
     judges the story and the pacing, not the delivery.
 
 ## 9. The files: `script.json` and `<slug>-script.md`
@@ -465,7 +492,8 @@ Run all of them, and write what each one changed into `<slug>-check.txt`.
   "format": "economics",
   "question": "Of a ₹3 lakh necklace bill, how much is the jeweller's own?",
   "answer": "About ₹4,600 (M7)",
-  "gain": "Read any jewellery bill: making charge percent and the HUID",
+  "gain": "Most of a jewellery bill is gold passing through; the jeweller earns on the making charge and gambles on the gold he holds",
+  "invented": ["ramesh", "ankit", "nandu"],
   "loops": {"L1": "इस बिल में ज्वेलर का अपना कितना?", "L2": "..."},
   "sources": ["https://...", "BIS hallmarking notification, 2021"],
   "lines": [
@@ -474,6 +502,10 @@ Run all of them, and write what each one changed into `<slug>-check.txt`.
   ]
 }
 ```
+
+**Top-level fields:** `question` (L1, one question), `answer` (exact, with its research id), `gain` (the one takeaway), and
+`invented`: the `who` names of every invented person who speaks (empty or absent when everyone is real). The checker looks
+for the example line before the first of them speaks.
 
 **Line fields:**
 - `hi`: the narration in Devanagari, exactly as the narrator says it, one sentence a line.
@@ -486,8 +518,9 @@ Run all of them, and write what each one changed into `<slug>-check.txt`.
 - `chapter`: on the first line of each chapter, a 3 to 5 word English title named for an event. It becomes the YouTube chapter.
 - `screen` (rare, on under a third of the lines): Hinglish in Latin letters, at most 6 words (a number, a name, the key word).
 - `facts`: research ids (F3, M2) on every line that states a fact or a model number.
-- `open` / `close`: loop ids from the ledger (a string or a list).
-- `tag`: `rehook`, `interrupt`, `reveal`, `reversal`, `payoff` or `gain`.
+- `open` / `close`: loop ids from the ledger (a string or a list). L1's are required.
+- `tag` (optional): `reveal`, `reversal`, `payoff`, `rehook`, `interrupt`, `gain` (the line that promises the takeaway) or
+  `example` (the line that introduces the invented people). Tag what is there; never add a line to have something to tag.
 - `say` (on every line where a person speaks): `{"who": "ramesh", "from": "धनतेरस के एक दिन"}`. `from` is where their words start; the
   narrator reads everything before it. Add `to` where they stop and the narrator resumes, or leave `from` out when the whole line is
   theirs. A list of marks covers a line with two speakers. `who` is a short lowercase name that matches `voice-cast.json`.
@@ -498,38 +531,33 @@ Run all of them, and write what each one changed into `<slug>-check.txt`.
 and a new picture every one to three lines. The edit rules (shot lengths, camera moves, the render checks) are in
 `references/production.md`. The script does not need them, but the visual notes should make them possible.
 
-**Length:** aim for 2,200 to 2,800 Hindi words (14 to 18 minutes at 155 words a minute). For a 10 to 15 minute video, 1,600 to
-2,300.
+**Length:** as long as the story needs and no longer: usually 1,600 to 2,500 Hindi words (10 to 16 minutes at 155 words a
+minute). When in doubt, cut; never pad to reach a length.
 
 Then run `casecheck.py script.json --md`. It writes **`<slug>-script.md`**, the production-ready script the owner reads: the
-title and alternatives, the thumbnail words, the central question and answer, the gain, the loop ledger with open and close
-times, then every chapter with timestamps, each line with its re-hook, loop and interrupt marks and its visual.
+title and alternatives, the thumbnail words, the central question, answer and takeaway, who is invented, the loops with open
+and close times, then every chapter with timestamps, each line with its marks and its visual.
 
-## 10. The editor's score: `<slug>-score.md`
+## 10. The editorial check: `<slug>-score.md`
 
 Before handing back, change roles. You are now an independent senior script editor who did not write this script and owes
-its writer nothing. Score the script, fix only what is weak, then score it again.
+its writer nothing. Read it as a **first-time viewer** who knows nothing about the trade: can they follow it, do they want the
+next minute, and what will they remember tomorrow? Score, fix only what is weak, then score again.
 
-**Step 1: score.** Score ten dimensions, equal weight, each 0 to 10. Give each score one line of evidence quoted from the
-script, with its timestamp.
+**Step 1: score.** Six questions, each 0 to 10, each with one line of evidence quoted from the script with its timestamp.
 
-| Dimension | What a 9 looks like |
-|---|---|
-| Opening hook | a picture, a price and a contradiction in 15 seconds; the title's promise is restated by 0:30 |
-| Storytelling | a person who wants something, makes choices and pays for them; concrete details; one time line |
-| Curiosity and open loops | 2 to 3 loops open at every moment; each closes with something worth the wait |
-| Retention and re-hooks | a reason to stay every 60 to 120 s; no stock re-hooks; no stretch where the narrator lectures |
-| Natural Hinglish and dialogue | every line passes the friend test; speakers named; nobody talks like a serial or a slogan |
-| Emotional connection | we feel what the person feels, shown in gestures, never told |
-| Pacing | no stretch drags; the information is spread out; the back third does not stall before the payoff |
-| Educational value and clarity | the viewer can explain the mechanism afterwards; no logic gap a smart viewer would catch |
-| Factual accuracy and research | every number traces to a row; windows, dates, arithmetic and the law all check |
-| Ending and payoff | L1 answered with the exact number; the promises kept; a last image, not a summary |
+| | The question | What a 9 looks like |
+|---|---|---|
+| **Clarity** | Could a first-time viewer follow every line on one hearing? | one idea at a time, each named in plain words; numbers the ear can hold; natural spoken Hinglish; always clear who speaks and when |
+| **Story focus** | Is it one question, one storyline, one takeaway? | every chapter, character and subplot moves L1 forward; nothing is there only because the research found it |
+| **Pacing** | Does something change in every stretch? | no lecture, no recap, no explaining past the click; the tail after the answer is short |
+| **Engagement** | Would they choose to keep watching? | a hook from a familiar situation or a surprising fact; a person we care about; reveals that change the picture; no suspense the next minute does not pay |
+| **Accuracy** | Is every claim true, and is its kind clear? | every number traces to a row; windows, arithmetic and the law check; estimates said as estimates; invented people introduced as an example |
+| **Educational value** | What will they remember and be able to do? | the takeaway can be said in one line, and the viewer could explain the mechanism to a friend |
 
-The overall score is the mean of the ten. A dimension scoring 8 or more is good: leave it alone. A dimension below 8 is
-weak.
+The overall score is the mean. A question scoring 8 or more is good: leave it alone. Below 8 is weak.
 
-**Step 2: the weak areas.** For each weak dimension, say what is wrong, quoting the line with its timestamp. Mark each fault:
+**Step 2: the weak areas.** For each weak question, say what is wrong, quoting the line with its timestamp. Mark each fault:
 - **critical**: a wrong fact, number or date window, the law, or a logic error a viewer would catch
 - **minor**: craft
 
@@ -556,13 +584,14 @@ Never invent a weakness to have something to fix.
 **Always run the skip audit, whatever the scores.** Read the script as the impatient viewer whose thumb is on the 10-second
 jump: at every chapter seam, every reveal, every math stretch and the tail after the central revelation, ask "if I jumped
 ahead here, would I feel I missed something?" List the three stretches where the honest answer is no, with timestamps, and
-fix them using "Where viewers skip" above — by cutting or restructuring, never by pasting a stinger. If pass 5 of the
+fix them using "Where viewers skip" above — by cutting or restructuring, never by pasting a stinger. If pass 4 of the
 revision already named three windows, check its fixes held; do not re-litigate windows that now pull.
 
 **Always run the naturalness check, whatever the scores.**
 - Characters sound like real Indian people in their own trade and age, not like a serial, a slogan or a chatbot.
 - Cut artificial drama: a narrator announcing a feeling ("वो बात जो कोई बेटा नहीं कहना चाहता") instead of showing a gesture.
 - Cut repeated hooks and suspense the story does not need.
+- Cut dialogue that sounds polished: a cast trading quotable lines, or a character stating the lesson.
 
 **Fix these faults wherever they are**, even in a section that scores 8 or more. They are errors, not style. If the audit
 finds a fault an earlier score missed, lower that score and say so.
@@ -570,9 +599,11 @@ finds a fault an earlier score missed, lower that score and say so.
 **Step 3: targeted fixes.**
 - Rewrite only the weak lines and paragraphs.
 - Keep the strong hooks, characters, transitions and loops, and keep the order.
-- Keep the runtime within 5%.
+- Do not add length; keep the runtime within 5% unless a cut makes it shorter.
 - Verify a fact before changing it, and add the new research rows.
 - Where retention is weak because the narrator explains, play the explanation as a scene with a person.
+- Where focus is weak, cut: a whole idea, character or chapter that does not serve L1 moves to "Not in this video". Cutting is
+  allowed to shorten the runtime.
 - Cut stock re-hooks, artificial drama and AI phrasing.
 - Do not tune every sentence for retention. Natural storytelling matters more. Do not change good content just to make it
   different.
@@ -599,9 +630,10 @@ Hand back:
 - the throughline sentence, and L1 with its exact answer
 - the chosen hook in full, plus one line on each alternative
 - the chapter list with timings, and the runtime
-- the loop ledger in one line each
+- the takeaway in one line, and the ideas taught on the way
+- who is invented and the line that introduces them
 - what the revision passes changed
-- the editor's score table (original against revised) and the remaining issues
+- the editorial check table (original against revised) and the remaining issues
 - the checker summary
 - any facts marked estimate or legend
 - the full path of `<slug>-script.md`

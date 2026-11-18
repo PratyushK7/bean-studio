@@ -7,16 +7,19 @@
     python casecheck.py --transcript tx.json [--format story]   # check a real video's captions (calibration)
 
 What it checks:
-  structure  the engine and beat sheet exist; the loop ledger (open/close on lines) opens L1 in the hook and closes it at the end,
-             every loop pays off, some loop is open at every moment; no long stretch without a re-hook, reveal or interrupt
+  focus      one central question, its answer and one takeaway are written down; L1 opens in the hook and is answered near the end;
+             every loop pays off; not so many loops that the story splits; new facts per chapter are listed (INFO)
   the ear    sentence length, numbers per sentence and per half minute, speech with no speaker named, repeated phrases,
              template and AI lines, meta orders to the viewer; the time anchors are listed (INFO) for the time-line pass
-  honesty    sources, research ids on lines with numbers, no fiction disclaimer, sources read aloud
+  honesty    sources, research ids on lines with numbers, invented people introduced as an example before they speak,
+             sources read aloud
   the rules  no greeting, no ask before the close, a short close
 
-What it cannot check: whether the story is any good. The v2 jewellery script passed the old checker with 0 FAIL and 0 WARN and still
-"felt so off", because lines had been added to satisfy its phrase counts. Never add a line to satisfy a rule here; fix the script and
-read the report again. The ear thresholds are rules of thumb, not measured on the hits; the craft is judged by SKILL.md section 8.
+What it does not do: count devices. Re-hooks, interrupts and reveals are not required at any rate (counting them does not separate
+hits from flops, craft.md section 1); tags only feed INFO lines. What it cannot check: whether the story is any good. The v2 jewellery
+script passed an older checker with 0 FAIL and 0 WARN and still "felt so off", because lines had been added to satisfy its counts.
+Never add a line to satisfy a rule here; fix the script and read the report again. The story is judged by the editorial check
+(SKILL.md section 10).
 """
 import json, re, sys, unicodedata
 from collections import Counter
@@ -36,7 +39,8 @@ AI = rx(r"क्या आपने कभी सोचा|आज के (इस
 REFRAME = rx(r"सिर्फ [^।?]{1,40} नहीं (था|थी|थे|है|हैं)[,।]?\s*(ये|यह|वो|वह|बल्कि)")
 META = rx(r"(लिख|नोट कर) (लीजिए|लो|लें|लीजिएगा)|याद रखि(ए|एगा)|याद रखना|वीडियो के (आखिर|अंत) (में|तक)")
 TOLD = rx(r"सांस (एक पल को )?(रुक|थम)|चेहरे पर (एक )?(मुस्कान|चमक|खुशी) (आ|छा|दौड)|दिल (जोर से )?(धड़क|बैठ) (उठा|गया|जाता)|आंखें (चमक|भर) (उठीं|आईं|गईं)")
-DISCLAIM = rx(r"किरदार|काल्पनिक|फिक्शन|कहानी (सच्ची|काल्पनिक) नहीं|ढूंढने मत निकल|(हमारी|ये|यह) (कहानी|किरदार)[^।]{0,30}(मनगढ़ंत|गढ़ी)")
+# the one line that introduces invented people as an example (SKILL.md non-negotiable 8); the `example` tag also counts
+EXAMPLE = rx(r"मिसाल|उदाहरण|काल्पनिक|कल्पना कीजिए|कल्पना करिए|गढ़ी हुई|गढ़ा हुआ|असली (नाम|लोग|किरदार) नहीं|एक मॉडल|मॉडल (दुकान|बिजनेस|कहानी)")
 # textbook Hindi people do not say today; each has the everyday word in SKILL.md ("The everyday word")
 BOOKISH = rx(r"सर्राफ|बनवाई|ग्राहक|बिक्री|मुनाफा|ब्याज|मजदूरी|संगठित|शुद्धता|उपभोक्ता|व्यापारी|लेन-देन|पूंजी|आमदनी|विक्रेता|क्रेता|अनुमान|\bतथा\b|\bएवं\b|किंतु|परंतु|\bअतः|\bहेतु\b|द्वारा|अत्यंत|अत्यधिक|प्रतीत|पश्चात|उपरांत|आवश्यक|संभवतः|वर्तमान में")
 SOURCED = rx(r"के मुताबिक|के अनुसार|रिपोर्ट (कहती|बताती)|का कहना है|ने खुद बताया|खुद मानती")
@@ -58,7 +62,6 @@ DEVANAGARI = re.compile(r"[ऀ-ॿ]")
 STOP = set(norm(w) for w in ("यह वह और है था थी थे हैं में से का की के को पर एक जो तो भी ही कि नहीं अपने अपनी उस इस उन इन कर रहे रहा "
                               "रही लिए साथ बाद अब हम आप वो ये ना है। हो गया गई गए जाता जाती जाते होता होती होते करते करता करती तक सब").split())
 ASKQ = rx(r"(आप|आपके|आपकी|आपका)[^।]*\?|(आप )?बताइए|अगली बार [^।]{0,60}(देखिएगा|देखिए|पूछिए|पूछिएगा|चेक कीजिए|डालिए)")
-DEVICE_TAGS = {"rehook", "interrupt", "reveal", "reversal", "payoff", "gain"}
 KINDS = {"still", "card", "hero"}
 
 def words(s): return [w for w in re.split(r"\s+", (s or "").strip()) if re.search(r"\w", w)]
@@ -122,9 +125,27 @@ def check(doc, research_text=None):
     if people: say("INFO", "people with their own voice: " + ", ".join(f"{w} ({len(v)} line{'s' if len(v) > 1 else ''})" for w, v in people.items()))
     quoted = [i for i, ln in enumerate(lines) if not ln.get("say") and re.search(r"(कहते हैं|कहता है|कहती है|बोला|बोले|बोलता है|बोलते हैं|पूछते हैं|पूछता है|पूछा|टोकते हैं|जवाब देता है)\s*,\s*\S", norm(ln.get("hi")) or "")]
     if quoted: say("WARN", f"lines {first_lines(quoted)} look like a person speaking but have no `say` mark, so the narrator would read their words; mark them (who, and where their words start) or rewrite as reported speech")
+    # invented people are introduced once, as an example, before the first of them speaks; never passed off as real
+    if not tr:
+        inv = as_list(doc.get("invented"))
+        if people and "invented" not in doc and fmt in ("economics", "compare"):
+            say("WARN", "people speak but the top-level \"invented\" is missing: list the invented speakers ([] when everyone is real), so the example line can be checked")
+        if inv:
+            spoke = [people[w][0] - 1 for w in inv if w in people]
+            limit = min(spoke) if spoke else len(lines) - 1
+            ex = [i for i, ln in enumerate(lines) if i <= limit and ("example" in as_list(ln.get("tag")) or EXAMPLE.search(txt[i]))]
+            if ex: say("PASS", f"the invented people are introduced as an example at {at(ex[0])}")
+            else: say("WARN", f"the invented people ({', '.join(inv)}) are never introduced as an example" + (f" before the first of them speaks at {at(limit)}" if spoke else "")
+                      + "; add one natural line early, not a disclaimer (SKILL.md non-negotiable 8), and tag it \"example\"")
+
+    # --- one video: one central question, one answer, one takeaway
+    if not tr:
+        if not doc.get("question"): say("FAIL", "no top-level \"question\": one video answers one central question (SKILL.md step 4)")
+        if not doc.get("answer"): say("WARN", "no top-level \"answer\": write L1's exact answer with its research id")
+        if not doc.get("gain"): say("WARN", "no top-level \"gain\": the one takeaway the viewer leaves with")
 
     # --- runtime and the hook
-    say("PASS" if 10 <= mins <= 25 else "WARN", f"runtime {mins:.1f} min at {doc.get('wpm') or WPM:.0f} wpm ({sum(len(words(l.get('hi'))) for l in lines)} words); aim for 14 to 18 min (10 to 15 for a short topic)")
+    say("PASS" if 8 <= mins <= 22 else "WARN", f"runtime {mins:.1f} min at {doc.get('wpm') or WPM:.0f} wpm ({sum(len(words(l.get('hi'))) for l in lines)} words); as long as the story needs, usually 10 to 16 min; cut rather than pad")
     chap_i = [i for i, ln in enumerate(lines) if ln.get("chapter")]
     hook_end = chap_i[1] if len(chap_i) > 1 else max(1, len(lines) // 12)
     hook_t = times[hook_end - 1][1]
@@ -133,9 +154,8 @@ def check(doc, research_text=None):
     if GREET.search(" ".join(txt[:3])): say("FAIL", "a greeting or channel intro in the first lines (the channel's rule)")
     hook = " ".join(txt[:hook_end])
     if CTA.search(hook): say("FAIL", "a like/subscribe/comment ask inside the hook (the channel's rule)")
-    if "?" not in hook: say("WARN", "the hook asks no question; L1 should be asked in it, as a guess where there is money")
 
-    # --- the loop ledger and the device rhythm
+    # --- the loops: L1 is required, smaller loops only where the story raises them
     close_i = next((i for i, s in enumerate(txt) if i >= hook_end and CTA.search(s)), len(lines))
     body_end_t = times[close_i - 1][1] if close_i > 0 else total
     if not tr:
@@ -144,7 +164,7 @@ def check(doc, research_text=None):
             for L in as_list(ln.get("open")): opens.setdefault(L, i)
             for L in as_list(ln.get("close")): closes[L] = i
         if not opens:
-            say("FAIL", "no loop ledger: mark the line that opens each loop (\"open\": \"L1\") and the line that pays it (\"close\": \"L1\"); L1 is the central question (SKILL.md steps 5 and 9)")
+            say("WARN", "L1 is not marked: put \"open\": \"L1\" on the line that asks the central question and \"close\": \"L1\" on the line that answers it (SKILL.md section 9)")
         else:
             never = [L for L in opens if L not in closes]
             if never: say("FAIL", f"loops opened and never paid: {never} (a broken promise; pay it or cut the opening)")
@@ -159,39 +179,25 @@ def check(doc, research_text=None):
                     say("PASS" if share >= 0.82 else "WARN", f"L1 is answered at {at(c)}, {share:.0%} of the runtime" + ("" if share >= 0.82 else "; once the central question is answered the reason to stay is gone, so answer it in the last 10 to 15%"))
             quick = [L for L in opens if L in closes and times[closes[L]][0] - times[opens[L]][0] < 15]
             if quick: say("WARN", f"loops closed within 15 s of opening: {quick} (a question answered at once is not a loop)")
-            # what is open at each moment of the body
-            dead, worst_open, run_start = [], 0, None
-            story_end = min(close_i, closes.get("L1", close_i))     # after L1 is answered the ending runs on payoffs, not loops
-            for i in range(hook_end, story_end):
-                n_open = sum(1 for L in opens if opens[L] <= i and (L not in closes or closes[L] > i))
-                worst_open = max(worst_open, n_open)
-                if n_open == 0 and run_start is None: run_start = i
-                if n_open and run_start is not None:
-                    if times[i][0] - times[run_start][0] > 20: dead.append(run_start)
-                    run_start = None
-            if run_start is not None and times[story_end - 1][1] - times[run_start][0] > 20: dead.append(run_start)
-            if dead: say("WARN", f"no loop open from {', '.join(at(i) for i in dead[:4])}: nothing pulls the viewer forward there (open the next loop before closing the last)")
-            elif opens: say("PASS", "a loop is open at every moment of the body")
+            worst_open = max((sum(1 for L in opens if opens[L] <= i and (L not in closes or closes[L] > i)) for i in range(hook_end, close_i)), default=0)
             if worst_open > 4: say("WARN", f"{worst_open} loops open at once somewhere; more than four and the viewer loses track")
+            if len(opens) > 5: say("WARN", f"{len(opens)} loops in one video; most need L1 and one to three smaller questions that serve it, and more usually means two stories")
             undescribed = [L for L in opens if L not in (doc.get("loops") or {})]
             if undescribed: say("WARN", f"loops with no question written in the top-level \"loops\": {undescribed[:6]}")
-        # the rhythm: any device event (a loop opening or closing, a tagged line)
-        ev = sorted(times[i][0] for i, ln in enumerate(lines) if hook_end <= i < close_i and (ln.get("open") or ln.get("close") or set(as_list(ln.get("tag"))) & DEVICE_TAGS))
-        def longest(points, a, b):
-            pts = [a] + sorted(points) + [b]
-            return max((pts[k + 1] - pts[k], pts[k]) for k in range(len(pts) - 1))
-        g, g_at = longest(ev, hook_t, body_end_t)
-        say("PASS" if g <= 120 else "WARN", f"longest stretch with no re-hook, reveal, interrupt or loop event: {g:.0f} s from {mmss(g_at)} (aim: something every 45 to 120 s)")
-        rh = [times[i][0] for i, ln in enumerate(lines) if hook_end <= i < close_i and set(as_list(ln.get("tag"))) & {"rehook", "reveal"}]
-        g2, g2_at = longest(rh, hook_t, body_end_t)
-        say("PASS" if g2 <= 150 else "WARN", f"{len(rh)} re-hooks and reveals in the body; longest gap {g2:.0f} s from {mmss(g2_at)} (never more than 2.5 min)")
-        mid = [p for p in rh if 0.35 * total <= p <= 0.65 * total]
-        if not mid: say("WARN", "no re-hook or reveal tagged in the middle third (35 to 65%); the biggest twist belongs there")
-        ints = [times[i][0] for i, ln in enumerate(lines) if "interrupt" in as_list(ln.get("tag"))]
-        say("INFO", f"{len(ints)} pattern interrupts tagged ({len(ints) / max(.1, mins):.1f}/min; the toolkit asks for one every 45 to 90 s, varied)")
+        # progression, for the table read: tags are notes, so this is never a target
+        turns = [times[i][0] for i, ln in enumerate(lines) if hook_end <= i < close_i and (ln.get("close") or set(as_list(ln.get("tag"))) & {"reveal", "reversal", "payoff"})]
+        pts = [hook_t] + sorted(turns) + [body_end_t]
+        g, g_at = max((pts[k + 1] - pts[k], pts[k]) for k in range(len(pts) - 1))
+        say("INFO", f"longest stretch with no tagged reveal, reversal or payoff: {g:.0f} s from {mmss(g_at)}; in the table read, check that something still changes there")
         gain_i = [i for i, ln in enumerate(lines) if "gain" in as_list(ln.get("tag"))]
-        if not doc.get("gain") or not gain_i: say("WARN", "no viewer's gain: set the top-level \"gain\" and tag the line that promises it (\"tag\": \"gain\")")
-        elif times[gain_i[0]][0] > 75: say("WARN", f"the viewer's gain is promised at {at(gain_i[0])}; promise it in the first minute")
+        if gain_i and times[gain_i[0]][0] > 90: say("WARN", f"the takeaway is first promised at {at(gain_i[0])}; promise it in the first minute or so")
+        # one idea at a time: verified facts brought in per chapter (model numbers are arithmetic, not new ideas)
+        seen, per = set(), []
+        for k, a in enumerate(chap_i or [0]):
+            b = chap_i[k + 1] if k + 1 < len(chap_i) else len(lines)
+            new = {f for ln in lines[a:b] for f in as_list(ln.get("facts")) if f.startswith("F")} - seen
+            seen |= new; per.append(f"{len(new)} {lines[a].get('chapter') or 'start'}")
+        if seen: say("INFO", "new research facts per chapter: " + " | ".join(per) + " (a chapter teaches one idea; a long list is usually a chapter doing too much)")
 
     # --- the ear
     longl = [i for i, s in enumerate(txt) if max(len(words(x)) for x in sentences(s)) > 22]
@@ -247,10 +253,10 @@ def check(doc, research_text=None):
         asks = sorted(set([i for i in end if CTA.search(txt[i]) or ASKQ.search(txt[i])] + nxt))
         say("PASS" if len(asks) <= 3 else "WARN", f"{len(asks)} asks in the close (lines {first_lines(asks)})" + ("" if len(asks) <= 3 else "; keep one comment question, one ask and the next video, then the sign-off"))
     tail = " ".join(txt[int(len(txt) * 0.88):])
-    if not NEXT.search(tail): say("WARN", "no next video named in the close")
+    if not NEXT.search(tail): say("INFO", "no next video named in the close (the channel usually names it in one line)")
     opening = set(w for w in words(" ".join(txt[:3])) if len(w) >= 4 and w not in STOP)
     back = opening & set(words(" ".join(txt[int(len(txt) * 0.6):])))
-    say("PASS" if len(back) >= 2 else "WARN", f"callback to the opening scene: {len(back)} shared words" + ("" if len(back) >= 2 else " (the hits end back in the opening scene)"))
+    say("INFO", f"callback to the opening scene: {len(back)} shared words" + ("" if len(back) >= 2 else " (the hits often end back in the opening scene; only if it fits)"))
 
     # --- honesty
     src = doc.get("sources") or []
@@ -267,8 +273,6 @@ def check(doc, research_text=None):
             if not known and used: say("WARN", "the research file has no F/M ids yet; number its rows so the fact links can be checked")
     srcd = [i for i, s in enumerate(txt) if SOURCED.search(s)]
     if len(srcd) > 2: say("WARN", f"sources read aloud {len(srcd)} times (lines {first_lines(srcd)}); keep them in the research file, two authority lines at most")
-    dis = [i for i, s in enumerate(txt) if DISCLAIM.search(s)]
-    if dis: say("FAIL", f"a line saying the characters or story are made up (lines {first_lines(dis)}); tell it straight")
     told = [i for i, s in enumerate(txt) if TOLD.search(s)]
     if told: say("WARN", f"feelings told instead of caused at lines {first_lines(told)}")
     book = [i for i, s in enumerate(txt) if BOOKISH.search(s)]
@@ -311,7 +315,8 @@ def write_md(doc, path):
     o.append(f"**Format:** {doc.get('format', '?')} · **Runtime:** about {total / 60:.1f} min ({n_words} words at {WPM} wpm)  ")
     if doc.get("question"): o.append(f"**The central question (L1):** {doc['question']}  ")
     if doc.get("answer"): o.append(f"**The answer:** {doc['answer']}  ")
-    if doc.get("gain"): o.append(f"**What the viewer walks away able to do:** {doc['gain']}  ")
+    if doc.get("gain"): o.append(f"**The takeaway:** {doc['gain']}  ")
+    if doc.get("invented"): o.append("**Invented for illustration (introduced as an example):** " + ", ".join(as_list(doc["invented"])) + "  ")
     if opens:
         o += ["", "## Open loops", "", "| Loop | The viewer's question | Opens | Pays off |", "|---|---|---|---|"]
         for L in sorted(opens, key=lambda x: opens[x]):
@@ -357,7 +362,7 @@ def main():
     for lvl, msg in out: print(f"  {lvl:4}  {msg}")
     fails = sum(1 for l, _ in out if l == "FAIL"); warns = sum(1 for l, _ in out if l == "WARN")
     print(f"\n  {fails} FAIL, {warns} WARN" + ("  - fix the FAILs before the voice" if fails else ""))
-    print("  The checker finds mechanical faults only. Never add a line to satisfy it; the story is judged by the revision passes.")
+    print("  The checker finds mechanical faults only. Never add a line to satisfy it; the story is judged by the editorial check (SKILL.md section 10).")
     sys.exit(1 if fails else 0)
 
 if __name__ == "__main__":

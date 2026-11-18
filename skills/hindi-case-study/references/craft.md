@@ -48,7 +48,7 @@ The quotes below are for studying the mechanism. Never reuse their lines, their 
 ## 3. Story shapes (beat skeletons, as % of runtime)
 
 **A. Economics told as an owner's story** (sleeper bus 3.8M, dhaba 2.2M; the strongest shape for "economics of owning X").
-0-3% cold open at the disaster or the paradox, with the money question as a guess and "जवाब आखिर में" · 3-4% straight on with the story (HiddenOps stops here for a fiction disclaimer; we never do) · 4-10% the person: pain,
+0-3% cold open at the disaster or the paradox, with the money question as a guess and "जवाब आखिर में" · 3-4% straight on with the story (HiddenOps says here, once, that the people are invented and the numbers real; we do the same in one natural line, SKILL.md non-negotiable 8) · 4-10% the person: pain,
 humiliation or a dead-end job, the naive math ("आप भी यही सोच रहे हैं ना? याद रखिए, यह हिसाब आखिर में पलटेगा") · 10-25% the leap:
 stakes laid on the table one sacrifice at a time, the first share-takers born in scenes (the lender, the seller), a temptation ·
 25-60% running it: each cost arrives as an event (a tyre bursts, the pump, the agent's cut, the permit officer), a false high, the
@@ -116,7 +116,8 @@ channel intro, no subscribe ask (the two flops with weak hooks both ask in the f
 ## 5. Re-hooks: the mechanisms, and what makes one real
 
 A re-hook works only when it **promises something specific** or **raises the danger to someone we care about**. A generic line
-("लेकिन कहानी यहीं खत्म नहीं होती", "आगे जो हुआ वो चौंकाने वाला था") promises nothing and is heard as filler.
+("लेकिन कहानी यहीं खत्म नहीं होती", "आगे जो हुआ वो चौंकाने वाला था") promises nothing and is heard as filler. Most scenes need
+none: use one where the plain story would lose the listener, and only if the next minutes pay what it promises.
 
 | Mechanism | Real line | Why it works |
 |---|---|---|
@@ -245,3 +246,23 @@ v3 passed the checker with 0 FAIL. The independent editor's pass (SKILL.md step 
 
 The lesson: the checker and the revision passes check craft. Only a fresh read against current sources catches a wrong window,
 a legal slip or a plan that does not add up.
+
+## 12. The first-time-viewer read of the voiced jewellery script (2026-11-18)
+
+The script that went to voice scored well on the old checker (0 FAIL, 1 WARN) and 8.56 on the old ten-part score. Read again with the
+editorial check (SKILL.md section 10), as someone who has never thought about a jeweller's books, it scores about 7. Its story
+and its scenes are strong (the bill with six names, the laddoo eaten on his own loss, the tarazu and the phone). What a
+first-time viewer would trip on:
+
+| What the viewer meets | Why it costs them | What the revised skill does |
+|---|---|---|
+| Ramesh's family, Goyal, Nandu, Sharma, Gupta are never introduced as an example | a viewer can take them for a real jeweller's family and real quotes | one natural line before the first of them speaks, and `invented` in script.json (checked) |
+| "The Showroom's Secret" brings in the gold loan, Titan's margin, the carat meter, hallmarking and HUID in about 2.5 minutes (7 new facts) | five ideas in one chapter; the listener keeps the first | one idea per chapter; the gold loan answers L2, the rest go to "Not in this video" or one line |
+| Two takeaways: "the sale is in gold, the earning in making, the risk in the safe" and "check the making percent and the HUID" | two lessons compete and both blur | one `gain`; the bill check can be the close's one practical line if it follows from it |
+| Three frames for the same answer: ₹4,600 per bill, ₹9 lakh a year, ₹47,000 this Dhanteras | the ear has to convert between them | one frame carries the answer; the others appear once, as comparisons |
+| Grandfather, Goyal and Nandu all speak in quotable one-liners; Nandu states the lesson ("आप गहने बेचते हो, पर कमाते और गंवाते हो सोने के रेट पर") | the cast sounds written | plain, slightly rough speech; one quotable line per person at most; the scene shows the lesson |
+| "और चौथी रात उस बही से एक ऐसा नंबर निकला, जिसके बाद रमेश जी घर ही नहीं गए" (he then sits on the step until midnight) | suspense bigger than what follows spends trust | a pull only as big as its payoff |
+| 11 `interrupt` and 14 `rehook`/`reveal` tags, written to the old cadence rules | some lines, like "और ऐसा सिर्फ इसी बाजार में नहीं हो रहा", read as if they exist to fill the cadence | no device quotas; tags are notes |
+
+The existing script was not changed; this table is for the next one.
+
