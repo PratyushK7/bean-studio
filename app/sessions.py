@@ -31,7 +31,8 @@ def new_prompt(c, p, topic, fmt, notes):
         return (f'This Claude session makes one video for the channel "{c["channel"]}" and nothing else. Its project folder is {p} (it exists). '
                 f"Topic: {topic}. Format: {fmt} ({HI_FORMATS[fmt]}). " + (f"Notes from the owner: {notes}. " if notes else "") +
                 "Use the hindi-case-study skill (read ~/.claude/skills/hindi-case-study/SKILL.md, references/craft.md, references/study.md and ~/.claude/youtube/voice-hindi.md first). "
-                "Write the research, engine, beats and hooks files, script.json and <slug>-script.md (casecheck.py --md) in the project folder, run casecheck.py, "
+                "Start with the YouTube competitor research (SKILL.md step 2: the top five videos with python tools/yt_research.py, their claims checked independently, what they miss), "
+                "then write the research, engine, beats and hooks files, script.json and <slug>-script.md (casecheck.py --md) in the project folder, run casecheck.py, "
                 "run the editorial check (section 10) and fix only the weak areas, then give the hand-back and STOP at Gate A: the owner reads the script and hears the free preview before anything else. "
                 "After the owner approves, continue the pipeline in this same session one step at a time (python tools/vyapaar_steps.py <project> <step>, the same steps as the Pipeline tab). "
                 "Never start a paid step (the Sarvam voice, clips, any paid API) without the owner's OK on the cost, and never touch other projects.")

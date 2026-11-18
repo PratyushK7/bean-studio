@@ -268,14 +268,13 @@ A topic works when all three hold:
 
 **A topic someone has already covered is fine, and often the best bet, if you repeat it cleverly.** The demand is proven, and
 the viewer clicks a title they already trust.
-- Search YouTube first and list who has covered it and with how many views.
+- Search YouTube first (step 2 opens with the competitor research).
 - Then pick a **different angle**, not a retelling:
   - a different question in the title ("where does the money actually go?" instead of "how did X rise?")
   - the mechanism nobody put on screen (unit economics, a ledger, a loan, a contract clause)
   - a human on the other side (the small shopkeeper, the employee, the customer)
   - a story shape the competitor does not use
 - Keep the proven hit's title formula, but never its script, its examples or its order.
-- Write the competitor list and your angle in `<slug>-research.md` under "Covered by".
 
 If a topic misses one of the three, say which and offer a sharper angle before writing.
 
@@ -309,11 +308,44 @@ The full data, thumbnail patterns and channel roster are in `references/study.md
 Read `references/craft.md` in full and `~/.claude/youtube/voice-hindi.md` before this step. For your format, also read its
 section of `references/study.md` and that file's **What not to copy**. Do not work from memory of them.
 
+**Research broadly, select carefully, explain simply.** The goal is not another version of an existing video; it is the clearest,
+most engaging and most useful video on the topic.
+
+### Competitor research first: the top five videos
+
+```bash
+python tools/yt_research.py search "<topic in English>" "<topic in Hinglish>" "<the closest equivalent>"   # candidates, by views
+python tools/yt_research.py fetch <project> <id> <id> <id> <id> <id>    # details, chapters, description, transcript, top comments
+```
+
+1. **Pick the top five** on the exact topic or its closest equivalent: strong views, relevance, engagement (likes, comments), a
+   credible creator. The fetch writes `research/competitors/<id>.md` (one per video) and `competitors.json`. Copy the table into
+   the research file under **"Top videos on this topic"**: title, channel, views, upload date, duration, link, and the date the
+   numbers were read.
+2. **Study each one** from its transcript, chapters, description and comments: how it opens and creates curiosity, how it
+   explains the hard idea, its facts, numbers and claims, its story shape and takeaway, and what the comments ask, doubt or
+   add (a question many people ask is a gift; a correction in the comments is a lead to check).
+3. **Their claims go into the facts table like any other**, checked independently, preferably against a primary source. A
+   number that appears only in competitor videos is not verified by being repeated; mark it **disputed** when sources
+   disagree, and give both sides or leave it out.
+4. **The opportunity**, under **"What they do well, what they miss"**: what is already explained well, and what is missed,
+   oversimplified, wrong or left unanswered (the comments often say). The angle comes from there; write it in one line.
+5. **Our script is our own.** Our own central question, storyline, examples and explanations. Never copy a transcript, a
+   distinctive phrase, a joke, a scene, or a creator's unique story structure, and never stitch other scripts into a
+   rewritten one. Their transcripts stay in `research/competitors/` and never next to the draft.
+
+When a transcript, comment list or view count is not available (the fetch says so and why), write the limitation down. Never
+fill it in, and never invent a source, a view count or an audience reaction. If YouTube asks for a sign-in or a bot check, stop
+and say so.
+
+### The facts table
+
 Build a facts table with these columns: **id** (F1, F2...), claim, number, source (a link or a document) and status. The status
 is one of:
 - **verified**: an official record, an annual report, a court filing, a regulator, or two independent reputable reports
 - **reported**: one reputable outlet
 - **estimate**: from industry people or a model calculation; say so inside the line
+- **disputed**: reliable sources disagree; give both sides in the line, or leave it out
 - **legend**: no record; say so, or leave it out
 
 Find at least five sources for a story or person video, and three for economics or compare. Prefer filings, court orders, company
@@ -553,7 +585,7 @@ next minute, and what will they remember tomorrow? Score, fix only what is weak,
 | **Pacing** | Does something change in every stretch? | no lecture, no recap, no explaining past the click; the tail after the answer is short |
 | **Engagement** | Would they choose to keep watching? | a hook from a familiar situation or a surprising fact; a person we care about; reveals that change the picture; no suspense the next minute does not pay |
 | **Accuracy** | Is every claim true, and is its kind clear? | every number traces to a row; windows, arithmetic and the law check; estimates said as estimates; invented people introduced as an example |
-| **Educational value** | What will they remember and be able to do? | the takeaway can be said in one line, and the viewer could explain the mechanism to a friend |
+| **Educational value** | What will they remember and be able to do? | the takeaway can be said in one line, the viewer could explain the mechanism to a friend, and it is clearer or more useful than the top five videos on the topic |
 
 The overall score is the mean. A question scoring 8 or more is good: leave it alone. Below 8 is weak.
 
@@ -627,6 +659,7 @@ The project folder ends up holding: `<slug>-research.md`, `<slug>-engine.md`, `<
 
 Hand back:
 - the winning title and thumbnail words
+- the top five videos on the topic (one line each), and what ours explains that they do not
 - the throughline sentence, and L1 with its exact answer
 - the chosen hook in full, plus one line on each alternative
 - the chapter list with timings, and the runtime

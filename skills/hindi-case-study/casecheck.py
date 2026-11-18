@@ -11,7 +11,7 @@ What it checks:
              every loop pays off; not so many loops that the story splits; new facts per chapter are listed (INFO)
   the ear    sentence length, numbers per sentence and per half minute, speech with no speaker named, repeated phrases,
              template and AI lines, meta orders to the viewer; the time anchors are listed (INFO) for the time-line pass
-  honesty    sources, research ids on lines with numbers, invented people introduced as an example before they speak,
+  honesty    the top five competitor videos are linked in the research file; sources, research ids on lines with numbers, invented people introduced as an example before they speak,
              sources read aloud
   the rules  no greeting, no ask before the close, a short close
 
@@ -265,6 +265,10 @@ def check(doc, research_text=None):
     if not tr:
         nofact = [i for i, (ln, s) in enumerate(zip(lines, txt)) if MONEY.search(s) and not ln.get("facts")]
         if nofact: say("WARN", f"{len(nofact)} lines state a number with no research id in \"facts\" (lines {first_lines(nofact)}); link each to its F or M row")
+        if research_text is None: say("WARN", "no <slug>-research.md: research the topic first, starting with the top five videos on it (SKILL.md step 2)")
+        else:
+            comp = set(re.findall(r"(?:youtube\.com/watch\?v=|youtu\.be/|youtube\.com/shorts/)([\w-]{11})", research_text))
+            if len(comp) < 5: say("WARN", f"the research file links {len(comp)} YouTube video{'' if len(comp) == 1 else 's'}; study the top five on the topic (tools/yt_research.py), or write down why fewer exist")
         if research_text is not None:
             known = set(re.findall(r"\b[FM]\d+\b", research_text))
             used = {f for ln in lines for f in as_list(ln.get("facts"))}
