@@ -52,7 +52,7 @@ not a score.
 4. A quotation whose ledger status is `video-reported`, `dramatized` or `unsupported` (paraphrase it as reported speech
    instead, or drop it).
 5. An AI image presented as a real photograph, or a prompt asking for "archival" or "vintage photo" looks for a real event.
-6. Any label, disclaimer or Devanagari text in an image prompt.
+6. Any label, disclaimer or Devanagari text in an image prompt, or a footnote-style label on screen ("चित्रण", "लगभग", "दावा", a source tag in a card's props).
 7. No complete anecdote and no promise by the band's deadline (Short 1:30, Standard 0:05, Long 0:05).
 8. An open loop never closed (including a story mentioned and not told).
 9. More than 2 attribution phrases in any 30-second window, or more than 2 disclaimer phrases in the whole script.

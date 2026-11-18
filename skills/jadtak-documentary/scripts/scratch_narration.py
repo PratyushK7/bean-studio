@@ -5,6 +5,7 @@ pacing and runtime, never the final delivery. Writes scratch/scratch-narration.m
 Run with the animation kit's Python (it has kokoro_onnx):
   ~/.claude/plugins/cache/claude-animation-skills/animation-skills/1.0.0/kit/.venv/Scripts/python.exe scratch_narration.py <project folder>"""
 import json, subprocess, sys, time
+sys.stdout.reconfigure(encoding="utf-8")
 from pathlib import Path
 import numpy as np, soundfile as sf
 from kokoro_onnx import Kokoro

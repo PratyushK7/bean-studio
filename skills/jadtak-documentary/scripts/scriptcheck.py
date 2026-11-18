@@ -32,6 +32,7 @@ FORMAL = ["निर्णय", "अवधारणा", "प्राप्त"
 PROMPT_BANNED = ["illustration", "artist's impression", "artist impression", "ai generated", "ai-generated", "approximate",
                  "not to scale", "reportedly", "as claimed", "legend says", "archival photo", "archive photo", "vintage photo",
                  "old photograph", "press photo", "newspaper clipping", "disclaimer", "claim", "चित्रण"]
+CARD_BANNED = ["चित्रण", "लगभग", "दावा", "शोध-ग्रंथ", "के मुताबिक़", "के हवाले से", "वेबसाइट", "हमने नहीं"]
 CTA_HARD = ["सब्सक्राइब", "लाइक", "शेयर"]
 OPENING_BAN = ["आज हम", "इस वीडियो में", "दोस्तों"]
 
@@ -112,6 +113,12 @@ def main():
         if re.search(r"[ऀ-ॿ]", p): hard.append(f"L{n}: Devanagari in the image prompt")
         for b in PROMPT_BANNED:
             if b in p.lower(): hard.append(f"L{n}: prompt contains '{b}' (prompts describe the picture only)")
+
+    # H5b no footnote-style labels on screen (owner's rule)
+    for n, l in enumerate(lines, 1):
+        shown = NFD(json.dumps(l.get("card", {}).get("props", {}), ensure_ascii=False))
+        for b in CARD_BANNED:
+            if NFD(b) in shown: hard.append(f"L{n}: on-screen label '{b}' in the card (no footnotes on screen)")
 
     # H6 opening
     first = " ".join(l.get("text", "") for l in lines[:2])

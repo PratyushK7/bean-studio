@@ -22,8 +22,9 @@ built in Remotion (`channels/jadtak/remotion/`), so the fields below feed it dir
    Credit on screen when the licence asks.
 2. **Real locations shot or licensed today** (the place as it is now). `kind: "still"`, `visual` says "present-day".
 3. **AI illustrations** in the channel's cinematic realistic style (`kind: "still"` with a `prompt`). Used for scenes no
-   camera recorded. They are labelled as illustrations **in the edit** (the Remotion still layer adds the small "चित्रण" tag),
-   never in the prompt.
+   camera recorded. **No label on screen** (the owner's rule: no "चित्रण" tag on frames). The disclosure is made once: in the
+   video description ("दृश्य कलाकार की कल्पना से बनाए गए हैं") and with YouTube's "altered or synthetic content" setting at
+   upload, which YouTube asks for when realistic generated images show real people or events.
 4. **Code-built cards and maps** for dates, names, numbers, quotes, sources, lists, places.
 
 **Never present an AI image as genuine archival photography.** Prompts never ask for "old photograph", "archival photo",
@@ -49,8 +50,12 @@ A prompt describes what a camera would see. **It never contains** labels, discla
 **Prompt pattern** (one paragraph, 40 to 90 words): `[style] [subject + action] [setting + period] [light + time of day]
 [camera: lens, angle, framing] [mood] [what must not appear, only if needed]`.
 
-Channel style line (prefix every prompt): `Cinematic realistic still, 16:9, natural film colour, soft volumetric light,
-shallow depth of field,`
+Channel style line (the owner-approved look; prefix every prompt): `Create an image. 16:9 cinematic realistic still for a Hindi
+documentary. Style: realistic film still, 35mm lens, natural light, shallow depth of field, soft film grain, muted colour grade
+with deep forest greens, earthy browns and warm cream highlights, one small warm amber light source. Quiet, respectful,
+dignified documentary mood. No text, no letters, no logos, no watermark, no borders, no halo, no glowing effects, no added
+religious symbols. Scene:` Name a real person the owner allows directly ("Neem Karoli Baba (Maharaj-ji), the Indian saint of
+Kainchi Dham"); don't describe them generically.
 
 Example (the barber anecdote):
 
@@ -86,10 +91,10 @@ no signage
 | `figure` | a counting number | `num`, `unit`, `sub` |
 | `split` | two sides of an answer | `left: [head, line]`, `right: [head, line]` |
 | `statement` | a line of narration on screen (last resort) | `text` |
-| `map` | places on a real map | `places: [[lon, lat, label]]`, `focus`, `zoom: [from, to]`, `bbox`, `ring: {at, km}`, `caption: {title, text}`, `note` |
+| `map` | places on a real map | `places: [[lon, lat, label]]`, `focus`, `zoom: [from, to]`, `bbox`, `ring: {at, km}`, `caption: {title, text}` |
 
 Card text is short (2 to 8 words), comes from the narration or the ledger, and never introduces a fact the narration does
-not say. Keep map crops inside regions whose borders are not disputed.
+not say. Card text never carries a source tag, a status word or a disclaimer. Keep map crops inside regions whose borders are not disputed.
 
 ## Shots and editing rhythm by beat
 
@@ -122,7 +127,10 @@ when the camera keeps moving; never more than 15 s on one image.
 
 ## Honesty in pictures
 
-- AI stills carry the edit's illustration tag; real photos carry their credit; reconstructions never imitate archive.
-- A map shows only places the ledger supports; uncertain places are a ring or an area, not a pin.
+- **Nothing on screen that reads like a footnote:** no "चित्रण", no "जगहें लगभग", no "वेबसाइट का दावा", no "(शोध-ग्रंथ के
+  मुताबिक़)" or other source tags on cards, maps or frames. Evidence lives in the ledger; the narration carries any
+  attribution the viewer needs.
+- AI stills carry no tag (disclosed once, see above); real photos carry their credit; reconstructions never imitate archive.
+- A map shows only places the ledger supports; an uncertain place is a ring or an area, not a pin, and needs no caption saying so.
 - A quote card shows only recorded words; a translation is marked "अनुवाद".
 - No invented documents, letters, newspaper headlines or signatures on screen.
