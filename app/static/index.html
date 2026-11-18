@@ -16,6 +16,8 @@
   nav { display:flex; gap:6px; margin-left:auto; flex-wrap:wrap; }
   nav button { font:inherit; font-weight:600; border:2px solid var(--ink); background:var(--paper); color:var(--ink); padding:6px 14px; border-radius:999px; cursor:pointer; box-shadow:2px 2px 0 var(--ink); }
   nav button.on { background: var(--yel); }
+  .newvid { font:inherit; font-weight:700; font-size:15px; border:3px solid var(--ink); background:var(--yel); color:var(--ink); padding:8px 18px; border-radius:999px; cursor:pointer; box-shadow:3px 3px 0 var(--ink); white-space:nowrap; }
+  .newvid:hover { transform:translate(-1px,-1px); box-shadow:4px 4px 0 var(--ink); } .newvid:active { transform:translate(1px,1px); box-shadow:1px 1px 0 var(--ink); }
   main { padding: 20px 24px; max-width: 1280px; margin: 0 auto; }
   .tab { display:none; } .tab.on { display:block; }
   .card { background:#fff; border:2px solid var(--ink); border-radius:14px; padding:14px; box-shadow:3px 3px 0 var(--ink); }
@@ -94,6 +96,7 @@
 <div id="toast"></div>
 <header>
   <h1>🫘 Bean <span>Studio</span></h1>
+  <button class="newvid" onclick="nvOpen()" title="Start a new video in its own Claude window">＋ New video</button>
   <nav>
     <button data-tab="projects" class="on">Videos</button>
     <button data-tab="pipeline">🧱 Pipeline</button>
@@ -151,7 +154,7 @@
 
 <section id="pipeline" class="tab">
   <div class="row" style="margin-bottom:6px"><h2 style="margin:0">Pipeline</h2><span class="muted" id="plcount"></span><span style="flex:1"></span>
-    <input id="plslug" placeholder="new-video-slug" pattern="[a-z0-9-]+"><button class="act" onclick="plNew()">+ New video</button></div>
+    <button class="act" style="font-size:15px;padding:8px 16px" onclick="nvOpen()">＋ New video</button></div>
   <p class="muted" id="plmodels" style="margin:0 0 14px"></p>
   <div id="plgrid"></div>
 </section>
@@ -290,10 +293,11 @@ const PL2 = {
   sheet:   ['Upload sheet', 'Title, description (with the music credit) and chapters, then upload from the Videos tab.', 'Opus', 'Claude usage'],
 };
 async function loadPipeline() {
-  const d = await api('/api/pipeline');
+  const [d, ss] = await Promise.all([api('/api/pipeline'), api('/api/sessions', {silent: true}).catch(() => ({sessions: {}}))]);
+  SESS = ss.sessions || {};
   $('#plcount').textContent = d.projects.length + ' video' + (d.projects.length === 1 ? '' : 's');
   $('#plmodels').innerHTML = 'Opus writes the script, the visual plan and judges pictures and the sample · Haiku runs ChatGPT (BrowserOS neo), the WaveSpeed upscale and the render · images can also come from your ChatGPT extension (collected from <code>' + esc(d.downloads) + '</code>) · clips from xAI (paid, only when you OK the cost).';
-  $('#plgrid').innerHTML = d.projects.map(plCard).join('') || '<p class="muted">No videos yet. Type a name above and press + New video.</p>';
+  $('#plgrid').innerHTML = d.projects.map(plCard).join('') || '<p class="muted">No videos yet. Press ＋ New video at the top.</p>';
 }
 function plCard(p) {
   const n = esc(p.name), cur = PL_OPEN[p.name] || p.next_key, done = p.stages.filter(s => s.state && !s.warn).length;
@@ -312,6 +316,7 @@ function plCard(p) {
   }).join('');
   return `<div class="card" style="margin-bottom:14px;padding:14px" id="pl-${n}">
     <div class="row"><b style="font-size:16px">${n}</b><span class="muted">${done} of ${p.stages.length} steps done</span><span style="flex:1"></span>
+      <button class="act blue" onclick="plSession('${n}')" title="${SESS[p.name] ? 'Reopen the same Claude conversation for this video' : 'Start a Claude session just for this video'}">💬 ${SESS[p.name] ? (SESS[p.name].running ? 'Session open' : 'Open its Claude session') : 'Start a Claude session'}</button>
       <button class="act sec" onclick="plOpen('${n}','')">📂 Folder</button></div>
     <div style="height:6px;background:#eee;border-radius:3px;margin:8px 0 6px"><div style="height:6px;width:${Math.round(100 * done / p.stages.length)}%;background:#1b7f3b;border-radius:3px"></div></div>
     <div class="row" style="margin-bottom:6px;gap:10px"><span class="muted"><b>Next:</b> ${esc(p.next)}</span>${p.new && p.next_key ? `<button class="act blue" onclick="plToggle('${n}','${p.next_key}')">Go to this step</button>` : ''}</div>
@@ -339,6 +344,39 @@ function plActions(p, s) {
     default: return '<div class="muted">After the video is built.</div>';
   }
 }
+// ---------- + New video: each video gets its own Claude window (session), reopened from its card ----------
+let SESS = {};
+function nvOpen() {
+  const hindi = (ME.language || '').toLowerCase() === 'hindi';
+  $('#wizbox').innerHTML = `<h2 style="margin:0 0 4px">＋ New video</h2>
+    <p class="muted" style="margin:0">Opens a <b>new Claude window just for this video</b>. It ${hindi ? 'researches and writes the script, then stops for you to read it and hear the free preview' : 'plans the script and shows it to you before building'}. Nothing paid starts without your OK. Close the window any time: the video's card has <b>💬 Open its Claude session</b> to pick up the same conversation.</p>
+    <label>What is the video about?</label><textarea id="nv_topic" rows="2" placeholder="${hindi ? 'e.g. the economics of a petrol pump: how much of ₹100 of petrol the owner keeps' : 'e.g. what if the moon disappeared'}" oninput="nvSlug()"></textarea>
+    <label>Short name for the folder <span class="muted" style="font-weight:400">(English, lowercase, dashes)</span></label><input type="text" id="nv_slug" placeholder="petrol-pump-economics" oninput="this.dataset.edited=1">
+    ${hindi ? `<label>Format</label><select id="nv_fmt">${Object.entries({economics: 'Economics of owning X', story: "A company’s rise, split or fall", person: "A person’s story", compare: 'Two people, one decision'}).map(([k, v]) => `<option value="${k}">${esc(v)}</option>`).join('')}</select>` : ''}
+    <label>Anything Claude should know? <span class="muted" style="font-weight:400">(optional)</span></label><textarea id="nv_notes" rows="2" placeholder="an angle, a source, a length"></textarea>
+    <div class="row" style="margin-top:16px; justify-content:flex-end"><button class="act sec" onclick="closeWizard()">Cancel</button><button class="act blue" id="nv_go" style="font-size:15px;padding:8px 16px" onclick="nvGo()">🚀 Open its Claude session</button></div>`;
+  $('#wiz').classList.add('on'); setTimeout(() => $('#nv_topic').focus(), 50);
+}
+function nvSlug() {
+  const el = $('#nv_slug'); if (el.dataset.edited) return;
+  const stop = new Set('the a an of and to in on for how why what is are does do its it ka ki ke hai'.split(' '));
+  el.value = ($('#nv_topic').value.toLowerCase().match(/[a-z0-9]+/g) || []).filter(w => !stop.has(w)).slice(0, 5).join('-').slice(0, 50);
+}
+async function nvGo() {
+  const topic = $('#nv_topic').value.trim(); if (!topic) { toast('Write what the video is about first.'); return; }
+  $('#nv_go').disabled = true;
+  try {
+    const r = await api('/api/sessions/new', {method: 'POST', body: {topic, slug: $('#nv_slug').value.trim(), format: $('#nv_fmt') ? $('#nv_fmt').value : null, notes: $('#nv_notes').value.trim()}});
+    closeWizard(); toast(`🪟 A Claude window opened for ${r.project}. Work with it there; this page shows the video's progress.`, 10000);
+    if (ME.tools.includes('pipeline')) show('pipeline'); else show('jobs');
+  } finally { const b = $('#nv_go'); if (b) b.disabled = false; }
+}
+async function plSession(n) {
+  const r = await api(`/api/sessions/${n}/open`, {method: 'POST', body: {}});
+  toast(r.resumed ? `🪟 Reopened ${n}'s Claude conversation in its own window.` : `🪟 Started a Claude session for ${n} in its own window.`, 8000);
+  loadPipeline();
+}
+
 // ---------- the documentary pipeline: buttons, the review panel, the sample and video panels ----------
 function plBtn(label, fn, cls = '') { return `<button class="act ${cls}" onclick="${fn}">${label}</button>`; }
 async function plStep(n, step, started, confirmText) {

@@ -457,6 +457,8 @@ topics.register(app, ROOT, cfg, start_job, JOBS, start_agent, start_staged)
 import thumbs
 import pipeline
 pipeline.register(app, ROOT, cfg, start_agent, JOBS, start_job)      # Pipeline tab: stages, ChatGPT batch collection, contact sheet
+import sessions
+sessions.register(app, ROOT, cfg, start_job, JOBS)      # + New video: one Claude window (session) per video, reopened from its card
 thumbs.register(app, ROOT, cfg, start_agent, proj_dir, JOBS)   # five thumbnail ideas, then the picked one drawn   # topic selector + the "make this video" job
 
 

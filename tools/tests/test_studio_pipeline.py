@@ -78,6 +78,35 @@ def studio_cast_and_music_endpoints_read_the_project_and_refuse_bad_voices():
     assert [x["key"] for x in s["stages"] if x["key"] in ("music", "cast")] == ["music", "cast"]
 
 
+@test
+def new_video_opens_its_own_claude_session_and_its_card_reopens_it():
+    sys.path.insert(0, str(ROOT / "app")); import sessions
+    from flask import Flask
+    d = Path(tempfile.mkdtemp(prefix="studio-sess-")); (d / "data").mkdir()
+    c = {"channel_id": "hindi", "language": "Hindi", "channel": "Decoding Vyapaar", "projects_dir": str(d), "plan_model": "opus",
+         "agent_command": ["claude", "-p", "--permission-mode", "acceptEdits"], "agent_cwd": str(ROOT)}
+    started, JOBS = [], {}
+    def fake_start(label, cmd, cwd, window=False, **k):                     # nothing is launched in a test
+        started.append({"label": label, "cmd": cmd, "window": window}); return {"id": str(len(started))}
+    app = Flask("t"); sessions.register(app, ROOT, lambda: c, fake_start, JOBS, data=lambda: d / "data"); cl = app.test_client()
+    r = cl.post("/api/sessions/new", json={"topic": "Economics of a petrol pump", "format": "economics"})
+    assert r.status_code == 200, r.get_data(as_text=True)
+    slug = r.get_json()["project"]; cmd = started[-1]["cmd"]
+    assert slug == "economics-petrol-pump" and (d / slug / "images").is_dir(), slug
+    assert started[-1]["window"] and "-p" not in cmd and cmd[cmd.index("--session-id") + 1] == r.get_json()["session"], cmd
+    assert "hindi-case-study" in cmd[-1] and "Gate A" in cmd[-1] and str(d / slug) in cmd[-1], "the first message names the skill, the folder and the stop"
+    assert cl.post("/api/sessions/new", json={"topic": "Economics of a petrol pump"}).status_code == 409, "an existing video is never overwritten"
+    assert cl.post("/api/sessions/new", json={"topic": "पेट्रोल पंप"}).status_code == 400, "a Devanagari topic needs an English folder name"
+    o = cl.post(f"/api/sessions/{slug}/open").get_json()
+    assert o["resumed"] and started[-1]["cmd"][-2:] == ["--resume", o["session"]], started[-1]["cmd"]
+    JOBS["x"] = {"label": f"session · {slug}", "channel": "hindi", "done": False}
+    assert cl.post(f"/api/sessions/{slug}/open").status_code == 409, "one window per video"
+    (d / "old-video").mkdir()
+    o = cl.post("/api/sessions/old-video/open").get_json()
+    assert not o["resumed"] and "existing video" in started[-1]["cmd"][-1], "a video with no session gets one that first looks where it is"
+    assert set(cl.get("/api/sessions").get_json()["sessions"]) == {slug, "old-video"}
+
+
 if __name__ == "__main__":
     for name, st, why in results: print(f"{st:4s} {name}" + (f"\n     {why}" if why else ""))
     bad = [r for r in results if r[1] != "ok"]

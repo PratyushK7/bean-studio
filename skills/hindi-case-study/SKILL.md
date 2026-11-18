@@ -686,4 +686,6 @@ Both are decided once the story is fixed and before the voice is paid for. Neith
 ```
 The whole visual pipeline, its rules and its rollback are in `references/production.md`. Bean Studio's **Pipeline** tab runs steps 3 to 8 with one button each (and `python tools/vyapaar_steps.py <project> <step>` does the same from a terminal); use it, and keep it in step with the pipeline when anything is added.
 
+**Each new video gets its own Claude session.** Bean Studio's **＋ New video** button (top of every page) makes the project folder and opens a new Claude window that works on that video only, starting with this skill and stopping at Gate A; the video's card reopens the same conversation (💬 Open its Claude session). Do not make several videos in one session.
+
 Nothing paid starts before Gate A. Build the first full cut on the free voice; the pro voice comes after the cut is right. After the voice, a changed line means re-voicing that line, so the script freezes at Gate A.
