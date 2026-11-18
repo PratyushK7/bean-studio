@@ -13,7 +13,7 @@ description: >-
   "economics of owning X" video, a documentary about a company or a businessman, or any script for Decoding Vyapaar or the
   Hindi channel, including from the Bean Studio Agent, Topics or Pipeline tab, and whenever a Decoding Vyapaar script needs
   fixing because it "feels off", is boring or sounds robotic. Not for other channels: a documentary on another subject (a
-  saint's or artist's life, history, a mystery) is for Jad Tak and uses general-case-study, even in Hindi.
+  saint's or artist's life, history, a mystery) is for Jad Tak and uses jadtak-documentary, even in Hindi.
 ---
 
 # Decoding Vyapaar: the script architect

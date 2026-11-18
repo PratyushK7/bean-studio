@@ -32,6 +32,14 @@ def skill(c):
 
 def new_prompt(c, p, topic, fmt, notes):
     """the first message of a new video's session: what to make, where, and where to stop"""
+    if skill(c) == "jadtak-documentary":
+        return (f'This Claude session makes one video for the channel "{c["channel"]}" (language: {c.get("language") or "Hindi"}) and nothing else. '
+                f"Its project folder is {p} (it exists). Topic: {topic}. " + (f"Notes from the owner: {notes}. " if notes else "") +
+                f"Use the jadtak-documentary skill (read ~/.claude/skills/jadtak-documentary/SKILL.md and its references first) and this channel's voice notes, {c.get('voice_file')}. "
+                "Not hindi-case-study and nothing from Decoding Vyapaar. Follow its ten steps without stopping for approval of minor stages: study the reference "
+                "videos (timestamped transcripts), build the claims ledger, plan the story, write script.json with visuals, run scriptcheck.py and both evaluations, "
+                "render the readable script and the free scratch listen, then give the hand-back and STOP: the owner reads the script and hears the listen before any production. "
+                "Never start a paid step without the owner's OK on the cost, and never touch other projects or channels.")
     if skill(c) == "general-case-study":
         return (f'This Claude session makes one video for the channel "{c["channel"]}" (language: {c.get("language") or "English"}) and nothing else. '
                 f"Its project folder is {p} (it exists). Topic: {topic}. " + (f"Notes from the owner: {notes}. " if notes else "") +

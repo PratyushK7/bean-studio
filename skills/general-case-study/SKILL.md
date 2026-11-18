@@ -1,17 +1,23 @@
 ---
 name: general-case-study
 description: >-
-  Script architect for Jad Tak, the documentary and case-study channel (not Decoding Vyapaar, not The Bean With Bad Ideas). It
+  Gated documentary script process (research, then three duration options, then an outline, each waiting for the owner's
+  approval). Jad Tak itself now uses jadtak-documentary: use this skill only for a channel whose "skill" setting is
+  general-case-study, or when the owner explicitly asks for the gated general-case-study process. It
   researches a subject properly (the top five YouTube videos on it, primary sources, the chronology, the conflicts and
   turning points), offers three duration options sized to the real material (concise, standard, deep dive, up to 45 to 90+
   minutes when the subject supports it), agrees a story outline, and only then writes one coherent, sourced narrative in the
   channel's own language and voice. Never invents facts, events or quotations, and marks reconstructions. Use it for any
-  documentary, biography, life story, history, mystery, faith or spiritual figure, place, event or "story of X" video for
-  Jad Tak (or "the documentary channel", "the third channel"), from Bean Studio or the chat, short or over an hour long. Business and economics videos for Decoding
-  Vyapaar use hindi-case-study instead; cartoon explainers use line-boil.
+  documentary on a channel set to it. Jad Tak documentaries use jadtak-documentary; business and economics videos for
+  Decoding Vyapaar use hindi-case-study; cartoon explainers use line-boil.
 ---
 
-# Jad Tak: the documentary and case-study script architect
+# The gated documentary script architect
+
+> **Jad Tak now uses `jadtak-documentary`** (19 Nov 2026), which writes the finished script without approval gates and
+> treats YouTube documentaries as cited research sources. This skill remains for a channel whose `skill` setting is
+> `general-case-study`, or when the owner asks for the gated process by name. Where this file says "Jad Tak", read "the
+> channel".
 
 Jad Tak (जड़ तक, "to the root") is the third channel in Bean Studio (`jadtak`), after The Bean With Bad Ideas and Decoding
 Vyapaar. It tells true stories from the beginning to the root of the matter.

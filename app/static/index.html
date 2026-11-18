@@ -385,9 +385,9 @@ function shTab(i) {
 let SESS = {};
 function nvOpen() {
   const skill = ME.skill || ((ME.language || '').toLowerCase() === 'hindi' ? 'hindi-case-study' : 'line-boil');
-  const hindi = skill === 'hindi-case-study', doc = skill === 'general-case-study';
+  const hindi = skill === 'hindi-case-study', jt = skill === 'jadtak-documentary', doc = jt || skill === 'general-case-study';
   $('#wizbox').innerHTML = `<h2 style="margin:0 0 4px">＋ New video</h2>
-    <p class="muted" style="margin:0">Opens a <b>new Claude window just for this video</b>. It ${hindi ? 'researches and writes the script, then stops for you to read it and hear the free preview' : doc ? 'researches the subject, then stops twice for you: to pick one of three lengths, and to approve the story outline, before it writes the script' : 'plans the script and shows it to you before building'}. Nothing paid starts without your OK. Close the window any time: the video's card has <b>💬 Open its Claude session</b> to pick up the same conversation.</p>
+    <p class="muted" style="margin:0">Opens a <b>new Claude window just for this video</b>. It ${hindi ? 'researches and writes the script, then stops for you to read it and hear the free preview' : jt ? 'researches the subject, logs every claim with its source, and writes the finished script with its scores, then stops for you to read it and hear the free listen' : doc ? 'researches the subject, then stops twice for you: to pick one of three lengths, and to approve the story outline, before it writes the script' : 'plans the script and shows it to you before building'}. Nothing paid starts without your OK. Close the window any time: the video's card has <b>💬 Open its Claude session</b> to pick up the same conversation.</p>
     <label>What is the video about?</label><textarea id="nv_topic" rows="2" placeholder="${hindi ? 'e.g. the economics of a petrol pump: how much of ₹100 of petrol the owner keeps' : doc ? 'e.g. the story of Neem Karoli Baba' : 'e.g. what if the moon disappeared'}" oninput="nvSlug()"></textarea>
     <label>Short name for the folder <span class="muted" style="font-weight:400">(English, lowercase, dashes)</span></label><input type="text" id="nv_slug" placeholder="petrol-pump-economics" oninput="this.dataset.edited=1">
     ${hindi ? `<label>Format</label><select id="nv_fmt">${Object.entries({economics: 'Economics of owning X', story: "A company’s rise, split or fall", person: "A person’s story", compare: 'Two people, one decision'}).map(([k, v]) => `<option value="${k}">${esc(v)}</option>`).join('')}</select>` : ''}
@@ -1051,7 +1051,7 @@ function addChannelForm() {
     <label>Language</label><input type="text" id="nc_lang" value="Hindi">
     <label>Icon (one emoji)</label><input type="text" id="nc_emoji" value="🪔" maxlength="4">
     <label>Colour</label><input type="color" id="nc_color" value="#c0262d">
-    <label>Video skill <span class="muted" style="font-weight:400">(how its scripts are made)</span></label><select id="nc_skill"><option value="general-case-study">Documentaries and case studies (general-case-study)</option><option value="hindi-case-study">Business case studies, like Decoding Vyapaar (hindi-case-study)</option><option value="line-boil">Cartoon explainers, like Bean (line-boil)</option></select>
+    <label>Video skill <span class="muted" style="font-weight:400">(how its scripts are made)</span></label><select id="nc_skill"><option value="jadtak-documentary">Hindi documentaries, like Jad Tak (jadtak-documentary)</option><option value="general-case-study">Documentaries with approval gates (general-case-study)</option><option value="hindi-case-study">Business case studies, like Decoding Vyapaar (hindi-case-study)</option><option value="line-boil">Cartoon explainers, like Bean (line-boil)</option></select>
     <div class="row" style="margin-top:16px; justify-content:flex-end"><button class="act sec" onclick="closeWizard()">Cancel</button><button class="act blue" onclick="addChannel()">Add channel</button></div>`;
   $('#wiz').classList.add('on');
 }

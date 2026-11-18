@@ -13,7 +13,7 @@ from pathlib import Path
 from flask import has_request_context, request
 
 ALL_TOOLS = ["projects", "pipeline", "topics", "agent", "jobs", "settings"]
-SKILLS = ["hindi-case-study", "general-case-study", "line-boil"]     # the script skill a channel's videos are made with
+SKILLS = ["hindi-case-study", "jadtak-documentary", "general-case-study", "line-boil"]     # the script skill a channel's videos are made with
 ID = re.compile(r"^[a-z][a-z0-9-]{0,24}$")
 _tl = threading.local()
 _raw = {"fn": lambda: {}}

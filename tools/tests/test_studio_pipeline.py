@@ -112,7 +112,7 @@ def each_channel_routes_to_its_own_script_skill_whatever_the_topic():
     sys.path.insert(0, str(ROOT / "app")); import channels, sessions, server
     from flask import Flask
     with server.app.test_request_context(headers={"X-Channel": "jadtak"}): jt = server.cfg()
-    assert jt["channel"] == "Jad Tak" and jt["skill"] == "general-case-study" and jt["projects_dir"].replace("\\", "/").endswith("channels/jadtak/videos"), jt["projects_dir"]
+    assert jt["channel"] == "Jad Tak" and jt["skill"] == "jadtak-documentary" and jt["projects_dir"].replace("\\", "/").endswith("channels/jadtak/videos"), jt["projects_dir"]
     assert "pipeline" not in server.cfg_raw()["channels"]["jadtak"]["tools"], "Jad Tak never gets Decoding Vyapaar's production pipeline"
     with server.app.test_request_context(headers={"X-Channel": "hindi"}): assert server.cfg()["skill"] == "hindi-case-study"
     assert channels.skill_of({"language": "Hindi"}) == "hindi-case-study" and channels.skill_of({"language": "English"}) == "line-boil", "old channels keep their skill"
@@ -124,7 +124,8 @@ def each_channel_routes_to_its_own_script_skill_whatever_the_topic():
     d = Path(tempfile.mkdtemp(prefix="studio-route-")); (d / "data").mkdir()
     base = {"plan_model": "opus", "agent_command": ["claude", "-p"], "agent_cwd": str(ROOT), "projects_dir": str(d), "voice_file": "~/.claude/youtube/voice-jadtak.md"}
     cases = [({"channel_id": "hindi", "channel": "Decoding Vyapaar", "language": "Hindi"}, "Economics of owning a jewellery shop", "hindi-case-study"),
-             ({"channel_id": "jadtak", "channel": "Jad Tak", "language": "Hindi", "skill": "general-case-study"}, "Story of Neem Karoli Baba", "general-case-study")]
+             ({"channel_id": "jadtak", "channel": "Jad Tak", "language": "Hindi", "skill": "jadtak-documentary"}, "Story of Neem Karoli Baba", "jadtak-documentary"),
+             ({"channel_id": "docs", "channel": "Docs", "language": "Hindi", "skill": "general-case-study"}, "Story of Mirabai", "general-case-study")]
     for ch, topic, want in cases:
         started = []
         app = Flask("t"); sessions.register(app, ROOT, lambda: {**base, **ch}, lambda label, cmd, cwd, window=False, **k: started.append(cmd) or {"id": "1"}, {}, data=lambda: d / "data")
@@ -132,8 +133,9 @@ def each_channel_routes_to_its_own_script_skill_whatever_the_topic():
         assert r.status_code == 200, r.get_data(as_text=True)
         first = started[-1][-1]
         assert f"Use the {want} skill" in first, (topic, first[:200])
-        if want == "general-case-study": assert "Gate 1" in first and "Gate 2" in first and "voice-jadtak.md" in first and "Jad Tak" in first, "it stops for the length and the outline"
-        else: assert "general-case-study" not in first and "Gate A" in first
+        if want == "jadtak-documentary": assert "scriptcheck.py" in first and "STOP" in first and "Gate 1" not in first and "voice-jadtak.md" in first and "Jad Tak" in first, "it delivers the finished script, then stops"
+        elif want == "general-case-study": assert "Gate 1" in first and "Gate 2" in first, "it stops for the length and the outline"
+        else: assert "general-case-study" not in first and "jadtak-documentary" not in first and "Gate A" in first
 
 
 @test

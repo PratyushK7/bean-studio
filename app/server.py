@@ -56,7 +56,7 @@ DEFAULTS = {
     "voice_file": "~/.claude/youtube/voice.md",   # the channel voice the agent reads (a channel can name its own)
     # one entry per YouTube channel. The first is home and keeps the studio's original folders; the others live in channels/<id>/.
     # Each can override: name, slots, topic_category, topic_channels, projects_dir, planner, voice_file. tools = which tabs it shows.
-    # skill = the script skill its videos use (hindi-case-study, general-case-study or line-boil; default by language, see channels.skill_of).
+    # skill = the script skill its videos use (hindi-case-study, jadtak-documentary, general-case-study or line-boil; default by language, see channels.skill_of).
     "channels": {
         "bean": {"name": "The Bean With Bad Ideas", "language": "English", "emoji": "🫘", "color": "#1982c4",
                  "tools": ["projects", "topics", "agent", "jobs", "settings"], "kinds": ["short", "long"]},
@@ -71,9 +71,9 @@ DEFAULTS = {
                       "HiddenOpsIndia1", "AniExplainerHindi-1", "moneycode_mc", "TruthFinance0.1", "FinXplain07", "ThinkSchool_Hindi"],
                   "voice_file": "~/.claude/youtube/voice-hindi.md"},
         # Pipeline stays off: its production (visual bible, graphics, render, cast) is Decoding Vyapaar's and must not be mixed in
-        "jadtak": {"name": "Jad Tak", "language": "Hindi", "emoji": "🌳", "color": "#2d6a4f", "skill": "general-case-study",
+        "jadtak": {"name": "Jad Tak", "language": "Hindi", "emoji": "🌳", "color": "#2d6a4f", "skill": "jadtak-documentary",
                    "tools": ["projects", "agent", "jobs", "settings"], "kinds": ["long"],
-                   "note": "Documentaries and case studies, from a few minutes to over an hour. ＋ New video researches, offers three lengths and an outline, then writes the script (general-case-study). Production is not set up yet.",
+                   "note": "Hindi documentaries of 10 to 40 minutes. ＋ New video researches the subject (YouTube documentaries and books, every claim logged), then writes the finished script with its sources ledger and scores (jadtak-documentary). The edit is in channels/jadtak/remotion.",
                    "voice_file": "~/.claude/youtube/voice-jadtak.md"},
     },
 }
