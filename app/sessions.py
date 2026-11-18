@@ -1,7 +1,8 @@
 """One Claude session per video. "+ New video" makes the project folder and opens a new, visible Claude window that works on
 that video only; its session id is remembered, so the video's card can reopen the same conversation later (claude --resume).
 
-The session runs interactively (you watch it and answer its questions), in the repo root so CLAUDE.md and the tools apply.
+The skill comes from the channel (its "skill" setting, channels.skill_of): the business skill for Decoding Vyapaar, the
+documentary skill for Jad Tak, line-boil for Bean. The session runs interactively (you watch it and answer its questions), in the repo root so CLAUDE.md and the tools apply.
 It is told to stop at Gate A (the owner approves the script) and to ask before anything paid.
 register(app, ROOT, cfg, start_job, JOBS) adds /api/sessions*; data() is where sessions.json lives (the channel data folder).
 """
@@ -25,9 +26,21 @@ def clean(s, n):
     return re.sub(r"\s+", " ", str(s or "")).strip()[:n]
 
 
+def skill(c):
+    return c.get("skill") or channels.skill_of(c)
+
+
 def new_prompt(c, p, topic, fmt, notes):
     """the first message of a new video's session: what to make, where, and where to stop"""
-    if (c.get("language") or "").lower() == "hindi":
+    if skill(c) == "general-case-study":
+        return (f'This Claude session makes one video for the channel "{c["channel"]}" (language: {c.get("language") or "English"}) and nothing else. '
+                f"Its project folder is {p} (it exists). Topic: {topic}. " + (f"Notes from the owner: {notes}. " if notes else "") +
+                f"Use the general-case-study skill (read ~/.claude/skills/general-case-study/SKILL.md first) and this channel's voice notes, {c.get('voice_file')}. "
+                "Not the hindi-case-study skill and nothing from Decoding Vyapaar. Research first (the top five videos with python tools/yt_research.py, then the "
+                "subject's own sources and chronology), then STOP at Gate 1 with three duration options and wait for the owner's choice; then the outline, "
+                "STOP at Gate 2 for approval; only then the script, the editorial check and the hand-back (Gate 3). "
+                "Never start a paid step without the owner's OK on the cost, and never touch other projects or channels.")
+    if skill(c) == "hindi-case-study":
         return (f'This Claude session makes one video for the channel "{c["channel"]}" and nothing else. Its project folder is {p} (it exists). '
                 f"Topic: {topic}. Format: {fmt} ({HI_FORMATS[fmt]}). " + (f"Notes from the owner: {notes}. " if notes else "") +
                 "Use the hindi-case-study skill (read ~/.claude/skills/hindi-case-study/SKILL.md, references/craft.md, references/study.md and ~/.claude/youtube/voice-hindi.md first). "
@@ -44,9 +57,8 @@ def new_prompt(c, p, topic, fmt, notes):
 
 def resume_prompt(c, p):
     """the first message when a video that had no session yet gets one"""
-    skill = "hindi-case-study" if (c.get("language") or "").lower() == "hindi" else "line-boil"
     return (f'This Claude session works on one existing video for the channel "{c["channel"]}" and nothing else: {p}. '
-            f"Read its files (and ~/.claude/skills/{skill}/SKILL.md) to see how far it is, tell the owner in a few lines, and wait for what to do next. "
+            f"Read its files (and ~/.claude/skills/{skill(c)}/SKILL.md) to see how far it is, tell the owner in a few lines, and wait for what to do next. "
             "Never start a paid step without the owner's OK on the cost, and never touch other projects.")
 
 

@@ -236,6 +236,8 @@ def register(app, ROOT, cfg, start_agent, JOBS, start_job):
         topic = str((request.get_json(silent=True) or {}).get("topic", "")).strip()
         if not topic: abort(400, "write the topic first")
         c = cfg()
+        if c.get("skill", "hindi-case-study") != "hindi-case-study":     # another channel's skill stops for the owner's answers: its own session
+            abort(400, f"this channel's scripts use the {c['skill']} skill, which asks you questions on the way: start them with ＋ New video")
         prompt = (f'Use the hindi-case-study skill (read ~/.claude/skills/hindi-case-study/SKILL.md) for the channel "{c["channel"]}". Topic: {topic}. '
                   f"The project folder is {p} (it exists; write the research, engine, beats and hooks files, script.json with its loop ledger and fact ids, the check output, "
                   "the voice text and the readable <slug>-script.md (casecheck.py --md) there). "

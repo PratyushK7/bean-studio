@@ -1,0 +1,547 @@
+"""Bean Studio: a local web interface for The Bean With Bad Ideas pipeline.
+
+    start.bat                 (or)    .venv\\Scripts\\python app\\server.py
+
+Serves http://127.0.0.1:<port> (localhost only). Everything it does runs a command from config.json on this
+machine: the line-boil build steps, the YouTube uploader and the Claude Code agent.
+"""
+import datetime as dt, json, os, re, shutil, stat, subprocess, sys, threading, time, uuid, webbrowser
+from pathlib import Path
+from urllib.parse import urlparse
+from flask import Flask, jsonify, request, send_from_directory, abort
+
+import agentlog, channels, planner, store
+
+APP = Path(__file__).resolve().parent
+ROOT = APP.parent                                      # the youtube folder
+CONFIG = ROOT / "config.json"
+IST = dt.timezone(dt.timedelta(hours=5, minutes=30))
+DEFAULTS = {
+    "port": 5173,
+    "open_browser": True,
+    "projects_dir": str(ROOT / "line-boil"),
+    "planner": str(ROOT / "bean-planner.xlsx"),
+    "python": sys.executable,   # the .venv python: has the uploader libs; build.py re-runs itself under the kit
+    "engine": str(Path.home() / ".claude" / "skills" / "line-boil" / "engine" / "build.py"),
+    "uploader": str(ROOT / "tools" / "yt_upload.py"),
+    "agent_command": ["claude", "-p", "--permission-mode", "acceptEdits"],
+    "agent_cwd": str(ROOT),
+    "slots": {"A": "12:00", "B": "06:30", "Long": "21:30"},
+    "channel": "The Bean With Bad Ideas",
+    "hide_projects": ["bean-avatar"],   # folders in projects_dir that aren't videos
+    "topic_category": "funny animated explainers that teach something useful, in any genre (science, health, money, tech, history, psychology, how things work, everyday life)",
+    "topic_channels": [
+        # animated / funny explainers
+        "TEDEd", "kurzgesagt", "MinuteEarth", "AsapSCIENCE", "SciShow", "LifeNoggin", "WhatIfScienceShow", "TheOdd1sOut", "JaidenAnimations", "OverSimplified", "Psych2go", "ThoughtCafe", "PrimerBlobs", "ZackDFilms", "RyanGeorge", "SciShowKids",
+        # science and how things work
+        "veritasium", "Vsauce", "Vsauce2", "Vsauce3", "Numberphile", "3blue1brown", "minutephysics", "SmarterEveryDay", "SteveMould", "NileRed", "TheActionLab", "ElectroBOOM", "PBSSpaceTime", "ArvinAsh", "DomainOfScience", "MarkRober", "PracticalEngineering", "colinfurze", "CrashCourse", "SciShowPsych", "SciShowSpace",
+        # health and the body
+        "DoctorMike", "ChubbyEmu", "MedCram", "HealthyGamerGG", "BrainCraft", "DrBecky",
+        # money and business
+        "EconomicsExplained", "PolyMatter", "Wendoverproductions", "BenFelixCSI", "HowMoneyWorks", "TheB1M", "FinanceWithSharan", "CARachanaRanade", "warikoo",
+        # history, world and culture
+        "CGPGrey", "Vox", "johnnyharris", "RealLifeLore", "HistoriaCivilis", "extrahistory", "TheInfographicsShow", "Lemmino", "MentalFloss", "NowThis",
+        # tech, productivity and learning
+        "ColdFusion", "Fireship", "Computerphile", "TwoMinutePapers", "Mrwhosetheboss", "Techquickie", "MKBHD", "ThomasFrank", "CleoAbram", "Nerdwriter1", "TomScottGo", "LegalEagle", "dhruvrathee", "DailyDoseOfInternet",
+    ],
+    # Every agent run names its model, so the session's default model never decides: Opus for the polished decisions, Sonnet for the coding.
+    "options_model": "opus",              # adapts outliers into 3 topic ideas, and finds spin-off Shorts (judgment)
+    "thumbnail_ideas_model": "opus",      # the three thumbnail ideas (judgment)
+    "thumbnail_draw_model": "sonnet",     # drawing the picked thumbnail (code)
+    "agent_model": "sonnet",              # an Agent-tab request, and any run that was not given a model (a video is still Opus plan + Sonnet build)
+    "agent_window": False,              # True: every video the agent makes opens in its own visible Claude window
+    "staged_make": True,                # a video is made in two runs: a PLAN (script, hook, shot plan) then a BUILD (code, render); a model picked in the form overrides this
+    "plan_model": "opus",               # the plan stage: the polished decisions (hook, script, jokes, staging)
+    "build_model": "sonnet",            # the build stage: coding the shots, stills, render, sheet
+    "voice_file": "~/.claude/youtube/voice.md",   # the channel voice the agent reads (a channel can name its own)
+    # one entry per YouTube channel. The first is home and keeps the studio's original folders; the others live in channels/<id>/.
+    # Each can override: name, slots, topic_category, topic_channels, projects_dir, planner, voice_file. tools = which tabs it shows.
+    "channels": {
+        "bean": {"name": "The Bean With Bad Ideas", "language": "English", "emoji": "🫘", "color": "#1982c4",
+                 "tools": ["projects", "topics", "agent", "jobs", "settings"], "kinds": ["short", "long"]},
+        "hindi": {"name": "Decoding Vyapaar", "language": "Hindi", "emoji": "🪔", "color": "#c0262d",
+                  "tools": ["projects", "pipeline", "topics", "agent", "jobs", "settings"], "kinds": ["long"],
+                  "note": "Long videos only (10 to 15 minutes). Topics studies the reference channels and has a topic analyzer; Pipeline takes a script to a finished video.",
+                  "slots": {"A": "12:00", "B": "18:30", "Long": "20:30"},
+                  "topic_category": "Hindi business case studies for Indian viewers: the economics of owning an everyday business, how a famous Indian company rose, split or fell, and the rivalry, revenge or rise of a businessman everyone knows",
+                  "topic_channels": [
+                      # faceless Hindi business documentaries and "economics of owning X" (the channel's model)
+                      "HinExpofficial", "ABFinDoc", "PaisaDecodeHQ", "Monexa90", "Financeinminutes80", "HinExplain", "Shivanshu.Agrawal",
+                      "HiddenOpsIndia1", "AniExplainerHindi-1", "moneycode_mc", "TruthFinance0.1", "FinXplain07", "ThinkSchool_Hindi"],
+                  "voice_file": "~/.claude/youtube/voice-hindi.md"},
+    },
+}
+SLUG = re.compile(r"^[a-z0-9][a-z0-9-]{0,60}$")
+HHMM = re.compile(r"^([01]\d|2[0-3]):[0-5]\d$")
+
+app = Flask(__name__, static_folder="static", static_url_path="/static")
+app.json.sort_keys = False        # keep the order we build (the checklist chips follow the order of the keys)
+
+
+# ---------- settings: only your changes live in config.json, so new defaults always reach you ----------
+_cfg = {"stamp": "unset", "val": None, "problem": None}
+
+def cfg_raw():
+    """the settings as saved, with no channel applied (what the Settings tab edits)"""
+    try: stamp = CONFIG.stat().st_mtime
+    except OSError: stamp = None
+    if _cfg["val"] is None or _cfg["stamp"] != stamp:
+        c, problem = dict(DEFAULTS), None
+        if stamp is not None:
+            try:
+                user = json.loads(CONFIG.read_text(encoding="utf-8"))
+                if isinstance(user, dict): c.update(user)
+                else: problem = "config.json is not a JSON object; using the defaults"
+            except Exception:
+                problem = "config.json is not valid JSON; using the defaults until it is fixed"
+        _cfg.update(stamp=stamp, val=c, problem=problem)
+    return dict(_cfg["val"])
+
+channels.init(cfg_raw)
+
+def cfg():
+    """the settings for the channel this request (or thread) is about"""
+    return channels.resolve(ROOT, cfg_raw())
+
+def validate_config(new):
+    if not isinstance(new, dict): return ["settings must be a JSON object { ... }"]
+    kinds = {"port": int, "open_browser": bool, "projects_dir": str, "planner": str, "python": str, "engine": str, "uploader": str,
+             "agent_command": list, "agent_cwd": str, "slots": dict, "channel": str, "hide_projects": list,
+             "topic_category": str, "topic_channels": list, "options_model": str, "thumbnail_ideas_model": str, "thumbnail_draw_model": str, "agent_model": str, "staged_make": bool, "plan_model": str, "build_model": str, "voice_file": str, "downloads_dir": str, "channels": dict}
+    errs = [f'"{k}" has the wrong type' for k, t in kinds.items() if k in new and (not isinstance(new[k], t) or (t is not bool and isinstance(new[k], bool)))]
+    if errs: return errs
+    if "agent_command" in new and (not new["agent_command"] or not all(isinstance(x, str) for x in new["agent_command"])):
+        errs.append('"agent_command" must be a non-empty list of strings')
+    if "slots" in new and not all(isinstance(k, str) and isinstance(v, str) and HHMM.match(v) for k, v in new["slots"].items()):
+        errs.append('"slots" must look like {"A": "12:00"} with 24-hour HH:MM times')
+    if "topic_channels" in new and not all(isinstance(x, str) and x.strip() for x in new["topic_channels"]):
+        errs.append('"topic_channels" must be a list of channel handles')
+    if "channels" in new:
+        chs = new["channels"]
+        if not chs or not all(channels.ID.match(k) and isinstance(v, dict) for k, v in chs.items()):
+            errs.append('"channels" must be {"id": {...}} with lowercase ids; keep at least one (the first is the home channel)')
+        elif not all(isinstance(v.get("name", ""), str) and isinstance(v.get("tools", []), list) for v in chs.values()):
+            errs.append('each channel needs a text "name" and a "tools" list')
+    if "port" in new and not 1024 <= new["port"] <= 65535: errs.append('"port" must be between 1024 and 65535')
+    return errs
+
+
+# ---------- only this machine may talk to the studio (it can run the agent and post to YouTube) ----------
+@app.before_request
+def guard():
+    if (request.host or "").split(":")[0].lower() not in ("127.0.0.1", "localhost"):
+        abort(403, "Bean Studio only answers on localhost")            # DNS-rebinding protection
+    if request.method not in ("GET", "HEAD", "OPTIONS"):
+        origin = request.headers.get("Origin")
+        if origin and (urlparse(origin).hostname or "") not in ("127.0.0.1", "localhost"):
+            abort(403, "cross-site request blocked")
+
+def DATA():
+    """this channel's data folder"""
+    return channels.data_for(ROOT)
+
+def proj_dir(name):
+    if not SLUG.match(name or ""): abort(400, "bad project name")
+    p = Path(cfg()["projects_dir"]) / name
+    if not p.is_dir(): abort(404, "no such project")
+    return p
+
+def body():
+    b = request.get_json(silent=True)
+    if not isinstance(b, dict): abort(400, "expected a JSON body")
+    return b
+
+
+# ---------- jobs: one background process each, log kept in memory (bounded) ----------
+JOBS = {}
+MAX_LOG, KEEP_JOBS = 4000, 40
+
+def start_job(label, cmd, cwd, unique=False, parser=None, window=False):
+    """runs cmd in the background. unique=True returns the job already running under the same label instead of starting a second.
+    parser(line, job) turns raw output lines into log lines (the agent feed); window=True opens the command in its own console window"""
+    if unique:
+        same = next((j for j in JOBS.values() if j["label"] == label and j["channel"] == cfg()["channel_id"] and not j["done"]), None)
+        if same: return same
+    done = sorted((j for j in JOBS.values() if j["done"]), key=lambda j: j["started"])
+    for old in done[:max(0, len(done) - KEEP_JOBS)]: JOBS.pop(old["id"], None)
+    jid = uuid.uuid4().hex[:8]
+    cid, token = cfg()["channel_id"], cfg()["token_path"]
+    job = {"id": jid, "channel": cid, "label": label, "cmd": cmd, "log": [], "dropped": 0, "done": False, "code": None, "started": time.time()}
+    JOBS[jid] = job
+    pdir = cfg()["projects_dir"]
+    def run():
+        env = dict(os.environ, PYTHONUTF8="1", PYTHONIOENCODING="utf-8", BEAN_PROJECTS_DIR=pdir, BEAN_TOKEN=token, BEAN_CHANNEL=cid)
+        try:
+            if window:      # its own console window: you watch (and can answer) the real Claude session
+                p = subprocess.Popen(cmd, cwd=cwd, env=env, creationflags=subprocess.CREATE_NEW_CONSOLE)
+                job.update(pid=p.pid, window=True, activity="Running in its own Claude window")
+                job["log"].append("▸ Opened in its own Claude window. Watch it there; it stays open when it finishes, so close it (or type /exit) afterwards.")
+                job["code"] = p.wait()
+            else:
+                p = subprocess.Popen(cmd, cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL,
+                                     text=True, encoding="utf-8", errors="replace", env=env)
+                job["pid"] = p.pid
+                for line in p.stdout:
+                    for text in (parser(line, job) if parser else [line.rstrip("\n")]):
+                        job["log"].append(text)
+                    if len(job["log"]) > MAX_LOG:
+                        del job["log"][:500]; job["dropped"] += 500
+                job["code"] = p.wait()
+        except Exception as e:
+            job["log"].append(f"[could not start] {e}"); job["code"] = -1
+        job["ended"] = time.time()
+        try: record_run(job)
+        except Exception: pass
+        job["done"] = True
+    threading.Thread(target=channels.bound(run, cid), daemon=True).start()
+    return job
+
+
+def record_run(job):
+    """keeps a small ledger of agent runs (time, steps, Claude's own cost estimate) so the cost of a video is visible"""
+    if job.get("cost") is None: return
+    f = DATA() / "runs.json"
+    with store.lock_for(f):
+        runs = store.read(f, []) or []
+        u = job.get("usage") or {}
+        runs.append({"when": time.strftime("%Y-%m-%d %H:%M"), "label": job["label"], "secs": round(job["ended"] - job["started"]), "turns": job.get("turns"),
+                     "cost": round(job["cost"], 4), "output_tokens": u.get("output_tokens"), "code": job.get("code")})
+        store.write(f, runs[-200:])
+
+@app.get("/api/runs")
+def runs():
+    rs = store.read(DATA() / "runs.json", []) or []
+    return jsonify(runs=rs[-30:][::-1], total=round(sum(r.get("cost") or 0 for r in rs), 2), count=len(rs))
+
+
+# Bash commands an unattended run may use without asking: python (the engine and small inline helpers) and read-only looking around.
+# Anything else needs approval, and nobody is there to give it, so the run stops. One comma-separated value, so it cannot swallow the prompt.
+AGENT_ALLOW = "Bash(python:*),Bash(python3:*),Bash(ls:*),Bash(cat:*),Bash(head:*),Bash(tail:*),Bash(grep:*),Bash(wc:*),Bash(mkdir:*),Bash(cp:*),Bash(mv:*)"
+
+
+def with_allow(cmd):
+    """the agent command with AGENT_ALLOW placed before --permission-mode (so the next token is a flag, never the prompt)"""
+    if "--allowedTools" in cmd or "--permission-mode" not in cmd: return list(cmd)
+    i = cmd.index("--permission-mode")
+    return list(cmd[:i]) + ["--allowedTools", AGENT_ALLOW] + list(cmd[i:])
+
+
+def start_agent(label, prompt, model=None, mode="plain"):
+    """one place that builds the agent's command line. mode: "plain" (output as is), "feed" (live readable steps),
+    "window" (its own visible Claude window, interactive)"""
+    c = cfg()
+    model = model or c.get("agent_model") or None                  # a run with no model of its own still never falls back to the session default
+    if mode == "window":
+        cmd = [x for x in c["agent_command"] if x != "-p"] + (["--model", model] if model else []) + [prompt]   # interactive: no -p
+        return start_job(label, cmd, c["agent_cwd"], window=True)
+    cmd = with_allow(c["agent_command"]) + (["--model", model] if model else [])
+    if mode == "feed": cmd += ["--output-format", "stream-json", "--verbose"]
+    return start_job(label, cmd + [prompt], c["agent_cwd"], parser=agentlog.parse if mode == "feed" else None)
+
+def start_staged(label, stages):
+    """stages: [{"name", "model", "prompt", "expect"}] run one after the other as ONE job (see staged_agent.py)"""
+    c = cfg()
+    spec = DATA() / "make" / (re.sub(r"[^\w.-]+", "_", label) + ".stages.json")
+    spec.parent.mkdir(parents=True, exist_ok=True)
+    spec.write_text(json.dumps({"command": with_allow(c["agent_command"]), "cwd": c["agent_cwd"], "stages": stages}), encoding="utf-8")
+    return start_job(label, [sys.executable, str(APP / "staged_agent.py"), str(spec)], c["agent_cwd"], parser=agentlog.parse)
+
+def job_view(j):
+    v = {k: j[k] for k in ("id", "label", "done", "code", "started")}
+    v.update(channel=j.get("channel"), activity=j.get("activity"), window=bool(j.get("window")), steps=j.get("steps", 0))
+    if j["label"].startswith("make · "):         # a video being made: how far along it is, from the files it has produced
+        slug = j["label"][7:]
+        kind = (store.read(DATA() / "make" / f"{slug}.json", {}) or {}).get("kind", "short")
+        v.update(progress=agentlog.make_progress(Path(cfg()["projects_dir"]) / slug, kind), elapsed=agentlog.clock((time.time() if not j["done"] else j.get("ended", time.time())) - j["started"]), kind=kind)
+        v["resumable"] = bool(j["done"] and (j.get("code") != 0 or v["progress"]["pct"] < 100) and can_resume(slug))
+    return v
+
+
+def can_resume(slug):
+    """a video started from the studio and not finished, with no run going on it: shows the Continue button"""
+    p = Path(cfg()["projects_dir"]) / slug
+    if not p.is_dir() or not (DATA() / "make" / f"{slug}.json").exists(): return False
+    if any(j["label"] == f"make · {slug}" and not j["done"] for j in JOBS.values()): return False
+    return not ((p / f"{slug}.mp4").exists() and (p / f"{slug}-youtube.txt").exists() and (p / f"{slug}.srt").exists())
+
+
+@app.get("/api/jobs")
+def jobs():
+    cid = cfg()["channel_id"]      # Activity shows this channel's jobs
+    return jsonify([job_view(j) for j in sorted(JOBS.values(), key=lambda j: -j["started"]) if j["channel"] == cid][:30])
+
+@app.get("/api/jobs/<jid>")
+def job(jid):
+    j = JOBS.get(jid) or abort(404, "that job is gone (the studio restarted?)")
+    since = int(request.args.get("since", 0))
+    return jsonify({"id": jid, "label": j["label"], "done": j["done"], "code": j["code"], "activity": j.get("activity"), "window": bool(j.get("window")),
+                    "log": j["log"][max(0, since - j["dropped"]):], "n": j["dropped"] + len(j["log"])})
+
+@app.post("/api/jobs/<jid>/stop")
+def stop(jid):
+    j = JOBS.get(jid) or abort(404)
+    if not j["done"] and j.get("pid"):
+        subprocess.run(["taskkill", "/PID", str(j["pid"]), "/T", "/F"], capture_output=True)
+    return jsonify(ok=True)
+
+
+# ---------- projects ----------
+def sheet_title(p):
+    f = p / f"{p.name}-youtube.txt"
+    if not f.exists(): return None
+    m = re.search(r"== TITLE ==\s*\n(.+)", f.read_text(encoding="utf-8"))
+    return m.group(1).strip() if m else None
+
+def summary(p):
+    import ytstate
+    n = p.name
+    has = lambda s: (p / f"{n}{s}").exists()
+    upinfo = store.read(p / f"{n}-upload.json")
+    script = store.read(p / "script.json", [])
+    words = len(" ".join(script).split()) if isinstance(script, list) else 0
+    pj = store.read(p / "project.json", {}) or {}
+    kind = (store.read(DATA() / "make" / f"{n}.json", {}) or {}).get("kind") or ("long" if pj.get("format") == "wide" else "short")
+    if kind == "long":     # a 16:9 video with chapters and sources, made with the line-boil-wide skill
+        steps = {"script": words > 20, "sources": has("-sources.md"), "chapters": has("-chapters.txt"), "video": has(".mp4"), "srt": has(".srt"),
+                 "thumbnail": has("-thumbnail.png"), "sheet": has("-youtube.txt"), "uploaded": bool(upinfo)}
+    else:
+        steps = {"script": words > 20, "video": has(".mp4"), "srt": has(".srt"), "thumbnail": has("-thumbnail.png"),
+                 "sheet": has("-youtube.txt"), "uploaded": bool(upinfo)}
+    ready = all(steps[k] for k in ("video", "srt", "thumbnail", "sheet"))
+    return {"name": n, "kind": kind, "title": sheet_title(p), "words": words, "steps": steps, "upload": upinfo, "yt": ytstate.badge_for(p),
+            "ready": ready, "resumable": (not ready) and can_resume(n),
+            "modified": max((f.stat().st_mtime for f in p.iterdir()), default=0)}
+
+@app.get("/api/projects")
+def projects():
+    d, hide = Path(cfg()["projects_dir"]), set(cfg().get("hide_projects", []))
+    out = [summary(p) for p in d.iterdir() if p.is_dir() and p.name not in hide and (p / "script.json").exists()] if d.exists() else []
+    return jsonify(sorted(out, key=lambda s: -s["modified"]))
+
+@app.get("/api/projects/<name>")
+def project(name):
+    p = proj_dir(name)
+    s = summary(p)
+    sheet = p / f"{name}-youtube.txt"
+    s["sheet_text"] = sheet.read_text(encoding="utf-8") if sheet.exists() else ""
+    script = store.read(p / "script.json", [])
+    s["script"] = script if isinstance(script, list) else []
+    if s["kind"] == "long":     # the research documents, shown read-only on the project page
+        s["docs"] = {k: (p / f"{name}-{k}.{ext}").read_text(encoding="utf-8") for k, ext in (("sources", "md"), ("chapters", "txt"))
+                     if (p / f"{name}-{k}.{ext}").exists()}
+    return jsonify(s)
+
+@app.put("/api/projects/<name>/sheet")
+def save_sheet(name):
+    text = body().get("text")
+    if not isinstance(text, str): abort(400, "text must be a string")
+    (proj_dir(name) / f"{name}-youtube.txt").write_text(text, encoding="utf-8")
+    return jsonify(ok=True)
+
+@app.put("/api/projects/<name>/script")
+def save_script(name):
+    sentences = body().get("sentences")
+    if not isinstance(sentences, list): abort(400, "sentences must be a list")
+    store.write(proj_dir(name) / "script.json", [str(s).strip() for s in sentences if str(s).strip()], indent=2)
+    return jsonify(ok=True)
+
+@app.delete("/api/projects/<name>")
+def delete_project(name):
+    """removes the project folder from disk (video, thumbnail, sources). The YouTube copy, if any, is untouched."""
+    p = proj_dir(name)
+    if p.resolve().parent != Path(cfg()["projects_dir"]).resolve(): abort(400, "not a project folder")
+    if any(j["label"].endswith(" · " + name) and not j["done"] for j in JOBS.values()): abort(409, "a job is still running on this project")
+    size = sum(f.stat().st_size for f in p.rglob("*") if f.is_file())
+    def unlock(fn, path, _):   # read-only files on Windows
+        os.chmod(path, stat.S_IWRITE); fn(path)
+    try:
+        shutil.rmtree(p, onerror=unlock)
+    except OSError as e:
+        abort(500, f"could not delete everything ({e}). Close anything using that folder and try again.")
+    (DATA() / "make" / f"{name}.json").unlink(missing_ok=True)
+    return jsonify(ok=True, freed_mb=round(size / 1e6, 1))
+
+@app.get("/media/<name>/<path:fname>")
+def media(name, fname):
+    p = proj_dir(name)
+    if not re.match(r"^[\w.-]+\.(mp4|png|jpg|srt)$", fname): abort(400)
+    return send_from_directory(p, fname)
+
+ACTIONS = {   # what the buttons run: engine steps and uploader commands
+    "voice": ("engine", ["voice"]), "check": ("engine", ["check"]), "video": ("engine", ["video"]),
+    "thumb": ("engine", ["thumb"]), "sheet": ("engine", ["sheet"]), "new": ("engine", ["new"]), "chapters": ("engine", ["chapters"]),
+    "upload-dry": ("uploader", ["upload", "--dry-run"]), "upload": ("uploader", ["upload"]), "comment": ("uploader", ["comment"]),
+}
+
+@app.post("/api/run")
+def run():
+    c, b = cfg(), body()
+    act, name = b.get("action"), b.get("project", "")
+    if act == "auth":
+        return jsonify(start_job("YouTube sign-in", [c["python"], c["uploader"], "auth"], str(ROOT), unique=True))
+    if act == "spinoffs":      # the yt-shorts skill on a finished long video: which moments survive alone, with new scored first lines
+        p = proj_dir(name)
+        if not (p / f"{name}.srt").exists(): abort(400, "this video has no .srt yet: build the video first")
+        prompt = (f"Use the yt-shorts skill (read ~/.claude/skills/yt-shorts/SKILL.md) on the finished long video {name}. The transcript is {p / (name + '.srt')}; the "
+                  f"chapters are {p / (name + '-chapters.txt')} and the script is {p / 'script.json'}. Find the 5 best spans of 20 to 55 seconds that survive without the video around them "
+                  "(a complete opening thought, a turn, an ending line). For each of the top 5 write: the timecodes, a NEW first line (score five options with "
+                  "~/.claude/skills/yt-script/hookscore.py and keep the best, showing the score), different on-screen text for the first two seconds, a loop point, and the title. "
+                  "These are animated cartoons, so they cannot be cropped from the 16:9 video: say which subjects, characters and set each Short would need, to be remade vertically with the line-boil skill. "
+                  f"Write it all to {p / (name + '-shorts.md')} and finish by printing the ranked list. Do not make any video and do not touch other projects.")
+        return jsonify(start_agent(f"spinoffs · {name}", prompt, c.get("options_model") or None, "feed"))
+    if act not in ACTIONS or not SLUG.match(name or ""): abort(400, "bad action or project")
+    tool, args = ACTIONS[act]
+    cmd = [c["python"], c[tool], args[0], name] + args[1:]
+    if tool == "uploader" and act != "comment":
+        if b.get("now"): cmd.append("--now")                                   # publish immediately, public
+        elif re.match(r"^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$", b.get("at") or ""): cmd += ["--at", b["at"]]   # IST, from the time dropdown
+        else: abort(400, "pick a date and a time first")
+    if act == "video" and b.get("no_music"): cmd.append("--no-music")
+    # unique: a double click returns the job that is already running instead of starting (and double-uploading) a second one
+    return jsonify(start_job(f"{act} · {name}", cmd, str(ROOT), unique=True))
+
+@app.post("/api/agent")
+def agent():
+    c = cfg()
+    b = body()
+    prompt = str(b.get("prompt", "")).strip()
+    if not prompt: abort(400, "empty prompt")
+    if b.get("duration") not in (None, "", 0):          # a chosen length is passed on to the skill as instructions
+        try: seconds = int(float(b["duration"]))
+        except (TypeError, ValueError): abort(400, "duration must be a number of seconds")
+        if not 20 <= seconds <= 1800: abort(400, "duration must be between 20 seconds and 30 minutes")
+        prompt += "\n\n" + topics.length_instructions(seconds)
+    mode = "window" if (b.get("window") or c.get("agent_window")) else "feed"
+    if c["channel_id"] != channels.home(cfg_raw()):    # a channel other than home: say whose it is and where its files are
+        prompt = (f'This task is for the YouTube channel "{c["channel"]}" (language: {c["language"]}), not for The Bean With Bad Ideas. '
+                  f'Its videos live in {c["projects_dir"]}, its data in {c["data_dir"]}, its planner is {c["planner"]}, and its voice notes are {c["voice_file"]} (create it if it is missing). '
+                  "Do not touch the other channels' folders.\n\n") + prompt
+    model = b.get("model") if b.get("model") in ("opus", "sonnet", "haiku") else None
+    vid = topics.make_request(prompt, seconds if b.get("duration") not in (None, "", 0) else None)
+    label = "make · " + vid["topic"] if vid else "agent · " + topics.short_label(prompt)
+    if vid and mode != "window" and not model and c.get("staged_make", True):       # "make a new Short ..." is the same two-stage job as the Topics tab: Opus plans, Sonnet builds
+        plan_note, build_note = topics.stage_notes("<project>", vid["long"])
+        find = (f" The project is the folder under {c['projects_dir']} that the plan run created: the most recently changed folder that contains a *-shotplan.md."
+                " In the notes below, <project> means that folder's name.")
+        return jsonify(start_staged(label, [
+            {"name": "Plan: script, hook and shot plan", "model": c.get("plan_model") or None,
+             "prompt": prompt + plan_note.replace("STAGE 1 OF 2: THE PLAN.", "STAGE 1 OF 2: THE PLAN. Choose the project name (a short lowercase slug) yourself; <project> below is that name.", 1), "expect": []},
+            {"name": "Build: code, render and sheet", "model": c.get("build_model") or None, "prompt": prompt + build_note + find, "expect": []}]))
+    return jsonify(start_agent(label, prompt, model or (c.get("plan_model") if vid else None), mode=mode))
+
+
+# ---------- the next free posting slot (the upload form's "Next free slot" button; YouTube is the truth for what is taken) ----------
+@app.get("/api/next-slot")
+def next_slot():
+    """the first posting slot (not Long) that is in the future and has nothing live or scheduled around it"""
+    import ytstate
+    c, now = cfg(), dt.datetime.now(IST)
+    taken = []
+    for v in ytstate.STATE["videos"]:
+        if v["state"] in ("scheduled", "live"):
+            try: taken.append(dt.datetime.fromisoformat(v["when"]))
+            except ValueError: pass
+    slots = sorted(((n, t) for n, t in c["slots"].items() if n != "Long"), key=lambda x: x[1])
+    for day in range(30):
+        d = (now + dt.timedelta(days=day)).date()
+        for name, hhmm in slots:
+            h, m = map(int, hhmm.split(":"))
+            t = dt.datetime(d.year, d.month, d.day, h, m, tzinfo=IST)
+            if t < now + dt.timedelta(minutes=35) or any(abs((t - x).total_seconds()) < 3600 for x in taken): continue
+            return jsonify(at=t.strftime("%Y-%m-%d %H:%M"), date=t.strftime("%Y-%m-%d"), time=hhmm, slot=name, checked_youtube=ytstate.STATE["connected"])
+    return jsonify(at=None)
+
+import ytstate, topics   # noqa: E402
+refresh_youtube = ytstate.register(app, ROOT, cfg)      # live posted / scheduled / private state for every tab
+topics.register(app, ROOT, cfg, start_job, JOBS, start_agent, start_staged)
+import thumbs
+import pipeline
+pipeline.register(app, ROOT, cfg, start_agent, JOBS, start_job)      # Pipeline tab: stages, ChatGPT batch collection, contact sheet
+import sessions
+sessions.register(app, ROOT, cfg, start_job, JOBS)      # + New video: one Claude window (session) per video, reopened from its card
+thumbs.register(app, ROOT, cfg, start_agent, proj_dir, JOBS)   # five thumbnail ideas, then the picked one drawn   # topic selector + the "make this video" job
+
+
+# ---------- settings and housekeeping ----------
+def code_stamp():
+    return max(f.stat().st_mtime for f in [*APP.glob("*.py"), *(APP / "static").glob("*")])
+STARTED = code_stamp()
+
+@app.get("/api/meta")
+def meta():
+    """shared lists (so the page never hard-codes them) and whether the code on disk is newer than this running copy"""
+    cfg()
+    return jsonify(types=topics.TYPES, voices=topics.VOICES, lengths=topics.LENGTHS, started=STARTED, current=code_stamp(), config_problem=_cfg["problem"],
+                   restartable=bool(os.environ.get("BEAN_AUTORESTART")), busy=any(not j["done"] for j in JOBS.values()))
+
+@app.post("/api/restart")
+def restart():
+    """start.bat runs the studio in a loop and starts it again on exit code 3: the page uses this to load newer code by itself"""
+    if not os.environ.get("BEAN_AUTORESTART"): abort(400, "started without start.bat: close this console window and run start.bat again")
+    threading.Timer(0.5, lambda: os._exit(3)).start()
+    return jsonify(ok=True)
+
+@app.get("/api/channels")
+def list_channels():
+    raw = cfg_raw()
+    return jsonify(channels=channels.public(ROOT, raw, lambda p: Path(p).exists()), current=cfg()["channel_id"], home=channels.home(raw))
+
+@app.post("/api/channels")
+def add_channel():
+    b, raw = body(), cfg_raw()
+    cid = re.sub(r"[^a-z0-9-]+", "-", str(b.get("id") or b.get("name") or "").lower()).strip("-")[:24]
+    name = str(b.get("name") or "").strip()
+    if not name: abort(400, "give the channel a name")
+    try: chs = channels.add(raw, cid, name[:80], str(b.get("language") or "")[:30], str(b.get("emoji") or "")[:4], str(b.get("color") or "")[:9])
+    except ValueError as e: abort(400, str(e))
+    user = json.loads(CONFIG.read_text(encoding="utf-8")) if CONFIG.exists() else {}
+    user["channels"] = chs
+    if CONFIG.exists(): shutil.copy2(CONFIG, CONFIG.with_suffix(".json.bak"))
+    CONFIG.write_text(json.dumps(user, indent=2, ensure_ascii=False), encoding="utf-8")
+    channels.make_dirs(ROOT, cfg_raw(), cid)
+    return jsonify(ok=True, id=cid)
+
+@app.get("/api/config")
+def get_config():
+    return jsonify(cfg_raw())      # global settings as saved; each channel's own settings live under "channels"
+
+@app.put("/api/config")
+def put_config():
+    new = request.get_json(silent=True)
+    errs = validate_config(new)
+    if errs: abort(400, "Not saved: " + "; ".join(errs))
+    overrides = {k: v for k, v in new.items() if DEFAULTS.get(k, object()) != v}      # only what differs from the defaults
+    if CONFIG.exists(): shutil.copy2(CONFIG, CONFIG.with_suffix(".json.bak"))
+    CONFIG.write_text(json.dumps(overrides, indent=2, ensure_ascii=False), encoding="utf-8")
+    for cid in channels.ids(new) if "channels" in new else []: channels.make_dirs(ROOT, new, cid)
+    return jsonify(ok=True, saved=len(overrides), note="Saved. Restart start.bat to apply a new port." if "port" in overrides else "Saved.")
+
+@app.get("/")
+def index():
+    return send_from_directory(app.static_folder, "index.html")
+
+
+def main():
+    c = cfg()
+    url = f"http://127.0.0.1:{c['port']}"
+    import socket, urllib.request
+    with socket.socket() as s:
+        busy = s.connect_ex(("127.0.0.1", c["port"])) == 0
+    if busy:                                   # already running: open it instead of crashing, and say if it is out of date
+        try:
+            running = json.loads(urllib.request.urlopen(url + "/api/meta", timeout=3).read())
+            stale = running["started"] < code_stamp() - 1
+        except Exception:
+            stale = True
+        print(f"Bean Studio is already running at {url}.")
+        if stale: print("That copy is OUT OF DATE (it started before the latest code). Close its console window, then run start.bat again.")
+        if c.get("open_browser"): webbrowser.open(url)
+        return
+    print(f"Bean Studio on {url}  (Ctrl+C to stop)")
+    if _cfg["problem"]: print("WARNING:", _cfg["problem"])
+    if c.get("open_browser"): threading.Timer(1.0, lambda: webbrowser.open(url)).start()
+    app.run(host="127.0.0.1", port=c["port"], debug=False, threaded=True)
+
+
+if __name__ == "__main__":
+    main()

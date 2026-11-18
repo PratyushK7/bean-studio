@@ -108,6 +108,35 @@ def new_video_opens_its_own_claude_session_and_its_card_reopens_it():
 
 
 @test
+def each_channel_routes_to_its_own_script_skill_whatever_the_topic():
+    sys.path.insert(0, str(ROOT / "app")); import channels, sessions, server
+    from flask import Flask
+    with server.app.test_request_context(headers={"X-Channel": "jadtak"}): jt = server.cfg()
+    assert jt["channel"] == "Jad Tak" and jt["skill"] == "general-case-study" and jt["projects_dir"].replace("\\", "/").endswith("channels/jadtak/videos"), jt["projects_dir"]
+    assert "pipeline" not in server.cfg_raw()["channels"]["jadtak"]["tools"], "Jad Tak never gets Decoding Vyapaar's production pipeline"
+    with server.app.test_request_context(headers={"X-Channel": "hindi"}): assert server.cfg()["skill"] == "hindi-case-study"
+    assert channels.skill_of({"language": "Hindi"}) == "hindi-case-study" and channels.skill_of({"language": "English"}) == "line-boil", "old channels keep their skill"
+    assert channels.skill_of({"language": "Hindi", "skill": "general-case-study"}) == "general-case-study", "a channel's own setting wins over its language"
+    assert channels.skill_of({"language": "Hindi", "skill": "nonsense"}) == "hindi-case-study"
+    try: channels.add({"channels": {}}, "docs", "Docs", "Hindi", "", "", "nope"); raise AssertionError("an unknown skill is refused")
+    except ValueError: pass
+    assert channels.add({"channels": {}}, "docs", "Docs", "Hindi", "", "", "general-case-study")["docs"]["skill"] == "general-case-study"
+    d = Path(tempfile.mkdtemp(prefix="studio-route-")); (d / "data").mkdir()
+    base = {"plan_model": "opus", "agent_command": ["claude", "-p"], "agent_cwd": str(ROOT), "projects_dir": str(d), "voice_file": "~/.claude/youtube/voice-jadtak.md"}
+    cases = [({"channel_id": "hindi", "channel": "Decoding Vyapaar", "language": "Hindi"}, "Economics of owning a jewellery shop", "hindi-case-study"),
+             ({"channel_id": "jadtak", "channel": "Jad Tak", "language": "Hindi", "skill": "general-case-study"}, "Story of Neem Karoli Baba", "general-case-study")]
+    for ch, topic, want in cases:
+        started = []
+        app = Flask("t"); sessions.register(app, ROOT, lambda: {**base, **ch}, lambda label, cmd, cwd, window=False, **k: started.append(cmd) or {"id": "1"}, {}, data=lambda: d / "data")
+        r = app.test_client().post("/api/sessions/new", json={"topic": topic})
+        assert r.status_code == 200, r.get_data(as_text=True)
+        first = started[-1][-1]
+        assert f"Use the {want} skill" in first, (topic, first[:200])
+        if want == "general-case-study": assert "Gate 1" in first and "Gate 2" in first and "voice-jadtak.md" in first and "Jad Tak" in first, "it stops for the length and the outline"
+        else: assert "general-case-study" not in first and "Gate A" in first
+
+
+@test
 def show_buttons_return_what_each_step_made_and_serve_only_safe_files():
     sys.path.insert(0, str(ROOT / "app")); import server
     c = server.app.test_client(); H = {"X-Channel": "hindi"}; name = JEW.name

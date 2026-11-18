@@ -9,10 +9,11 @@ description: >-
   our own drafts. Formats: the economics of owning a business (as an owner's story or told to "you"), a company's rise or
   fall, a person's story as a thriller, a mystery, a list, a comparison. Output: a sourced, fact-linked script.json (its
   central question, answer, takeaway and shot plan), a readable script.md checked by casecheck.py and by a short editorial
-  check, and a free local listen. Use it whenever the user asks for a Hindi or Hinglish script, a Hindi
-  case study, a "business case study" or "economics of owning X" video, a Hindi documentary about a company or a
-  businessman, or a script for Decoding Vyapaar or the Hindi channel, including from the Bean Studio Agent tab or Topics
-  tab. Also use it whenever a Hindi script needs fixing because it "feels off", is boring or sounds robotic.
+  check, and a free local listen. Use it for Decoding Vyapaar only: a Hindi or Hinglish business case study, an
+  "economics of owning X" video, a documentary about a company or a businessman, or any script for Decoding Vyapaar or the
+  Hindi channel, including from the Bean Studio Agent, Topics or Pipeline tab, and whenever a Decoding Vyapaar script needs
+  fixing because it "feels off", is boring or sounds robotic. Not for other channels: a documentary on another subject (a
+  saint's or artist's life, history, a mystery) is for Jad Tak and uses general-case-study, even in Hindi.
 ---
 
 # Decoding Vyapaar: the script architect

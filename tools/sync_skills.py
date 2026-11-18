@@ -1,11 +1,11 @@
-"""Mirror the line-boil skills between ~/.claude/skills (what Claude reads) and ./skills (what git pushes).
+"""Mirror the video skills between ~/.claude/skills (what Claude reads) and ./skills (what git pushes).
   python tools/sync_skills.py out   copy the live skills into the repo, then commit and push
   python tools/sync_skills.py in    copy the repo's skills onto a new PC
 """
 import shutil, sys
 from pathlib import Path
 
-NAMES = ["line-boil", "line-boil-wide", "line-boil-thumbnail-short", "line-boil-thumbnail-long", "hindi-case-study"]
+NAMES = ["line-boil", "line-boil-wide", "line-boil-thumbnail-short", "line-boil-thumbnail-long", "hindi-case-study", "general-case-study"]
 LIVE, REPO = Path.home() / ".claude" / "skills", Path(__file__).resolve().parent.parent / "skills"
 skip = shutil.ignore_patterns("__pycache__", "*.pyc")
 

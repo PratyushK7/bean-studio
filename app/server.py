@@ -56,6 +56,7 @@ DEFAULTS = {
     "voice_file": "~/.claude/youtube/voice.md",   # the channel voice the agent reads (a channel can name its own)
     # one entry per YouTube channel. The first is home and keeps the studio's original folders; the others live in channels/<id>/.
     # Each can override: name, slots, topic_category, topic_channels, projects_dir, planner, voice_file. tools = which tabs it shows.
+    # skill = the script skill its videos use (hindi-case-study, general-case-study or line-boil; default by language, see channels.skill_of).
     "channels": {
         "bean": {"name": "The Bean With Bad Ideas", "language": "English", "emoji": "🫘", "color": "#1982c4",
                  "tools": ["projects", "topics", "agent", "jobs", "settings"], "kinds": ["short", "long"]},
@@ -69,6 +70,11 @@ DEFAULTS = {
                       "HinExpofficial", "ABFinDoc", "PaisaDecodeHQ", "Monexa90", "Financeinminutes80", "HinExplain", "Shivanshu.Agrawal",
                       "HiddenOpsIndia1", "AniExplainerHindi-1", "moneycode_mc", "TruthFinance0.1", "FinXplain07", "ThinkSchool_Hindi"],
                   "voice_file": "~/.claude/youtube/voice-hindi.md"},
+        # Pipeline stays off: its production (visual bible, graphics, render, cast) is Decoding Vyapaar's and must not be mixed in
+        "jadtak": {"name": "Jad Tak", "language": "Hindi", "emoji": "🌳", "color": "#2d6a4f", "skill": "general-case-study",
+                   "tools": ["projects", "agent", "jobs", "settings"], "kinds": ["long"],
+                   "note": "Documentaries and case studies, from a few minutes to over an hour. ＋ New video researches, offers three lengths and an outline, then writes the script (general-case-study). Production is not set up yet.",
+                   "voice_file": "~/.claude/youtube/voice-jadtak.md"},
     },
 }
 SLUG = re.compile(r"^[a-z0-9][a-z0-9-]{0,60}$")
@@ -414,7 +420,7 @@ def agent():
     mode = "window" if (b.get("window") or c.get("agent_window")) else "feed"
     if c["channel_id"] != channels.home(cfg_raw()):    # a channel other than home: say whose it is and where its files are
         prompt = (f'This task is for the YouTube channel "{c["channel"]}" (language: {c["language"]}), not for The Bean With Bad Ideas. '
-                  f'Its videos live in {c["projects_dir"]}, its data in {c["data_dir"]}, its planner is {c["planner"]}, and its voice notes are {c["voice_file"]} (create it if it is missing). '
+                  f'Its scripts use the {c["skill"]} skill (~/.claude/skills/{c["skill"]}/SKILL.md). Its videos live in {c["projects_dir"]}, its data in {c["data_dir"]}, its planner is {c["planner"]}, and its voice notes are {c["voice_file"]} (create it if it is missing). '
                   "Do not touch the other channels' folders.\n\n") + prompt
     model = b.get("model") if b.get("model") in ("opus", "sonnet", "haiku") else None
     vid = topics.make_request(prompt, seconds if b.get("duration") not in (None, "", 0) else None)
@@ -492,7 +498,7 @@ def add_channel():
     cid = re.sub(r"[^a-z0-9-]+", "-", str(b.get("id") or b.get("name") or "").lower()).strip("-")[:24]
     name = str(b.get("name") or "").strip()
     if not name: abort(400, "give the channel a name")
-    try: chs = channels.add(raw, cid, name[:80], str(b.get("language") or "")[:30], str(b.get("emoji") or "")[:4], str(b.get("color") or "")[:9])
+    try: chs = channels.add(raw, cid, name[:80], str(b.get("language") or "")[:30], str(b.get("emoji") or "")[:4], str(b.get("color") or "")[:9], str(b.get("skill") or "")[:40] or None)
     except ValueError as e: abort(400, str(e))
     user = json.loads(CONFIG.read_text(encoding="utf-8")) if CONFIG.exists() else {}
     user["channels"] = chs

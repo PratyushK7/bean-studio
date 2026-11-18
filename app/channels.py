@@ -13,6 +13,7 @@ from pathlib import Path
 from flask import has_request_context, request
 
 ALL_TOOLS = ["projects", "pipeline", "topics", "agent", "jobs", "settings"]
+SKILLS = ["hindi-case-study", "general-case-study", "line-boil"]     # the script skill a channel's videos are made with
 ID = re.compile(r"^[a-z][a-z0-9-]{0,24}$")
 _tl = threading.local()
 _raw = {"fn": lambda: {}}
@@ -52,6 +53,12 @@ def bound(fn, cid):
     def run(*a, **k):
         with using(cid): return fn(*a, **k)
     return run
+
+
+def skill_of(ch):
+    """the channel's script skill: its own "skill" setting, else what the studio always used (Hindi: the business skill)"""
+    s = (ch or {}).get("skill")
+    return s if s in SKILLS else "hindi-case-study" if ((ch or {}).get("language") or "").lower() == "hindi" else "line-boil"
 
 
 def is_home(c, cid):
@@ -97,6 +104,7 @@ def resolve(ROOT, c):
         if ch.get(src) not in (None, ""): out[dst] = ch[src]
     out.setdefault("voice_file", "~/.claude/youtube/voice.md")
     out["language"] = ch.get("language") or "English"
+    out["skill"] = skill_of(ch)
     out["data_dir"] = str(data_dir(ROOT, c, cid))
     out["token_path"] = str(token_path(ROOT, c, cid))
     return out
@@ -107,20 +115,21 @@ def public(ROOT, c, token_exists):
     rows = []
     for cid, ch in (c.get("channels") or {}).items():
         rows.append({"id": cid, "name": ch.get("name") or cid, "emoji": ch.get("emoji") or "📺", "color": ch.get("color") or "#1982c4",
-                     "language": ch.get("language") or "English", "note": ch.get("note") or "",
+                     "language": ch.get("language") or "English", "skill": skill_of(ch), "note": ch.get("note") or "",
                      "tools": [t for t in (ch.get("tools") or ALL_TOOLS) if t in ALL_TOOLS],
                      "kinds": [k for k in (ch.get("kinds") or ["short", "long"]) if k in ("short", "long")] or ["short", "long"], "home": cid == home(c),
                      "connected": token_exists(token_path(ROOT, c, cid))})
     return rows
 
 
-def add(c_raw, cid, name, language, emoji, color):
+def add(c_raw, cid, name, language, emoji, color, skill=None):
     """the channels dict with one more channel (the caller saves it); raises ValueError with a plain reason"""
     chs = dict(c_raw.get("channels") or {})
     if not ID.match(cid or ""): raise ValueError("the id must be lowercase letters, numbers and dashes, starting with a letter")
     if cid in chs: raise ValueError(f"there is already a channel with the id {cid}")
+    if skill not in (None, "") and skill not in SKILLS: raise ValueError(f"the video skill must be one of {', '.join(SKILLS)}")
     chs[cid] = {"name": name, "language": language or "English", "emoji": emoji or "📺", "color": color or "#c0262d",
-                "tools": [t for t in ALL_TOOLS if t != "topics"],
+                **({"skill": skill} if skill else {}), "tools": [t for t in ALL_TOOLS if t != "topics"],
                 "note": "Topics stay off until this channel has a video skill (a style that can make its videos)."}
     return chs
 
