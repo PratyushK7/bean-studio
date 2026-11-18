@@ -1,0 +1,1027 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bean Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root { --paper:#fffaf0; --ink:#1c1c1c; --red:#ff595e; --blue:#1982c4; --yel:#ffca3a; --soft:#f1eadb; --mute:#6b6b6b; --ok:#c9e8c9; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: Poppins, system-ui, sans-serif; background: var(--paper); color: var(--ink); }
+  header { display:flex; align-items:center; gap:16px; padding:14px 24px; border-bottom:3px solid var(--ink); background: var(--blue); color:#fff; }
+  header h1 { margin:0; font-size:20px; letter-spacing:.3px; }
+  header h1 span { color: var(--yel); }
+  nav { display:flex; gap:6px; margin-left:auto; flex-wrap:wrap; }
+  nav button { font:inherit; font-weight:600; border:2px solid var(--ink); background:var(--paper); color:var(--ink); padding:6px 14px; border-radius:999px; cursor:pointer; box-shadow:2px 2px 0 var(--ink); }
+  nav button.on { background: var(--yel); }
+  .newvid { font:inherit; font-weight:700; font-size:15px; border:3px solid var(--ink); background:var(--yel); color:var(--ink); padding:8px 18px; border-radius:999px; cursor:pointer; box-shadow:3px 3px 0 var(--ink); white-space:nowrap; }
+  .newvid:hover { transform:translate(-1px,-1px); box-shadow:4px 4px 0 var(--ink); } .newvid:active { transform:translate(1px,1px); box-shadow:1px 1px 0 var(--ink); }
+  main { padding: 20px 24px; max-width: 1280px; margin: 0 auto; }
+  .tab { display:none; } .tab.on { display:block; }
+  .card { background:#fff; border:2px solid var(--ink); border-radius:14px; padding:14px; box-shadow:3px 3px 0 var(--ink); }
+  .grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap:16px; }
+  .proj { cursor:pointer; transition: transform .08s; } .proj:hover { transform: translate(-1px,-1px); }
+  .proj img { width:100%; aspect-ratio: 9/16; object-fit: cover; border-radius:8px; border:2px solid var(--ink); background: var(--soft); display:block; }
+  .proj .ph { width:100%; aspect-ratio:9/16; border-radius:8px; border:2px dashed var(--mute); display:grid; place-items:center; color:var(--mute); font-size:13px; }
+  .proj h3 { font-size:14px; margin:10px 0 4px; line-height:1.3; }
+  .slug { font-size:12px; color:var(--mute); }
+  .chips { display:flex; flex-wrap:wrap; gap:4px; margin-top:8px; }
+  .chip { font-size:11px; padding:2px 8px; border-radius:999px; border:1.5px solid var(--ink); background: var(--soft); }
+  .chip.y { background: var(--ok); } .chip.n { background:#fff; color:var(--mute); border-color:#bbb; }
+  .badge { display:inline-block; font-size:11px; font-weight:700; padding:2px 8px; border-radius:6px; background:var(--red); color:#fff; }
+  .badge.ok { background:#2f8f3a; } .badge.up { background: var(--blue); }
+  button.act { font:inherit; font-weight:600; font-size:13px; border:2px solid var(--ink); background:var(--yel); padding:6px 12px; border-radius:10px; cursor:pointer; box-shadow:2px 2px 0 var(--ink); }
+  button.act.sec { background:#fff; } button.act.red { background: var(--red); color:#fff; } button.act.blue { background: var(--blue); color:#fff; }
+  button.act:active { transform: translate(1px,1px); box-shadow:1px 1px 0 var(--ink); }
+  button:disabled { opacity:.5; cursor: default; }
+  .row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  textarea, input, select { font: inherit; font-size:13px; border:2px solid var(--ink); border-radius:10px; padding:8px 10px; background:#fff; color:var(--ink); }
+  textarea { width:100%; resize: vertical; font-family: ui-monospace, Consolas, monospace; }
+  .detail { display:grid; grid-template-columns: 300px 1fr; gap:20px; }
+  .detail video, .detail img.thumb { width:100%; border-radius:10px; border:2px solid var(--ink); background:#000; display:block; }
+  h2 { font-size:18px; margin: 0 0 12px; } h4 { margin: 16px 0 8px; font-size:14px; }
+  .log { background: var(--ink); color: #eee; font: 12px/1.45 ui-monospace, Consolas, monospace; padding:12px; border-radius:10px; height: 300px; overflow:auto; white-space: pre-wrap; }
+  table { width:100%; border-collapse: collapse; font-size:13px; background:#fff; }
+  th, td { text-align:left; padding:7px 8px; border-bottom:1px solid #e4dccb; vertical-align: top; }
+  th { background: var(--blue); color:#fff; position: sticky; top:0; }
+  tr.Long td { background:#ffe2e3; font-weight:600; } tr.today td:first-child { border-left:5px solid var(--yel); }
+  .st-Posted { color:#2f8f3a; font-weight:700; } .st-Ready, .st-Scheduled { color: var(--blue); font-weight:700; }
+  .muted { color: var(--mute); font-size:12px; }
+  .jobs { display:flex; flex-direction:column; gap:6px; margin-bottom:10px; max-height:160px; overflow:auto; }
+  .job { font-size:12px; padding:6px 10px; border:1.5px solid var(--ink); border-radius:8px; background:#fff; cursor:pointer; display:flex; justify-content:space-between; }
+  .job.sel { background: var(--yel); }
+  .quick button { margin: 0 6px 6px 0; }
+  .back { cursor:pointer; color: var(--blue); font-weight:600; font-size:13px; margin-bottom:12px; display:inline-block; }
+  @media (max-width: 800px) { .detail { grid-template-columns: 1fr; } header { flex-wrap: wrap; } main { padding: 16px; } }
+  .modal { position:fixed; inset:0; background:rgba(28,28,28,.55); display:none; align-items:flex-start; justify-content:center; overflow:auto; padding:30px 16px; z-index:50; }
+  .modal.on { display:flex; }
+  .modal .box { background:var(--paper); border:3px solid var(--ink); border-radius:16px; box-shadow:5px 5px 0 var(--ink); padding:20px; width:min(640px,100%); }
+  .modal label { display:block; font-weight:600; font-size:13px; margin:12px 0 4px; }
+  .modal select, .modal input[type=text], .modal textarea { width:100%; }
+  .opt { cursor:pointer; position:relative; } .opt:hover { transform: translate(-1px,-1px); }
+  .opt h3 { margin:6px 0 6px; font-size:16px; line-height:1.3; }
+  .opt .n { position:absolute; top:10px; right:12px; font-weight:700; color:var(--mute); }
+  .risk-low { background:var(--ok); } .risk-medium { background:#ffe9a8; } .risk-high { background:#ffd1d2; }
+  .spin { display:inline-block; animation: sp 1s linear infinite; } @keyframes sp { to { transform: rotate(360deg); } }
+  .stt { font-size:11px; font-weight:700; padding:2px 8px; border-radius:6px; color:#fff; display:inline-block; }
+  .stt.live { background:#2f8f3a; } .stt.scheduled { background:var(--blue); } .stt.private { background:#8a8a8a; } .stt.unlisted { background:#8a8a8a; } .stt.planned { background:var(--yel); color:var(--ink); }
+  button.del { font:inherit; font-size:12px; border:2px solid var(--ink); background:#fff; color:#c0262d; padding:3px 9px; border-radius:8px; cursor:pointer; }
+  button.del:hover { background:#c0262d; color:#fff; }
+  .making { border-style:dashed; background:#fffbe8; }
+  #toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%) translateY(90px); background:var(--ink); color:#fff; padding:10px 16px; border-radius:12px; font-size:13px; max-width:min(560px,92vw); opacity:0; transition:.25s; z-index:90; pointer-events:none; }
+  #toast.on { opacity:1; transform:translateX(-50%); }
+  .banner { background:var(--yel); border-bottom:3px solid var(--ink); padding:8px 24px; font-weight:600; font-size:13px; }
+  .seg { display:inline-flex; border:2px solid var(--ink); border-radius:999px; overflow:hidden; box-shadow:2px 2px 0 var(--ink); }
+  .seg button { font:inherit; font-weight:600; border:0; padding:6px 16px; background:#fff; cursor:pointer; }
+  .seg button.on { background:var(--yel); }
+  .opt.pick { background:#fffbe8; border-color:var(--red); }
+  .opt ul { margin:6px 0 0 16px; padding:0; font-size:12px; color:var(--mute); }
+  .proj img.wide, .proj .ph.wide { aspect-ratio:16/9; }
+  .detail img.thumb.wide, .detail video.wide { aspect-ratio:16/9; }
+  .bar { height:12px; border:2px solid var(--ink); border-radius:999px; background:#fff; overflow:hidden; margin:10px 0 6px; }
+  .bar i { display:block; height:100%; background:var(--blue); transition:width .6s; }
+  #chbar { display:flex; gap:8px; align-items:flex-end; padding:10px 24px 0; background:var(--soft); border-bottom:3px solid var(--ink); overflow-x:auto; }
+  #chbar button.ch { font:inherit; font-weight:700; font-size:14px; border:2px solid var(--ink); border-bottom:0; border-radius:12px 12px 0 0; background:#fff; color:var(--mute); padding:8px 16px 7px; cursor:pointer; white-space:nowrap; }
+  #chbar button.ch.on { background:var(--paper); color:var(--ink); padding-bottom:10px; margin-bottom:-3px; box-shadow:inset 0 5px 0 var(--chc, var(--blue)); }
+  #chbar button.ch small { font-weight:600; color:var(--mute); font-size:11px; margin-left:6px; }
+  #chbar button.add { margin-left:auto; margin-bottom:6px; }
+  .chnote { background:#fffbe8; border:2px dashed var(--ink); border-radius:10px; padding:8px 12px; margin-bottom:14px; font-size:13px; }
+  .now { font-size:12px; color:var(--mute); min-height:34px; line-height:1.35; word-break:break-word; }
+</style>
+</head>
+<body>
+<div class="banner" id="stale" style="display:none">⚠ The studio's code changed after it started. Close its console window and run <code>start.bat</code> again to use the new version.</div>
+<div id="toast"></div>
+<header>
+  <h1>🫘 Bean <span>Studio</span></h1>
+  <button class="newvid" onclick="nvOpen()" title="Start a new video in its own Claude window">＋ New video</button>
+  <nav>
+    <button data-tab="projects" class="on">Videos</button>
+    <button data-tab="pipeline">🧱 Pipeline</button>
+    <button data-tab="topics">✨ Topics</button>
+    <button data-tab="agent">Agent</button>
+    <button data-tab="jobs">Activity</button>
+    <button data-tab="settings">Settings</button>
+  </nav>
+</header>
+<div id="chbar"></div>
+<main>
+<div id="chnote" class="chnote" style="display:none"></div>
+
+<section id="projects" class="tab on">
+  <div id="list">
+    <div class="row" style="margin-bottom:16px">
+      <h2 style="margin:0">Videos</h2>
+      <span class="muted" id="count"></span>
+      <span style="flex:1"></span>
+      <input id="newslug" placeholder="new-project-slug" pattern="[a-z0-9-]+">
+      <button class="act" onclick="newProject()">+ New project</button>
+    </div>
+    <div class="grid" id="grid"></div>
+  </div>
+  <div id="detail" style="display:none"></div>
+</section>
+
+<section id="topics" class="tab">
+  <div class="row" style="margin-bottom:6px">
+    <h2 style="margin:0">Topics</h2>
+    <div class="seg" id="kseg"><button id="kshort" class="on" onclick="setKind('short')">Shorts</button><button id="klong" onclick="setKind('long')">Long videos</button></div>
+    <span class="muted" id="tpmeta"></span>
+    <span style="flex:1"></span>
+    <button class="act sec" id="tprefresh" onclick="refreshSources()">↻ Refresh sources</button>
+  </div>
+  <p class="muted" style="margin:0 0 12px" id="tpdesc"></p>
+  <div id="tpana" class="card" style="display:none;margin-bottom:16px">
+    <h3 style="margin:0 0 4px">🔎 Topic analyzer</h3>
+    <p class="muted" style="margin:0 0 8px">Type one idea. Opus checks the three tests (can they picture it, is there a gap, is there money math or conflict), searches YouTube for who covered it and with how many views, and tells you <b>go</b>, <b>sharpen</b> or <b>skip</b> with a different angle, titles and chapters. A covered topic is fine when the angle is new.</p>
+    <div class="row"><input id="tpanatopic" style="flex:1" placeholder="e.g. Jewellery shop business: real profit, and why Tanishq squeezes the local sarafa" onkeydown="if (event.key === 'Enter') analyzeTopic()"><button class="act blue" id="tpanago" onclick="analyzeTopic()">Analyze</button></div>
+    <div id="tpanastatus" class="muted" style="margin-top:8px"></div>
+    <div id="tpanaout"></div>
+  </div>
+  <div id="tpempty" class="card" style="display:none"></div>
+  <div id="tppicks" style="margin-bottom:16px"></div>
+  <div class="grid" id="tpopts" style="grid-template-columns:repeat(auto-fill,minmax(300px,1fr))"></div>
+  <div class="row" style="margin:18px 0; justify-content:center">
+    <button class="act blue" id="tpgo" onclick="getIdeas()">✨ Get 3 ideas</button>
+    <button class="act" id="tpreroll" onclick="getIdeas()" style="display:none">🎲 Re-roll: 3 new ideas</button>
+  </div>
+  <div id="tpstatus" class="muted" style="text-align:center"></div>
+  <h4>Top performers it is learning from</h4>
+  <div class="card" style="padding:0; overflow:auto"><table id="tptop"></table></div>
+</section>
+
+<section id="pipeline" class="tab">
+  <div class="row" style="margin-bottom:6px"><h2 style="margin:0">Pipeline</h2><span class="muted" id="plcount"></span><span style="flex:1"></span>
+    <button class="act" style="font-size:15px;padding:8px 16px" onclick="nvOpen()">＋ New video</button></div>
+  <p class="muted" id="plmodels" style="margin:0 0 14px"></p>
+  <div id="plgrid"></div>
+</section>
+
+<section id="agent" class="tab">
+  <h2>Ask the agent</h2>
+  <p class="muted">Runs Claude Code in your youtube folder with the command from Settings. It can use the line-boil and yt-* skills. Output appears below and in Activity.</p>
+  <div class="quick" id="quick"></div>
+  <textarea id="prompt" rows="5" placeholder="e.g. Make a new Short with the line-boil skill about why onions make you cry. Go straight through without waiting for my OK."></textarea>
+  <div class="row" style="margin:10px 0"><button class="act blue" onclick="askAgent()">Run agent</button>
+    <label class="muted" style="font-weight:600">Length <select id="agentlen" title="Passed to the line-boil skill as a target length"></select></label>
+    <label class="muted" style="font-weight:600">Model <select id="agentmodel" title="Auto: a request to make a video runs as Opus plans, Sonnet builds; anything else runs on Sonnet. Whatever the Claude session default is, it is never used."><option value="">Auto (Opus plans, Sonnet builds)</option><option value="opus">Opus</option><option value="sonnet">Sonnet</option></select></label>
+    <label class="muted" style="font-weight:600"><input type="checkbox" id="agentwin"> 🪟 own window</label>
+    <span class="muted">Long jobs keep running if you switch tabs.</span></div>
+  <div class="log" id="agentlog"></div>
+</section>
+
+<section id="jobs" class="tab">
+  <h2>Activity</h2>
+  <div class="row" style="margin-bottom:10px">
+    <button class="act sec" onclick="run({action:'auth'})">YouTube sign-in</button>
+  </div>
+  <div class="jobs" id="joblist"></div>
+  <div class="row" style="margin-bottom:6px"><b id="jobtitle" style="font-size:13px"></b><span style="flex:1"></span><button class="act red" id="stopbtn" onclick="stopJob()" style="display:none">Stop</button><button class="act blue" id="contbtn" onclick="continueJob()" style="display:none" title="Carry on from the files already made">▶ Continue from where it stopped</button></div>
+  <div class="log" id="joblog"></div>
+  <h4>Agent runs <span class="muted" id="runsum"></span></h4>
+  <p class="muted" style="margin:0 0 6px">The video itself (voice, drawing, rendering) runs on your computer for free. Only the agent that writes and checks it uses Claude. The cost is Claude's own estimate at API prices: on a subscription it counts against your plan's usage instead of being billed.</p>
+  <div class="card" style="padding:0; overflow:auto"><table id="runs"></table></div>
+</section>
+
+<section id="settings" class="tab">
+  <h2>Settings</h2>
+  <p class="muted">Paths, posting slots, models, source channels and the port. Only what you change is stored in <code>config.json</code> (a backup of the old one is kept), so new defaults in updates still reach you. Restart <code>start.bat</code> after changing the port.</p>
+  <textarea id="cfg" rows="22"></textarea>
+  <div class="row" style="margin-top:10px"><button class="act" onclick="saveCfg()">Save settings</button><span class="muted" id="cfgmsg"></span></div>
+</section>
+
+</main>
+<div class="modal" id="wiz"><div class="box" id="wizbox"></div></div>
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let TOAST_T = null;
+let CH = ''; try { CH = localStorage.getItem('bean.channel') || ''; } catch (e) {}     // the channel tab you are on (remembered)
+let CHANNELS = [];
+function toast(msg, ms = 7000) { const el = $('#toast'); el.textContent = msg; el.classList.add('on'); clearTimeout(TOAST_T); TOAST_T = setTimeout(() => el.classList.remove('on'), ms); }
+async function api(url, opt = {}) {      // opt.silent: background polls don't pop up errors
+  const silent = opt.silent; delete opt.silent;
+  if (opt.body && typeof opt.body !== 'string') { opt.body = JSON.stringify(opt.body); opt.headers = {'Content-Type': 'application/json'}; }
+  opt.headers = Object.assign({}, opt.headers, {'X-Channel': CH});      // every call says which channel it is about
+  let r;
+  try { r = await fetch(url, opt); } catch (e) { if (!silent) toast('Cannot reach Bean Studio. Is its console window still open?'); throw e; }
+  if (!r.ok) {
+    const t = await r.text();
+    let msg = t;
+    if (t.trim().startsWith('<!doctype')) {      // Flask's HTML error page: show just its message
+      const m = t.match(/<p>([\s\S]*?)<\/p>/);
+      msg = t.includes('The requested URL was not found') ? 'This page is newer than the running Bean Studio. Close its console window and run start.bat again.'
+          : (m ? new DOMParser().parseFromString(m[1], 'text/html').body.textContent : 'Error ' + r.status);
+    }
+    if (!silent) toast(msg);
+    const err = new Error(msg); err.status = r.status; throw err;
+  }
+  return r.json();
+}
+const istDate = (add = 0) => new Intl.DateTimeFormat('en-CA', {timeZone: 'Asia/Kolkata'}).format(new Date(Date.now() + add * 864e5));   // YYYY-MM-DD in IST
+let TYPES = [], VOICES = [], META = null;       // shared lists come from the server, so they exist in one place only
+function fillLengths() {           // the Agent tab's Length option: what you pick is passed to the skill as the target length
+  const L = META.lengths;
+  $('#agentlen').innerHTML = '<option value="">Auto (the agent decides)</option>' +
+    `<optgroup label="Short (9:16)">${L.short.map(x => `<option value="${x}">${x} seconds</option>`).join('')}</optgroup>` +
+    `<optgroup label="Long video (16:9)">${L.long.map(x => `<option value="${x}">${x / 60} minutes</option>`).join('')}</optgroup>`;
+}
+async function initMeta() { await checkMeta(true); setInterval(checkMeta, 60000); }
+let RESTARTING = false;
+async function restartStudio() {          // start.bat restarts the server on exit code 3; wait for the new copy, then reload the page
+  if (RESTARTING) return; RESTARTING = true;
+  const was = META && META.started;
+  $('#stale').textContent = '↻ Restarting Bean Studio with the new code…'; $('#stale').style.display = '';
+  try { await fetch('/api/restart', {method: 'POST'}); } catch (e) {}
+  for (let i = 0; i < 60; i++) {
+    await new Promise(r => setTimeout(r, 1000));
+    try { const m = await (await fetch('/api/meta')).json(); if (m.started !== was) return location.reload(); } catch (e) {}
+  }
+  RESTARTING = false; $('#stale').textContent = '⚠ The restart did not come back. Close the console window and run start.bat again.';
+}
+async function checkMeta(onLoad) {
+  const m = await api('/api/meta', {silent: true}).catch(() => null); if (!m) return;
+  if (!META) { META = m; TYPES = m.types; VOICES = m.voices; fillLengths(); if (m.config_problem) toast('⚠ ' + m.config_problem, 15000); }
+  const stale = m.current > m.started + 1;
+  if (RESTARTING) return;
+  $('#stale').style.display = stale ? '' : 'none';
+  if (!stale) return;
+  if (m.restartable) {
+    $('#stale').innerHTML = '⚠ The studio\'s code changed after it started. <button class="act" onclick="restartStudio()">↻ Restart now</button>' + (m.busy ? ' <span class="muted">(a job is running: it would be stopped)</span>' : '');
+    if (onLoad === true && !m.busy) restartStudio();             // a page refresh picks up the new code by itself, unless a job would be cut off
+  }
+}
+let CFG = {};
+document.querySelectorAll('nav button').forEach(b => b.onclick = () => show(b.dataset.tab));
+function show(tab) {
+  document.querySelectorAll('nav button').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('on', t.id === tab));
+  ({projects: loadProjects, pipeline: loadPipeline, topics: loadTopics, jobs: loadJobs, settings: loadCfg}[tab] || (() => {}))();
+}
+
+
+// ---------- pipeline: one video, one step at a time ----------
+// Each video shows its steps in order. Only the CURRENT step is open, with plain words and the one or two buttons that step needs;
+// finished steps shrink to a line (with "redo" where it is safe), later steps wait greyed out. Steps whose tool is not built yet say so.
+const PL_OPEN = {};                                          // which step the user opened by hand, per video
+const PL_INFO = {
+  script:  ['Write the script', 'Opus writes it from your topic (research, hook, chapters, shot plan) and checks it. You can also start it from the Topics tab.'],
+  prompts: ['Make the image prompts', 'Turns the script into prompt files for your ChatGPT extension: first the character sheets, then the scene pictures in batches of 30.'],
+  images:  ['Make the pictures', 'Two moves per file. The studio never touches ChatGPT: you run the prompt files in your own extension, then it picks up what was downloaded.'],
+  voice:   ['Make the voice', 'The locked voice (Sarvam, aditya) reads the whole script. It also gives exact timings and the .srt subtitle file (never burned in).'],
+  clips:   ['Animate the key shots', 'The shots marked hero become 2 to 5 second video clips (xAI), smoothed to 48 fps. Not built into the studio yet.'],
+  sound:   ['Mix music and effects', 'Puts music, ambience and sound effects under the voice. Uses your own tracks from the audio folder, or thin placeholders if there are none.'],
+  render:  ['Build the video', 'Joins pictures, clips, cards, voice and sound into the final MP4. Not built into the studio yet.'],
+  sheet:   ['Upload sheet', 'Title, description and chapters, then upload from the Videos tab.'],
+};
+// The documentary pipeline (projects with a visual plan, and every Hindi-channel project): [title, plain words, who does it, what it costs]
+const PL2 = {
+  script:  ['Script', 'Opus writes it from your topic: research, hook, chapters, a shot plan. You read it and hear the free listen before anything else starts.', 'Opus', 'Claude usage'],
+  plan:    ['Visual plan', 'The art director step. Opus decides, for every shot, who is in it, the light, the camera and what is held back, against the channel\'s visual bible. Nothing is drawn yet.', 'Opus', 'Claude usage'],
+  prompts: ['Picture prompts', 'Turns the plan into one prompt per picture, with the character sheet each one needs. A re-run never renumbers a picture you already have.', 'automatic', 'free'],
+  images:  ['Pictures', 'ChatGPT draws them through your BrowserOS neo browser, one fresh chat per picture, character sheets first. If ChatGPT says the daily image limit is hit, the run stops; run it again after the reset (it says when).', 'automatic', 'your ChatGPT plan'],
+  review:  ['Check the pictures', 'Gate 1. A machine measures light, colour, blur, repeats and faces, then <b>you look at every picture</b> and approve it or send it back with a note. Nothing goes on until all are approved.', 'you (or Opus)', 'free'],
+  upscale: ['Sharpen (upscale)', 'Makes the approved pictures 2x sharper on your graphics card (about 24 seconds each). Only approved pictures, so no time goes on a bad one.', 'automatic', 'free'],
+  music:   ['Music plan', 'The music follows what is said and felt, not the chapter: a mood for every emotional shift (about one every 20 to 30 seconds), each with its reason, and a bare voice under the sharpest reveals. Tracks rotate and continue where they stopped.', 'Opus', 'Claude usage'],
+  cast:    ['Voice cast', 'Every person in the story speaks in their own voice, the narrator in the locked channel voice. Choose each person\'s voice, pace and (free voice) pitch, then hear them before the full voice is made.', 'you', 'free · the Sarvam sample is paid'],
+  voice:   ['Voice', 'Start with the free voice: it judges the story and pacing, not the delivery. When the cut is right, make the paid Sarvam voice and re-run the video: pictures are reused, only audio and timing change.', 'automatic', 'free · Sarvam is paid'],
+  clips:   ['Hero clips (optional)', 'A few shots become short moving clips. Not needed: the video is complete with pictures and camera moves. They are paid and always ask first; use them where they buy attention: the first 15 seconds, then the big reveal.', 'you decide', 'paid, asks first'],
+  sample:  ['Sample', 'Gate 2. A short cut of the hook, a graphics stretch and the ending is made and checked by a machine for freezes, jumps, loudness and text clipping. <b>You watch it</b> and approve it. The full video refuses to start without that.', 'automatic + you', 'free'],
+  video:   ['Full video', 'Joins pictures, graphics, voice and music into the final MP4 (about 20 minutes for 15 minutes of video), then checks it. The subtitles are a separate .srt, never burned in.', 'automatic', 'free'],
+  sheet:   ['Upload sheet', 'Title, description (with the music credit) and chapters, then upload from the Videos tab.', 'Opus', 'Claude usage'],
+};
+async function loadPipeline() {
+  const [d, ss] = await Promise.all([api('/api/pipeline'), api('/api/sessions', {silent: true}).catch(() => ({sessions: {}}))]);
+  SESS = ss.sessions || {};
+  $('#plcount').textContent = d.projects.length + ' video' + (d.projects.length === 1 ? '' : 's');
+  $('#plmodels').innerHTML = 'Opus writes the script, the visual plan and judges pictures and the sample · Haiku runs ChatGPT (BrowserOS neo), the WaveSpeed upscale and the render · images can also come from your ChatGPT extension (collected from <code>' + esc(d.downloads) + '</code>) · clips from xAI (paid, only when you OK the cost).';
+  $('#plgrid').innerHTML = d.projects.map(plCard).join('') || '<p class="muted">No videos yet. Press ＋ New video at the top.</p>';
+}
+function plCard(p) {
+  const n = esc(p.name), cur = PL_OPEN[p.name] || p.next_key, done = p.stages.filter(s => s.state && !s.warn).length;
+  const rows = p.stages.map((s, i) => {
+    const open = s.key === cur, state = s.state, fail = /FAIL/.test(state || '') || s.warn;
+    const dot = fail ? '⚠' : state ? '✓' : (open ? '●' : '○');
+    const info = p.new ? PL2[s.key] : PL_INFO[s.key];
+    const chips = p.new ? `<span class="chip">${esc(info[2])}</span><span class="chip ${/free/.test(info[3]) && !/paid/.test(info[3]) ? 'y' : ''}">${esc(info[3])}</span>` : '';
+    const head = `<div class="row" style="gap:10px;cursor:pointer;padding:6px 0" onclick="plToggle('${n}','${s.key}')">
+      <span style="width:22px;text-align:center;font-weight:700;color:${fail ? '#c0262d' : state ? '#1b7f3b' : '#999'}">${dot}</span>
+      <b style="${state || open ? '' : 'color:#888'}">${i + 1}. ${esc(info[0])}</b>
+      <span class="muted" style="${fail ? 'color:#c0262d' : ''}">${esc(state || s.note || (s.built ? '' : 'coming next'))}</span><span style="flex:1"></span>${open ? '' : chips}</div>`;
+    return `<div style="border-top:1px solid #eee">${head}${open ? `<div style="margin:0 0 10px 32px;padding:10px 12px;background:#faf7f0;border-radius:8px">
+      <div class="row" style="margin-bottom:6px;gap:6px">${chips}</div>
+      <div class="muted" style="margin-bottom:8px">${p.new ? info[1] : esc(info[1])}</div>${p.new ? plActions2(p, s) : plActions(p, s)}</div>` : ''}</div>`;
+  }).join('');
+  return `<div class="card" style="margin-bottom:14px;padding:14px" id="pl-${n}">
+    <div class="row"><b style="font-size:16px">${n}</b><span class="muted">${done} of ${p.stages.length} steps done</span><span style="flex:1"></span>
+      <button class="act blue" onclick="plSession('${n}')" title="${SESS[p.name] ? 'Reopen the same Claude conversation for this video' : 'Start a Claude session just for this video'}">💬 ${SESS[p.name] ? (SESS[p.name].running ? 'Session open' : 'Open its Claude session') : 'Start a Claude session'}</button>
+      <button class="act sec" onclick="plOpen('${n}','')">📂 Folder</button></div>
+    <div style="height:6px;background:#eee;border-radius:3px;margin:8px 0 6px"><div style="height:6px;width:${Math.round(100 * done / p.stages.length)}%;background:#1b7f3b;border-radius:3px"></div></div>
+    <div class="row" style="margin-bottom:6px;gap:10px"><span class="muted"><b>Next:</b> ${esc(p.next)}</span>${p.new && p.next_key ? `<button class="act blue" onclick="plToggle('${n}','${p.next_key}')">Go to this step</button>` : ''}</div>
+    <div id="plrun-${n}"></div>${rows}
+    <div id="plx-${n}" style="margin-top:10px"></div></div>`;
+}
+function plActions(p, s) {
+  const n = esc(p.name), b = (label, fn, cls = '') => `<button class="act ${cls}" onclick="${fn}">${label}</button>`;
+  switch (s.key) {
+    case 'script': return `<div class="row" style="flex-wrap:wrap;gap:8px"><input id="plt-${n}" placeholder="topic, e.g. jewellery shop economics" style="min-width:280px">${b('✍ Write the script (Opus)', `plScript('${n}')`)}</div>` +
+      (s.state ? `<div class="muted" style="margin-top:6px">A script exists. Writing again replaces it, so only do that on purpose.</div>` : '');
+    case 'prompts': return b('📋 Make the image prompts', `plMakePrompts('${n}')`) + ' ' + (s.state ? b('Show the prompts', `plPrompts('${n}')`, 'sec') : '');
+    case 'images': setTimeout(plFiles, 0, p.name); return `<ol style="margin:0 0 8px 18px;padding:0;line-height:2">
+      <li>In your ChatGPT extension, upload <b>one</b> prompt file (start with <code>01-characters</code>), choose wide, delay 5 to 7 s, and run it until the pictures have downloaded.</li>
+      <li>Which file did you just run? <select id="plf-${n}" style="max-width:340px"></select></li>
+      <li>${b('⬇ Get my pictures', `plBatch('${n}','collect')`)} <span class="muted">files them under the right picture numbers; if some prompts failed it asks which</span></li>
+      <li>${b('🖼 Check the sheet', `plContact('${n}',0)`, 'sec')} <span class="muted">all pictures on one numbered page</span></li></ol>
+      <div class="muted">Two pictures in the wrong places? Swap picture numbers <input id="pls1-${n}" size="3"> and <input id="pls2-${n}" size="3"> ${b('Swap', `plSwap('${n}')`, 'sec')}</div>
+      <div class="muted" style="margin-top:6px">${b('📋 Show the prompts', `plPrompts('${n}')`, 'sec')} ${b('📂 Prompts folder', `plOpen('${n}','prompts')`, 'sec')}</div>`;
+    case 'voice': return b('🎙 Make the voice', `plVoice('${n}')`) + ' <span class="muted">runs in the background; follow it in the Activity tab</span>';
+    case 'clips': return `<div class="muted">${p.hero} hero shots, about $${p.hero_cost} at xAI prices (rough: shot length from the narration). This step is not built into the studio yet.</div>`;
+    case 'sound': return p.stages.find(x => x.key === 'voice').state ? b('🎚 Mix the sound', `plSound('${n}')`) + ' <span class="muted">music moods, ambience and effects come from the script; real tracks in <code>audio/music</code> and <code>audio/sfx</code> replace the placeholders</span>'
+      : '<span class="muted">Make the voice first: the mix is timed from it.</span>';
+    case 'render': return '<div class="muted">Not built into the studio yet.</div>';
+    default: return '<div class="muted">After the video is built.</div>';
+  }
+}
+// ---------- + New video: each video gets its own Claude window (session), reopened from its card ----------
+let SESS = {};
+function nvOpen() {
+  const hindi = (ME.language || '').toLowerCase() === 'hindi';
+  $('#wizbox').innerHTML = `<h2 style="margin:0 0 4px">＋ New video</h2>
+    <p class="muted" style="margin:0">Opens a <b>new Claude window just for this video</b>. It ${hindi ? 'researches and writes the script, then stops for you to read it and hear the free preview' : 'plans the script and shows it to you before building'}. Nothing paid starts without your OK. Close the window any time: the video's card has <b>💬 Open its Claude session</b> to pick up the same conversation.</p>
+    <label>What is the video about?</label><textarea id="nv_topic" rows="2" placeholder="${hindi ? 'e.g. the economics of a petrol pump: how much of ₹100 of petrol the owner keeps' : 'e.g. what if the moon disappeared'}" oninput="nvSlug()"></textarea>
+    <label>Short name for the folder <span class="muted" style="font-weight:400">(English, lowercase, dashes)</span></label><input type="text" id="nv_slug" placeholder="petrol-pump-economics" oninput="this.dataset.edited=1">
+    ${hindi ? `<label>Format</label><select id="nv_fmt">${Object.entries({economics: 'Economics of owning X', story: "A company’s rise, split or fall", person: "A person’s story", compare: 'Two people, one decision'}).map(([k, v]) => `<option value="${k}">${esc(v)}</option>`).join('')}</select>` : ''}
+    <label>Anything Claude should know? <span class="muted" style="font-weight:400">(optional)</span></label><textarea id="nv_notes" rows="2" placeholder="an angle, a source, a length"></textarea>
+    <div class="row" style="margin-top:16px; justify-content:flex-end"><button class="act sec" onclick="closeWizard()">Cancel</button><button class="act blue" id="nv_go" style="font-size:15px;padding:8px 16px" onclick="nvGo()">🚀 Open its Claude session</button></div>`;
+  $('#wiz').classList.add('on'); setTimeout(() => $('#nv_topic').focus(), 50);
+}
+function nvSlug() {
+  const el = $('#nv_slug'); if (el.dataset.edited) return;
+  const stop = new Set('the a an of and to in on for how why what is are does do its it ka ki ke hai'.split(' '));
+  el.value = ($('#nv_topic').value.toLowerCase().match(/[a-z0-9]+/g) || []).filter(w => !stop.has(w)).slice(0, 5).join('-').slice(0, 50);
+}
+async function nvGo() {
+  const topic = $('#nv_topic').value.trim(); if (!topic) { toast('Write what the video is about first.'); return; }
+  $('#nv_go').disabled = true;
+  try {
+    const r = await api('/api/sessions/new', {method: 'POST', body: {topic, slug: $('#nv_slug').value.trim(), format: $('#nv_fmt') ? $('#nv_fmt').value : null, notes: $('#nv_notes').value.trim()}});
+    closeWizard(); toast(`🪟 A Claude window opened for ${r.project}. Work with it there; this page shows the video's progress.`, 10000);
+    if (ME.tools.includes('pipeline')) show('pipeline'); else show('jobs');
+  } finally { const b = $('#nv_go'); if (b) b.disabled = false; }
+}
+async function plSession(n) {
+  const r = await api(`/api/sessions/${n}/open`, {method: 'POST', body: {}});
+  toast(r.resumed ? `🪟 Reopened ${n}'s Claude conversation in its own window.` : `🪟 Started a Claude session for ${n} in its own window.`, 8000);
+  loadPipeline();
+}
+
+// ---------- the documentary pipeline: buttons, the review panel, the sample and video panels ----------
+function plBtn(label, fn, cls = '') { return `<button class="act ${cls}" onclick="${fn}">${label}</button>`; }
+async function plStep(n, step, started, confirmText) {
+  if (confirmText && !confirm(confirmText)) return;
+  const r = await api(`/api/pipeline/${n}/step`, {method: 'POST', body: {step, confirm_cost: !!confirmText}});
+  if (r.output !== undefined) { $(`#plx-${n}`).innerHTML = `<pre style="white-space:pre-wrap;font-size:12px;background:#fff;padding:8px;border-radius:8px;border:1px solid #ddd">${esc(r.output)}</pre>`; return; }
+  toast((started || 'Started') + ' Follow it in the Activity tab; this page updates when it finishes.'); plWatch(); show('jobs');
+}
+async function plWritePlan(n) { await api(`/api/pipeline/${n}/plan`, {method: 'POST', body: {}}); toast('Opus is writing the visual plan: follow it in the Activity tab.'); plWatch(); show('jobs'); }
+function plActions2(p, s) {
+  const n = esc(p.name), st = k => (p.stages.find(x => x.key === k) || {}).state;
+  switch (s.key) {
+    case 'script': return `<div class="row" style="flex-wrap:wrap;gap:8px"><input id="plt-${n}" placeholder="topic, e.g. jewellery shop economics" style="min-width:280px">${plBtn('✍ Write the script (Opus)', `plScript('${n}')`)}</div>` +
+      (s.state ? `<div class="muted" style="margin-top:6px">A script exists. Writing again replaces it, so only do that on purpose.</div>` : '');
+    case 'plan': return plBtn('✍ Write the visual plan (Opus)', `plWritePlan('${n}')`) + ' ' + (s.state ? plBtn('Check the plan', `plStep('${n}','plan-check')`, 'sec') : '') +
+      (s.state ? '<div class="muted" style="margin-top:6px">"Check the plan" looks for shots with no picture, wrong people counts, and graphic numbers that do not trace to the research. Fix critical ones before drawing.</div>' : '');
+    case 'prompts': return plBtn('📋 Make the picture prompts', `plStep('${n}','prompts','Making the prompts.')`) + ' ' + (s.state ? plBtn('Show the prompts', `plPrompts('${n}')`, 'sec') + ' ' + plBtn('📂 Folder', `plOpen('${n}','prompts')`, 'sec') : '');
+    case 'images': return plBtn('▶ Make the pictures in ChatGPT', `plStep('${n}','pictures','ChatGPT is drawing the missing pictures (about a minute each).')`) +
+      `<div class="muted" style="margin-top:6px">Open BrowserOS neo and stay signed in to ChatGPT. It makes only the pictures you do not have yet; a picture you sent back is the only one redrawn. Done pictures are measured for the next step.</div>
+       <div class="muted" style="margin-top:6px">Prefer your own extension? ${plBtn('Show the prompts', `plPrompts('${n}')`, 'sec')} then ${plBtn('Get my pictures', `plBatch('${n}','collect')`, 'sec')} (the older way).</div>`;
+    case 'review': setTimeout(plReview, 0, p.name); return `<div class="row" style="gap:8px;margin-bottom:8px">${plBtn('🔬 Measure the pictures', `plStep('${n}','check-pictures','Measuring the pictures and building the contact sheets.')`, 'sec')}
+      <span class="muted">do this after new pictures arrive: it makes the automatic flags below</span></div><div id="plrev-${n}"></div>`;
+    case 'upscale': return plBtn('🔍 Sharpen the approved pictures', `plStep('${n}','upscale','Sharpening: about 24 seconds a picture.')`) + `<div class="muted" style="margin-top:6px">${esc(s.state || 'Approve pictures first.')}</div>`;
+    case 'music': setTimeout(plMusic, 0, p.name); return plBtn('✍ Write the music plan (Opus)', `plWriteMusic('${n}')`) + `<div id="plmus-${n}" style="margin-top:10px"></div>`;
+    case 'cast': setTimeout(plCast, 0, p.name); return `<div id="plcast-${n}"></div>`;
+    case 'voice': return `<div class="row" style="gap:8px;flex-wrap:wrap">${plBtn('🎙 Free voice (Kokoro, about 10 minutes)', `plStep('${n}','voice-free','Making the free voice.')`)}
+      ${plBtn('💰 Pro voice (Sarvam, paid)', `plStep('${n}','voice-pro','Making the Sarvam voice.','This is a paid step (Sarvam, a few rupees for a 15 minute video). Make the Sarvam voice now?')`, 'sec')}</div>
+      <div class="muted" style="margin-top:6px">${esc(s.state || 'No voice yet.')} The free voice is flat: it shows the story and pacing, not the delivery. The pro voice changes the timings, so the graphics are re-timed and the video re-rendered; the pictures are reused.</div>`;
+    case 'clips': return `<div class="muted">${esc(s.state || 'Not planned. The video does not need them.')}. Clips are made from the chat with you saying OK to the cost (xAI, or a cheaper model such as Hailuo, Wan or Seedance after a one-clip trial).</div>`;
+    case 'sample': setTimeout(plOutputs, 0, p.name, 'sample'); return `<div class="row" style="gap:8px;flex-wrap:wrap">${plBtn('🎞 1. Make the sample', `plStep('${n}','sample','Making the sample (a few minutes).')`)}
+      ${plBtn('🔎 2. Check it', `plStep('${n}','check-sample','Checking the sample.')`, 'sec')}${plBtn('👍 3. Approve it', `plStep('${n}','approve-sample','Approving.','Approve the sample? Do this only after you watched it and it looks right: it unlocks the full video.')`, 'sec')}</div>
+      <div id="plout-${n}" style="margin-top:10px"></div>`;
+    case 'video': setTimeout(plOutputs, 0, p.name, 'video'); return `${plBtn('🎬 Make the full video', `plStep('${n}','full','Rendering the full video (about 20 minutes).')`)}
+      <span class="muted">it refuses to start until every picture is approved and the sample was approved with the same settings; an earlier video is kept, not overwritten</span><div id="plout-${n}" style="margin-top:10px"></div>`;
+    default: return '<div class="muted">After the video is built.</div>';
+  }
+}
+function plFlag(f) { const c = f[0] === 'critical' ? '#c0262d' : f[0] === 'warn' ? '#b26a00' : '#777'; return `<div style="color:${c};font-size:12px;margin-top:2px">${f[0] === 'critical' ? '⛔' : f[0] === 'warn' ? '⚠' : 'ℹ'} ${esc(f[1])}</div>`; }
+async function plReview(n) {
+  const box = $(`#plrev-${n}`); if (!box) return;
+  box.innerHTML = '<div class="muted">Reading the pictures…</div>';
+  let d; try { d = await api(`/api/pipeline/${n}/review`); } catch (e) { box.innerHTML = ''; return; }
+  const c = d.counts, clean = d.items.filter(i => !i.flags.some(f => f[0] === 'critical' || f[0] === 'warn'));
+  const head = `<div style="margin-bottom:8px"><b>${c.approved} of ${d.total} approved</b>${c.pending ? ` · ${c.pending} waiting for you` : ''}${c.rejected ? ` · ${c.rejected} sent back` : ''}${c.not_made ? ` · ${c.not_made} not made yet` : ''}${d.critical ? ` · <span style="color:#c0262d">${d.critical} critical</span>` : ''}${d.gate_open ? ' · <b style="color:#1b7f3b">Gate 1 is open ✓</b>' : ''}</div>`;
+  const bulk = clean.length > 1 ? `<div style="margin-bottom:10px">${plBtn(`👍 I looked: approve the ${clean.length} with no warnings`, `plApproveClean('${n}','${clean.map(i => i.n).join(',')}')`, 'sec')}</div>` : '';
+  const grid = d.items.map(i => `<div class="card" style="padding:8px;box-shadow:2px 2px 0 var(--ink)">
+      <img src="/api/pipeline/${n}/pic/${i.n}?channel=${encodeURIComponent(CH)}" loading="lazy" style="width:100%;border-radius:8px;cursor:zoom-in" onclick="window.open(this.src)">
+      <div style="margin-top:6px"><b>#${i.n}</b> · ${esc(i.shot)} · line${i.lines.length > 1 ? 's' : ''} ${esc(i.lines.join(','))} · <span class="muted">${esc(i.category || '')}</span></div>
+      <div lang="hi" style="margin:4px 0;font-size:13px">${esc(i.text)}</div>${i.flags.map(plFlag).join('')}
+      <div class="row" style="gap:6px;margin-top:8px">${plBtn('✓ Approve', `plDecide('${n}',${i.n},'approve')`)}
+        <input id="plnote-${n}-${i.n}" placeholder="what is wrong?" style="flex:1;min-width:120px">${plBtn('✗ Send back', `plDecide('${n}',${i.n},'reject')`, 'red')}</div></div>`).join('');
+  box.innerHTML = head + bulk + (d.items.length ? `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:12px">${grid}</div>
+      <div class="muted" style="margin-top:8px">Look at faces and hands, the right person, the light against the moment, and whether the picture matches the line. A picture you send back is kept in a side folder, and only that slot is redrawn: if the shot's description caused it, fix the plan first.</div>`
+    : (d.gate_open ? '<div class="muted">Every picture is approved. Next: sharpen them.</div>' : '<div class="muted">Nothing is waiting. Make the pictures, then press Measure the pictures.</div>'));
+}
+async function plDecide(n, num, act) {
+  const note = ($(`#plnote-${n}-${num}`) || {}).value || '';
+  if (act === 'reject' && !note.trim()) { toast('Write what is wrong first: it is how the picture gets fixed.'); return; }
+  const r = await api(`/api/pipeline/${n}/review`, {method: 'POST', body: {action: act, numbers: String(num), note}});
+  toast(act === 'approve' ? `Picture ${num} approved.` : `Picture ${num} sent back: press Make the pictures to redraw it.`); await loadPipeline(); PL_OPEN[n] = 'review'; loadPipeline();
+}
+async function plApproveClean(n, list) {
+  if (!confirm('Approve these pictures? Only do this if you have looked at them. They are the ones the machine found no warning on.')) return;
+  await api(`/api/pipeline/${n}/review`, {method: 'POST', body: {action: 'approve', numbers: list, note: 'approved in Bean Studio after looking, no machine warnings'}});
+  toast('Approved.'); PL_OPEN[n] = 'review'; loadPipeline();
+}
+async function plOutputs(n, which) {
+  const box = $(`#plout-${n}`); if (!box) return;
+  let o; try { o = await api(`/api/pipeline/${n}/outputs`, {silent: true}); } catch (e) { return; }
+  const vids = o.videos.filter(v => which === 'sample' ? v.file === 'sample.mp4' : v.file !== 'sample.mp4');
+  const g2 = o.gate2 && o.gate2.approved ? `<div style="margin-bottom:8px"><b style="color:#1b7f3b">Gate 2 approved</b> <span class="muted">${esc(o.gate2.at || '')} · settings ${esc(o.gate2.settings || '')} · a change to the graphics or the bible needs a new sample</span></div>` : (which === 'sample' ? '<div class="muted" style="margin-bottom:8px">Gate 2 is not approved yet.</div>' : '');
+  box.innerHTML = g2 + (vids.map(v => `<div style="margin-bottom:14px"><div><b>${esc(v.file)}</b> <span class="muted">${v.mb} MB</span>
+      ${v.verdict ? `<span class="chip ${/^PASS$/.test(v.verdict) ? 'y' : ''}">${esc(v.verdict.toLowerCase())}</span>` : '<span class="chip n">not checked</span>'}${v.stale ? '<span class="chip" style="background:#ffe0e0">older than the script</span>' : ''}</div>
+      <video controls preload="none" style="width:100%;max-width:760px;margin-top:6px;border-radius:8px;background:#000" src="${v.url}?channel=${encodeURIComponent(CH)}"></video>
+      <div class="muted" style="margin-top:4px">${v.shots ? `<a href="${v.shots}?channel=${encodeURIComponent(CH)}" target="_blank">one frame of every shot</a> · ` : ''}${v.strips ? `<a href="${v.strips}?channel=${encodeURIComponent(CH)}" target="_blank">the opening, middle and ending</a>` : ''}</div>
+      ${v.fail.length || v.warn.length ? `<details style="margin-top:4px"><summary class="muted">${v.fail.length} failures, ${v.warn.length} warnings</summary>${v.fail.concat(v.warn).map(w => `<div class="muted">• ${esc(w)}</div>`).join('')}</details>` : ''}</div>`).join('')
+    || '<div class="muted">None yet.</div>') + (o.srt.length ? `<div class="muted">Subtitles: ${o.srt.map(esc).join(', ')} (separate file, never burned in)</div>` : '');
+}
+async function plWriteMusic(n) { await api(`/api/pipeline/${n}/music-plan`, {method: 'POST', body: {}}); toast('Opus is writing the music plan: follow it in the Activity tab.'); plWatch(); show('jobs'); }
+async function plMusic(n) {
+  const box = $(`#plmus-${n}`); if (!box) return;
+  let d; try { d = await api(`/api/pipeline/${n}/music`, {silent: true}); } catch (e) { return; }
+  if (!d.cues.length) { box.innerHTML = '<div class="muted">No music plan yet. Until there is one, only the few mood tags in the script are used.</div>'; return; }
+  const col = {curious: '#dff0ff', tense: '#ffe2d6', dread: '#e6d6f0', sad: '#dde3ee', bittersweet: '#f0e6d6', flashback: '#fdf0cf', hopeful: '#dff3df', warm: '#ffecc9', silence: '#eee'};
+  const tr = Object.entries(d.moods).filter(([m, v]) => v.tracks.length).map(([m, v]) => `<div class="muted"><b>${esc(m)}</b>: ${v.tracks.map(esc).join(' · ')}</div>`).join('');
+  box.innerHTML = `<div style="margin-bottom:8px"><b>${d.cues.length} cues</b> <span class="muted">a cue holds until the next one</span></div>
+    <div style="max-height:360px;overflow:auto;border:1px solid #eee;border-radius:8px;background:#fff">${d.cues.map(c => `<div class="row" style="gap:8px;padding:4px 8px;border-bottom:1px solid #f2f2f2;align-items:flex-start">
+      <span class="muted" style="width:46px">line ${c.line}</span><span class="chip" style="background:${col[c.mood] || '#eee'};min-width:84px;text-align:center">${c.mood === 'silence' ? '🔇 ' : ''}${esc(c.mood)}</span><span style="font-size:13px">${esc(c.why || '')}</span></div>`).join('')}</div>
+    <div style="margin-top:8px"><b>Tracks for each mood</b> (the same mood returning uses the next track)</div>${tr}`;
+}
+async function plCast(n) {
+  const box = $(`#plcast-${n}`); if (!box) return;
+  let d; try { d = await api(`/api/pipeline/${n}/cast`, {silent: true}); } catch (e) { return; }
+  const hz = d.pool.sarvam_pitch_hz || {}, sv = (d.pool.sarvam || []).slice().sort((a, b) => (hz[a] || 0) - (hz[b] || 0)), kv = d.pool.kokoro || [];
+  const opt = (list, cur, fmt) => list.map(x => `<option value="${esc(x)}" ${x === cur ? 'selected' : ''}>${esc(fmt ? fmt(x) : x)}</option>`).join('');
+  const row = sp => {
+    const e = d.cast[sp.who] || {}, s = e.sarvam || {}, k = e.kokoro || {}, id = `plc-${n}-${sp.who}`, lock = sp.who === 'narrator';
+    return `<tr style="border-top:1px solid #eee;vertical-align:top"><td style="padding:6px 8px 6px 0"><b>${esc(e.label || sp.who)}</b><div class="muted">${sp.lines} line${sp.lines === 1 ? '' : 's'}${sp.first ? ' · line ' + sp.first.line + ': ' + esc(sp.first.text) : ''}</div></td>
+      <td style="padding:6px"><select id="${id}-sv" ${lock ? 'disabled' : ''}>${opt(sv, s.speaker, x => x + (hz[x] ? ' · ' + hz[x] + ' Hz' : ''))}</select><br><span class="muted">pace</span> <input id="${id}-pace" size="4" value="${s.pace ?? ''}" ${lock ? 'disabled' : ''}></td>
+      <td style="padding:6px"><select id="${id}-kv" ${lock ? 'disabled' : ''}>${opt(kv, k.voice)}</select><br><span class="muted">speed</span> <input id="${id}-sp" size="4" value="${k.speed ?? ''}" ${lock ? 'disabled' : ''}> <span class="muted">pitch</span> <input id="${id}-pi" size="4" value="${k.pitch ?? ''}" ${lock ? 'disabled' : ''}></td></tr>`;
+  };
+  const probs = d.problems.length ? `<div style="padding:6px 10px;background:#fff3cd;border-radius:8px;margin-bottom:8px">${d.problems.map(x => '<div>' + esc(x) + '</div>').join('')}</div>` : '';
+  const aud = d.voices.map(f => `<div style="margin-top:6px"><span class="muted">${esc(f)}</span><br><audio controls preload="none" src="/api/pipeline/${n}/asset/voices/${encodeURIComponent(f)}?channel=${encodeURIComponent(CH)}"></audio></div>`).join('');
+  box.innerHTML = probs + (d.speakers.length < 2 ? '<div class="muted" style="margin-bottom:8px">No one speaks yet: mark dialogue lines with <code>say</code> in the script (the skill explains how), then choose their voices here.</div>' : '') +
+    `<table style="border-collapse:collapse;width:100%"><tr class="muted"><td></td><td>Sarvam voice (paid)</td><td>Free voice (Kokoro)</td></tr>${d.speakers.map(row).join('')}</table>
+    <div class="row" style="gap:8px;flex-wrap:wrap;margin-top:10px">${plBtn('💾 Save the cast', `plCastSave('${n}')`)} ${plBtn('🔊 Hear the free cast', `plStep('${n}','cast-sample-free','Making the free cast sample.')`, 'sec')}
+      ${plBtn('💰 Hear the Sarvam cast (paid, about ₹4)', `plStep('${n}','cast-sample-pro','Making the Sarvam cast sample.','This is a paid step: one short real line per person in Sarvam, about 1,500 characters (a few rupees). Make the sample?')`, 'sec')}</div>
+    <div class="muted" style="margin-top:6px">Lower Hz is a deeper, older voice; higher is younger or a woman's. The narrator stays the locked channel voice. Save first, then hear. Voices not heard here have not been heard by anyone: choose by ear.</div>${aud}`;
+}
+async function plCastSave(n) {
+  const d = await api(`/api/pipeline/${n}/cast`, {silent: true}), cast = {};
+  d.speakers.filter(sp => sp.who !== 'narrator').forEach(sp => {
+    const id = `plc-${n}-${sp.who}`, g = x => ($(`#${id}-${x}`) || {}).value;
+    cast[sp.who] = {label: (d.cast[sp.who] || {}).label || sp.who, sarvam: {speaker: g('sv'), pace: g('pace')}, kokoro: {voice: g('kv'), speed: g('sp'), pitch: g('pi')}};
+  });
+  const r = await api(`/api/pipeline/${n}/cast`, {method: 'POST', body: {cast}}); toast(`Saved ${r.saved} voices. Hear them, then make the voice again to use them.`); loadPipeline(); PL_OPEN[n] = 'cast';
+}
+let PL_TIMER = null;
+function plWatch() {                                        // while a job from this tab runs, show it here and refresh the steps when it ends
+  clearInterval(PL_TIMER);
+  const tick = async () => {
+    const js = await api('/api/jobs', {silent: true}).catch(() => null); if (!js) return;
+    const run = js.filter(j => !j.done && /^[a-z-]+ · [a-z0-9-]+$/.test(j.label) && !j.label.startsWith('upload'));
+    document.querySelectorAll('[id^="plrun-"]').forEach(el => {
+      const mine = run.filter(j => j.label.endsWith(' · ' + el.id.slice(6)));
+      el.innerHTML = mine.length ? `<div style="padding:6px 10px;background:#e8f3ff;border-radius:8px;margin-bottom:6px">⏳ Running: <b>${mine.map(j => esc(j.label.split(' · ')[0])).join(', ')}</b> <span class="muted">· see the Activity tab</span></div>` : '';
+    });
+    if (!run.length) { clearInterval(PL_TIMER); PL_TIMER = null; if ($('#pipeline').classList.contains('on')) loadPipeline(); }
+  };
+  tick(); PL_TIMER = setInterval(tick, 8000);
+}
+function plToggle(name, key) { PL_OPEN[name] = PL_OPEN[name] === key ? '__none' : key; loadPipeline(); }
+async function plMakePrompts(n) { const r = await api(`/api/pipeline/${n}/make-prompts`, {method: 'POST', body: {}}); toast(r.summary.split('\n')[0]); await loadPipeline(); PL_OPEN[n] = 'images'; loadPipeline(); }
+async function plSound(n) { await api(`/api/pipeline/${n}/sound`, {method: 'POST', body: {}}); toast('Mixing started: follow it in the Activity tab.'); show('jobs'); }
+async function plVoice(n) { await api(`/api/pipeline/${n}/voice`, {method: 'POST', body: {}}); toast('Voice started (Sarvam aditya): follow it in the Activity tab.'); show('jobs'); }
+async function plNew() { const slug = $('#plslug').value.trim(); if (!slug) return; await api('/api/pipeline', {method: 'POST', body: {slug}}); $('#plslug').value = ''; loadPipeline(); }
+async function plOpen(n, sub) { await api(`/api/pipeline/${n}/open`, {method: 'POST', body: {sub}}); }
+async function plScript(n) { const topic = $(`#plt-${n}`).value.trim(); const j = await api(`/api/pipeline/${n}/script`, {method: 'POST', body: {topic}}); toast('Script started on Opus: follow it in the Activity tab.'); show('jobs'); }
+async function plFiles(n) {
+  const sel = $(`#plf-${n}`); if (!sel) return;
+  const r = await api(`/api/pipeline/${n}/files`, {silent: true}); const next = r.files.find(f => !f.retry && f.done < f.slots) || r.files.find(f => f.retry);
+  sel.innerHTML = r.files.map(f => `<option value="${esc(f.file)}" ${next && next.file === f.file ? 'selected' : ''}>${esc(f.file)} · ${f.retry ? 'retry, ' + f.slots + ' prompts' : f.done + ' of ' + f.slots + ' pictures in'}</option>`).join('');
+}
+async function plBatch(n, action) {
+  const file = ($(`#plf-${n}`) || {}).value; if (!file) { toast('Make the image prompts first.'); return; }
+  plAfter(n, file, await api(`/api/pipeline/${n}/batch`, {method: 'POST', body: {action: 'collect', file}}));
+}
+function plAfter(n, file, r) {
+  if (r.state === 'none') { toast('No new pictures yet: wait until the extension has finished downloading, then press again.'); return; }
+  if (r.state === 'filed') {
+    $(`#plx-${n}`).innerHTML = '';
+    toast(r.collected + ' pictures filed (' + r.total + ' in all)' + (r.missing && r.missing.length ? '. ' + r.missing.length + ' failed: run prompts/' + r.retry + ' next.' : '.')); PL_OPEN[n] = 'images'; loadPipeline(); return;
+  }
+  const more = r.collected > r.expected;
+  $(`#plx-${n}`).innerHTML = `<div style="padding:10px;background:#fff3cd;border-radius:8px"><b>${r.collected} pictures found, but ${esc(file)} has ${r.expected} prompts.</b>
+    ${more ? '<div>More pictures than prompts: probably extra downloads. Delete the extras from your Downloads folder and press Get my pictures again.</div>'
+      : `<div>Some prompts probably failed. Look at the numbered sheet (the order they arrived), then type the <b>slot numbers that failed</b> from the list below, separated by commas. The rest are filed in order, and a retry file is made for the failed ones.</div>
+      <div style="margin:8px 0"><input id="plm-${n}" placeholder="e.g. 7, 19" style="width:160px"> <button class="act" onclick="plAssign('${n}','${esc(file)}')">Assign</button></div>`}
+    <img src="${r.sheet}?t=${Date.now()}" style="max-width:100%;border:1px solid #ddd;margin-top:6px">
+    <div class="muted" style="margin-top:6px;columns:2">${r.slots.map(sl => `<div><b>${sl.pos}</b> ${esc(sl.text)}…</div>`).join('')}</div></div>`;
+}
+async function plAssign(n, file) {
+  const missing = ($(`#plm-${n}`).value.match(/\d+/g) || []).map(Number);
+  plAfter(n, file, await api(`/api/pipeline/${n}/batch`, {method: 'POST', body: {action: 'assign', file, missing}}));
+}
+async function plSwap(n) {
+  const a = +$(`#pls1-${n}`).value, b = +$(`#pls2-${n}`).value; if (!a || !b) return;
+  await api(`/api/pipeline/${n}/batch`, {method: 'POST', body: {action: 'swap', a, b}}); toast(`Swapped pictures ${a} and ${b}.`); plContact(n, 0);
+}
+async function plContact(n, page) {
+  const r = await api(`/api/pipeline/${n}/contact`, {method: 'POST', body: {page}});
+  $(`#plx-${n}`).innerHTML = `<img src="${r.url}?t=${Date.now()}" style="max-width:100%;border:1px solid #ddd"><div class="muted">${r.count} images` + (r.pages > page + 1 ? ` · <a href="#" onclick="plContact('${n}',${page + 1});return false">next sheet</a>` : '') + '</div>';
+}
+async function plPrompts(n) {
+  const r = await api(`/api/pipeline/${n}/prompts`);
+  $(`#plx-${n}`).innerHTML = r.files.length ? `<div class="muted">Upload a file to the extension, or copy single prompts. Folder: <a href="#" onclick="plOpen('${n}','prompts');return false">${esc(r.folder)}</a></div>` +
+    r.files.map(f => `<div style="margin-top:8px"><b>${esc(f.file)}</b> · ${f.lines.length} prompts <button class="act sec" onclick="navigator.clipboard.writeText(${esc(JSON.stringify(f.lines.join('\n')))});toast('Copied all ${f.lines.length} prompts')">Copy all</button>
+      ${f.lines.map((l, i) => `<div class="muted" style="margin:3px 0"><button class="act sec" onclick="navigator.clipboard.writeText(${esc(JSON.stringify(l))});toast('Copied prompt ${i + 1}')">${i + 1}</button> ${esc(l.slice(0, 110))}…</div>`).join('')}</div>`).join('') : '<span class="muted">No prompt files yet: press Make the image prompts.</span>';
+}
+
+
+// ---------- videos ----------
+const STEP_LABELS = {script: 'Script', video: 'Video', srt: 'Captions', thumbnail: 'Thumbnail', sheet: 'Upload sheet', uploaded: 'Uploaded', sources: 'Sources', chapters: 'Chapters'};
+const stepChips = p => (p ? Object.keys(p.steps) : ['script', 'video', 'srt', 'thumbnail', 'sheet']).map(k => { const on = p && p.steps[k]; return `<span class="chip ${on ? 'y' : 'n'}">${on ? '✓' : '·'} ${STEP_LABELS[k] || k}</span>`; }).join('');
+const YT = {live: 'LIVE', scheduled: 'SCHEDULED', private: 'PRIVATE', unlisted: 'UNLISTED'};
+const ytBadge = y => y ? `<span class="stt ${y.state}" title="${esc(y.when)}">${YT[y.state] || y.state.toUpperCase()}${y.state === 'scheduled' ? ' · ' + esc(y.when.slice(5, 16).replace('T', ' ')) + ' IST' : ''}</span>` : '';
+let MAKEPOLL = null, GRIDSIG = '';
+async function loadProjects() {
+  $('#detail').style.display = 'none'; $('#list').style.display = '';
+  api('/api/youtube/videos?refresh=1', {silent: true}).catch(() => {});          // keeps the badges current (the server throttles this)
+  const [ps, jobs] = await Promise.all([api('/api/projects'), api('/api/jobs')]);
+  const making = jobs.filter(j => !j.done && j.label.startsWith('make · '));
+  $('#count').textContent = `${ps.length} videos · ${ps.filter(p => p.ready && !p.steps.uploaded).length} ready to upload · ${ps.filter(p => p.yt && p.yt.state === 'live').length} live`;
+  const html = making.map(j => { const slug = j.label.slice(7), p = ps.find(x => x.name === slug), g = j.progress || {pct: 0, stage: 'Starting'};
+    return `<div class="card making"><div class="ph" style="border-style:dashed"><div style="text-align:center"><div class="spin" style="font-size:28px">⟳</div><div>the agent is making<br><b>${esc(slug)}</b></div></div></div>
+      <h3>${p && p.title ? esc(p.title) : esc(slug)}</h3>
+      <div class="bar"><i style="width:${g.pct}%"></i></div>
+      <div class="slug"><b>${g.pct}%</b> · ${esc(g.stage)} · ${esc(j.elapsed || '')}</div>
+      <div class="now">${j.window ? '🪟 running in its own Claude window' : '▸ ' + esc(j.activity || 'starting…')}</div>
+      <div class="chips">${stepChips(p)}</div>
+      <div style="margin-top:8px"><a href="#" onclick="show('jobs');watch('${j.id}');return false">watch every step live →</a></div></div>`; }).join('') +
+  ps.filter(p => !making.some(j => j.label.slice(7) === p.name)).map(p => `
+    <div class="card proj" onclick="openProject('${p.name}')">
+      ${p.steps.thumbnail ? `<img class="${p.kind === 'long' ? 'wide' : ''}" loading="lazy" src="/media/${p.name}/${p.name}-thumbnail.png?channel=${CH}&${p.modified}">` : `<div class="ph ${p.kind === 'long' ? 'wide' : ''}">${p.kind === 'long' ? 'long video<br>no thumbnail yet' : 'no thumbnail yet'}</div>`}
+      <h3>${esc(p.title || p.name)}</h3>
+      <div class="slug">${p.kind === 'long' ? '🎞 long · ' : ''}${p.name} · ${p.words} words</div>
+      <div style="margin-top:6px">${p.yt ? ytBadge(p.yt) : p.steps.uploaded ? '<span class="badge up">UPLOADED</span>' : p.ready ? `<span class="badge ok">READY</span>` : '<span class="badge">IN PROGRESS</span>'}
+        ${p.resumable ? `<button class="act blue" title="The run stopped part-way (usage limit or a crash). Carry on from the files already made, without redoing them." onclick="event.stopPropagation(); continueMake('${p.name}')">▶ Continue</button> ` : ''}<button class="del" style="float:right" title="Delete from disk" onclick="event.stopPropagation(); deleteProject('${p.name}', ${p.yt ? "'" + p.yt.state + "'" : 'null'})">🗑 Delete</button></div>
+      <div class="chips">${stepChips(p)}</div>
+    </div>`).join('');
+  const sig = JSON.stringify([making.map(j => [j.id, j.progress && j.progress.pct, j.activity, j.elapsed]), ps.map(p => [p.name, p.modified, p.title, p.yt && p.yt.state + p.yt.when, p.steps, p.resumable])]);
+  if (sig !== GRIDSIG) { GRIDSIG = sig; $('#grid').innerHTML = html; }       // only redraw when something changed (no flicker while a video is being made)
+  clearInterval(MAKEPOLL); if (making.length) MAKEPOLL = setInterval(() => { if ($('#projects').classList.contains('on') && $('#detail').style.display === 'none') loadProjects(); else clearInterval(MAKEPOLL); }, 4000);
+}
+async function continueMake(slug) {
+  try { await api('/api/topics/make', {method: 'POST', body: {resume: slug}}); } catch (e) { return; }
+  toast('Continuing ' + slug + ' from where it stopped'); show('projects'); loadProjects();
+}
+async function deleteProject(name, ytState) {
+  const live = ytState ? `\n\nIt is ${ytState.toUpperCase()} on YouTube. Deleting here does NOT remove it from YouTube.` : '';
+  if (!confirm(`Delete "${name}" from this computer?\n\nThe video, thumbnail, script and all files in its folder are removed permanently (not sent to the Recycle Bin).${live}`)) return;
+  const r = await api('/api/projects/' + name, {method: 'DELETE'});
+  toast(`Deleted ${name} (${r.freed_mb} MB freed).`);
+  loadProjects();
+}
+async function openProject(name) {
+  const p = await api('/api/projects/' + name);
+  const long = p.kind === 'long';
+  CFG = await api('/api/config');
+  $('#list').style.display = 'none'; const d = $('#detail'); d.style.display = '';
+  setTimeout(() => useNextSlot(true), 0);
+  d.innerHTML = `
+    <span class="back" onclick="loadProjects()">← all videos</span>
+    <div class="detail">
+      <div>
+        ${p.steps.video ? `<video class="${long ? 'wide' : ''}" controls preload="metadata" src="/media/${name}/${name}.mp4?channel=${CH}&${p.modified}"></video>` : '<div class="card muted">No video yet. Run Voice, then Build video.</div>'}
+        ${p.steps.thumbnail ? `<h4>Thumbnail</h4><img class="thumb ${long ? 'wide' : ''}" src="/media/${name}/${name}-thumbnail.png?channel=${CH}&${p.modified}">` : ''}
+      </div>
+      <div>
+        <div class="row" style="justify-content:space-between"><h2 style="margin:0">${esc(p.title || name)}</h2>${p.yt ? ytBadge(p.yt) : ''}
+          <button class="del" onclick="deleteProject('${name}', ${p.yt ? "'" + p.yt.state + "'" : 'null'}).then(() => loadProjects())">🗑 Delete</button></div>
+        <div style="height:10px"></div>
+        <div class="chips" style="margin-bottom:14px">${stepChips(p)}</div>
+        ${p.upload ? `<div class="card" style="margin-bottom:14px">Uploaded: <a href="${p.upload.url}" target="_blank">${p.upload.url}</a> · goes live ${new Date(p.upload.publishAt).toLocaleString()} · <a href="${p.upload.studio}" target="_blank">open in Studio</a></div>` : ''}
+        ${`        <h4>Build</h4>
+        <div class="row">
+          <button class="act sec" onclick="run({action:'voice',project:'${name}'})">1 · Voice</button>
+          <button class="act sec" onclick="run({action:'check',project:'${name}'})">2 · Check</button>
+          <button class="act" onclick="run({action:'video',project:'${name}'})">3 · Build video</button>
+          <button class="act sec" onclick="run({action:'thumb',project:'${name}'})">4 · Thumbnail</button>
+          <button class="act red" title="Three thumbnail ideas built on different click triggers; pick one and it is drawn" onclick="thumbIdeas('${name}')">🖼 Better thumbnail</button>
+          <button class="act sec" title="Describe the thumbnail you want in your own words; the agent draws exactly that (no ideas step)" onclick="thumbDescribe('${name}')">✏ Describe thumbnail</button>
+          <button class="act sec" onclick="run({action:'sheet',project:'${name}'})">Contact sheet</button>${long && p.steps.video ? `<button class="act blue" title="yt-shorts: which moments survive alone, with new scored first lines" onclick="run({action:'spinoffs',project:'${name}'})">✂ Spin-off Shorts</button>` : ''}${long ? `<button class="act sec" onclick="run({action:'chapters',project:'${name}'})">Chapters</button>` : ''}
+          <button class="act blue" onclick="agentFor('${name}')">Ask agent…</button>
+        </div>
+        <h4>Upload &amp; schedule</h4>
+        <div class="card">
+          <div class="row">
+            <label>Date <input type="date" id="update" value="${istDate(1)}" onchange="whenHint()"></label>
+            <label>Time (IST) <select id="uptime" onchange="whenHint()">${timeOptions()}</select></label>
+            <button class="act sec" onclick="useNextSlot()" title="The first slot with nothing live or scheduled around it">⏭ Next free slot</button>
+            <span class="muted" id="whenhint"></span>
+          </div>
+          <div class="row" style="margin-top:10px">
+            <button class="act sec" onclick="upload('${name}', 'dry')">Dry run</button>
+            <button class="act blue" onclick="upload('${name}', 'schedule')" ${p.ready ? '' : 'disabled title="needs video, captions, thumbnail and upload sheet"'}>Upload + schedule</button>
+            <button class="act red" onclick="upload('${name}', 'now')" ${p.ready ? '' : 'disabled title="needs video, captions, thumbnail and upload sheet"'}>⚡ Post now</button>
+            <button class="act sec" onclick="run({action:'comment',project:'${name}'})" ${p.upload ? '' : 'disabled'}>Post pinned comment</button>
+          </div>
+          <p class="muted" style="margin:8px 0 0">Sets title, description, tags, Education, not made for kids, altered content No, thumbnail and captions. <b>Post now</b> publishes publicly right away; <b>Upload + schedule</b> keeps it private until the chosen time.</p>
+          <div class="chips" style="margin-top:8px"><span class="chip">After upload, in Studio → Education:</span><span class="chip y">Type: Concept overview</span><span class="chip y">Level: None</span><span class="chip y">pin the comment</span></div>
+        </div>
+`}
+        <h4>Script <span class="muted">(one sentence per line · re-run Voice after editing)</span></h4>
+        <textarea id="script" rows="8">${esc(p.script.join('\n'))}</textarea>
+        <div class="row" style="margin-top:6px"><button class="act sec" onclick="saveScript('${name}')">Save script</button></div>
+        <h4>Upload sheet <span class="muted">(${name}-youtube.txt)</span></h4>
+        <textarea id="sheet" rows="16" placeholder="No sheet yet. Ask the agent to write one.">${esc(p.sheet_text)}</textarea>
+        <div class="row" style="margin-top:6px"><button class="act sec" onclick="saveSheet('${name}')">Save sheet</button></div>
+        ${long ? Object.entries(p.docs || {}).map(([k, t]) => `<h4>${k} <span class="muted">(written by the agent)</span></h4><textarea readonly rows="10">${esc(t)}</textarea>`).join('') : ''}
+      </div>
+    </div>`;
+}
+async function saveScript(n) { await api(`/api/projects/${n}/script`, {method: 'PUT', body: {sentences: $('#script').value.split('\n')}}); toast('Script saved. Run Voice to re-record it.'); }
+async function saveSheet(n) { await api(`/api/projects/${n}/sheet`, {method: 'PUT', body: {text: $('#sheet').value}}); toast('Upload sheet saved.'); }
+// every 15 minutes, IST; the channel's slots come first
+function timeOptions() {
+  const slots = Object.entries(CFG.slots).sort((x, y) => x[1].localeCompare(y[1]));
+  let h = `<optgroup label="Your slots">${slots.map(([k, v]) => `<option value="${v}">${k} · ${v}</option>`).join('')}</optgroup><optgroup label="Any time">`;
+  for (let m = 0; m < 1440; m += 15) { const t = String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0'); h += `<option value="${t}">${t}</option>`; }
+  return h + '</optgroup>';
+}
+function whenHint() {   // what the chosen IST time is for viewers in the US and India
+  const d = $('#update').value, t = $('#uptime').value; if (!d || !t) return;
+  const at = new Date(`${d}T${t}:00+05:30`);
+  const f = tz => at.toLocaleString('en-US', {timeZone: tz, weekday: 'short', hour: 'numeric', minute: '2-digit'});
+  $('#whenhint').textContent = `= ${f('America/New_York')} ET · ${f('America/Los_Angeles')} PT`;
+}
+async function useNextSlot(quiet) {
+  const s = await api('/api/next-slot', {silent: quiet});
+  if (!s.at) return quiet || toast('No free slot found in the next 30 days.');
+  $('#update').value = s.date; $('#uptime').value = s.time; whenHint();
+  if (!quiet) toast(`Next free slot: ${s.date} ${s.time} IST (slot ${s.slot})` + (s.checked_youtube ? '' : '. YouTube is not connected, so this only skips times that have passed.'));
+}
+function upload(n, mode) {
+  if (mode !== 'now' && !$('#update').value) return toast('Pick a date first.');
+  const at = `${$('#update').value} ${$('#uptime').value}`;
+  if (mode === 'now' && !confirm(`Post "${n}" to YouTube right now? It becomes public immediately.`)) return;
+  if (mode === 'schedule' && !confirm(`Upload "${n}" and schedule it for ${at} IST?`)) return;
+  run({action: mode === 'dry' ? 'upload-dry' : 'upload', project: n, at, now: mode === 'now'});
+}
+async function newProject() {
+  const s = $('#newslug').value.trim();
+  if (!/^[a-z0-9][a-z0-9-]*$/.test(s)) return toast('Use a lowercase slug like why-onions-cry');
+  await run({action: 'new', project: s});
+}
+function agentFor(n) { show('agent'); $('#prompt').value = `For the line-boil project ${n}: `; $('#prompt').focus(); }
+
+// ---------- jobs ----------
+let CUR = null; const POLLS = {};
+async function run(body) { const j = await api('/api/run', {method: 'POST', body}); show('jobs'); watch(j.id); }
+async function loadJobs() {
+  const js = await api('/api/jobs', {silent: true});
+  api('/api/runs', {silent: true}).then(r => {
+    $('#runsum').textContent = r.count ? `${r.count} runs · about $${r.total} in total at API prices` : '';
+    $('#runs').innerHTML = `<tr><th>When</th><th>What</th><th>Time</th><th>Turns</th><th>Est. cost</th><th></th></tr>` +
+      (r.runs.length ? r.runs.map(x => `<tr><td>${esc(x.when)}</td><td>${esc(x.label)}</td><td>${Math.floor(x.secs / 60)} min ${x.secs % 60} s</td><td>${x.turns ?? ''}</td><td>$${(x.cost || 0).toFixed(2)}</td><td>${x.code === 0 ? '✓' : '✗'}</td></tr>`).join('') : '<tr><td colspan=6 class="muted" style="padding:14px">Runs appear here after the next video, idea set or agent request finishes.</td></tr>');
+  }).catch(() => {});
+  $('#joblist').innerHTML = js.map(j => `<div class="job ${j.id === CUR ? 'sel' : ''}" onclick="watch('${j.id}')"><span>${esc(j.label)}</span><span>${j.done ? (j.code === 0 ? '✓ done' : '✗ exit ' + j.code) : (j.progress ? j.progress.pct + '%' : '…') + ' running'}</span></div>`).join('') || '<span class="muted">Nothing run yet.</span>';
+}
+function watch(id, target = '#joblog', onDone) {       // each log pane has its own poller, so watching one job never cancels another's callback
+  if (target === '#joblog') CUR = id;
+  clearInterval(POLLS[target]); let n = 0; $(target).textContent = '';
+  const tick = async () => {
+    let j;
+    try { j = await api(`/api/jobs/${id}?since=${n}`, {silent: true}); }
+    catch (e) { clearInterval(POLLS[target]); $(target).textContent += '\n(that job is no longer known: the studio was restarted)'; if (onDone) onDone({code: -1}); return; }
+    n = j.n;
+    if (target === '#joblog') { $('#jobtitle').textContent = j.label; $('#stopbtn').style.display = j.done ? 'none' : ''; if (!j.done) $('#contbtn').style.display = 'none'; }
+    if (j.log.length) { const el = $(target); el.textContent += j.log.join('\n') + '\n'; el.scrollTop = el.scrollHeight; }
+    if (j.done) { clearInterval(POLLS[target]); $(target).textContent += j.code === 0 ? '\n✓ finished' : `\n✗ exited with ${j.code}`; if (target === '#joblog') showContinue(j.label); if (onDone) onDone(j); }
+    if (target === '#joblog' || j.done) loadJobs().catch(() => {});
+  };
+  tick(); POLLS[target] = setInterval(tick, 1000);
+}
+async function showContinue(label) {       // a make run that ended: offer to carry on if it left work unfinished
+  const b = $('#contbtn'); if (!b) return; b.style.display = 'none';
+  if (!label.startsWith('make · ')) return;
+  const js = await api('/api/jobs', {silent: true}).catch(() => []);
+  const me = js.find(x => x.id === CUR);
+  if (me && me.resumable) { b.dataset.slug = label.slice(7); b.style.display = ''; }
+}
+function continueJob() { const b = $('#contbtn'); if (b && b.dataset.slug) continueMake(b.dataset.slug); }
+async function stopJob() { if (CUR) await api(`/api/jobs/${CUR}/stop`, {method: 'POST'}); }
+
+// ---------- agent ----------
+const QUICK = [
+  ['New Short', 'Make a new Short with the line-boil skill about TOPIC. Write the script, fact-check it, build the video, render the thumbnail and write the upload sheet. Go straight through without waiting for my OK.'],
+  ['Upload sheet', 'Write the YouTube upload sheet for the line-boil project SLUG, following the skill\'s references/youtube.md.'],
+  ['Thumbnail', 'Write web/thumb.js and render the thumbnail for the line-boil project SLUG, following SKILL.md step 9.'],
+  ['Rebuild old Short', 'Rebuild the line-boil project SLUG with the current engine so it has captions and the .srt (and no outro: Shorts loop). Check caption placement on a still per shot.'],
+  ['Idea batch', 'Suggest 10 new Short ideas for The Bean With Bad Ideas across different video types (see the Types tab in bean-planner.xlsx), avoiding topics already in the planner.'],
+];
+$('#quick').innerHTML = QUICK.map(([l, t], i) => `<button class="act sec" onclick="$('#prompt').value=QUICK[${i}][1]">${l}</button>`).join('');
+async function askAgent() {
+  const prompt = $('#prompt').value.trim(); if (!prompt) return;
+  const j = await api('/api/agent', {method: 'POST', body: {prompt, duration: $('#agentlen').value || null, model: $('#agentmodel').value || null, window: $('#agentwin').checked}});
+  watch(j.id, '#agentlog');
+}
+
+// ---------- topics ----------
+let TKIND = 'short', TPPOLL = null, TBATCH = null, ME = null, TANA = [], ANAPOLL = null;
+const TLAST = {short: null, long: null};
+const TOPT = {short: [], long: []}, TPICK = {short: [], long: []};
+const TDESC = {
+  short: `Studies what is beating its own channel's average on other channels in your category (<span id="tpcat"></span>), then adapts the best into <b>3 original ideas</b> for you: the topic and format are borrowed, never the script or title. Pick one, answer a few questions, and the agent makes the whole video.`,
+  long: `The same study for <b>long videos</b> (4 to 40 minutes) on other channels, adapted into 3 ideas with chapters, a runtime and sources to check. <b>Researched picks</b> sit on top. A long video is made end to end in <b>16:9</b> with the line-boil-wide skill: sourced script, chapters timed from the real voiceover, the animation, a 1280×720 thumbnail and the upload sheet.`};
+function applyKinds() {                      // a channel makes only the kinds it lists (the Hindi channel: long videos only, so no Shorts button)
+  const ks = (ME && ME.kinds) || ['short', 'long'];
+  $('#kshort').style.display = ks.includes('short') ? '' : 'none'; $('#klong').style.display = ks.includes('long') ? '' : 'none';
+  $('#kseg').style.display = ks.length > 1 ? '' : 'none';
+  if (!ks.includes(TKIND)) TKIND = ks[0];
+  $('#kshort').classList.toggle('on', TKIND === 'short'); $('#klong').classList.toggle('on', TKIND === 'long');
+  $('#tpana').style.display = ME && ME.language === 'Hindi' ? '' : 'none';
+  if (ME && ME.language === 'Hindi') TDESC.long = `Studies the <b>long documentaries</b> (8 to 60 minutes) of the reference channels in your category (<span id="tpcat"></span>) and shows what beats each channel's own median. <b>Get 3 ideas</b> turns the best into topics with a different angle (covered topics are fine when the angle is new); <b>Make this</b> has Opus write the script in the Pipeline tab. Use the analyzer above to judge your own idea.`;
+}
+function setKind(k) {
+  TKIND = k; $('#kshort').classList.toggle('on', k === 'short'); $('#klong').classList.toggle('on', k === 'long');
+  clearInterval(TPPOLL); TPPOLL = null; TBATCH = null; $('#tpstatus').textContent = ''; loadTopics();
+}
+async function loadTopics() {
+  const k = TKIND; loadAnalyses();
+  const [t, pk] = await Promise.all([api('/api/topics?kind=' + k), api('/api/topics/picks?kind=' + k)]);
+  if (k !== TKIND) return;                               // switched format while this was loading
+  TPICK[k] = pk.picks;
+  if (pk.last.length && TLAST[k] !== pk.last_when) { TOPT[k] = pk.last; TLAST[k] = pk.last_when; }          // the newest ideas, also when they finished while this page was away
+  if (pk.running) watchBatch(k, pk.running);                          // a batch is still being written: follow it
+  $('#tpdesc').innerHTML = TDESC[k]; if ($('#tpcat')) $('#tpcat').textContent = t.category || 'your category';
+  $('#tpmeta').textContent = t.fetched ? `${t.videos} ${k === 'short' ? 'Shorts' : 'long videos'} from ${t.channels.length} channels · studied ${ago(t.fetched)}` : '';
+  $('#tprefresh').disabled = t.refreshing; $('#tprefresh').textContent = t.refreshing ? `↻ Studying… ${t.progress}` : '↻ Refresh sources';
+  const e = $('#tpempty');
+  e.style.display = t.videos ? 'none' : '';
+  e.innerHTML = t.videos ? '' : `<b>No ${k === 'short' ? 'Shorts' : 'long-video'} source data yet.</b> Press <b>Refresh sources</b> to study ${t.channels.length} channels in your category (about a minute; public data only, no login).${t.error ? `<div style="color:#c0262d;margin-top:6px">⚠ ${esc(t.error)}</div>` : ''}`;
+  $('#tpgo').disabled = !t.videos;
+  $('#tptop').innerHTML = `<tr><th>x channel median</th><th>Views</th><th>Channel</th><th>Title</th><th>Format</th></tr>` + (t.top || []).map(v => `<tr><td><b>${v.multiple}×</b></td><td>${v.views.toLocaleString()}</td><td>${esc(v.channel)}</td><td><a href="${v.url}" target="_blank">${esc(v.title)}</a>${v.duration ? ` <span class="muted">${Math.round(v.duration / 60)} min</span>` : ''}</td><td>${esc(v.type)}</td></tr>`).join('');
+  drawPicks(); drawOptions();
+  if (t.refreshing) setTimeout(() => $('#topics').classList.contains('on') && loadTopics(), 3000);
+}
+async function refreshSources() { await api('/api/topics/refresh', {method: 'POST', body: {kind: TKIND}}); loadTopics(); }
+function optionCard(o, i, src) {
+  const long = TKIND === 'long';
+  return `<div class="card opt ${src === 'pick' ? 'pick' : ''}" onclick="openWizard('${src}', ${i})">
+    ${src === 'pick' ? '<span class="n">⭐ researched</span>' : `<span class="n">#${i + 1}</span>`}<span class="chip">${esc(o.type)}</span> <span class="chip risk-${o.fact_risk}" title="${esc(o.fact_note)}">facts: ${o.fact_risk}</span>${long && o.runtime_min ? ` <span class="chip">⏱ ~${o.runtime_min} min</span>` : ''}${o.adapted ? '' : ' <span class="chip" title="the agent did not return an adapted idea">raw source</span>'}
+    <h3>${esc(o.title)}</h3>
+    ${o.promise ? `<div style="font-size:13px">${esc(o.promise)}</div>` : ''}
+    ${o.visual ? `<div class="muted" style="margin-top:6px">🎨 ${esc(o.visual)}</div>` : ''}
+    ${o.assumption ? `<div style="font-size:12px;margin-top:6px"><b>Everyone assumes:</b> ${esc(o.assumption)}<br><b>The truth:</b> ${esc(o.gap || '')}</div>` : ''}
+    ${o.angle ? `<div style="font-size:12px;margin-top:6px"><b>Our angle:</b> ${esc(o.angle)}</div>` : ''}
+    ${(o.covered_by || []).length ? `<div class="muted" style="font-size:12px;margin-top:4px">Covered by: ${o.covered_by.map(esc).join(' · ')}</div>` : ''}
+    ${long && (o.chapters || []).length ? `<ul>${o.chapters.map(c => `<li>${esc(c)}</li>`).join('')}</ul>` : ''}
+    ${long && (o.reuse_shorts || []).length ? `<div class="muted" style="margin-top:6px">♻ builds on: ${o.reuse_shorts.map(esc).join(' · ')}</div>` : ''}
+    ${(o.why || []).length ? `<div style="margin-top:8px;font-size:12px"><b>Why this one</b><ul>${o.why.map(w => `<li>${esc(w)}</li>`).join('')}</ul></div>` : ''}
+    <div class="muted" style="margin-top:8px;border-top:1px dashed #ccc;padding-top:6px">Inspired by <b>${esc(o.inspired_by.channel)}</b>: “${esc(o.inspired_by.title)}”${o.inspired_by.multiple ? ` · ${o.inspired_by.multiple}× its channel's median` : ''}</div>
+    <div style="margin-top:8px"><span class="act" style="display:inline-block;font-size:12px;padding:4px 10px">${long ? 'Make this →' : 'Pick this →'}</span></div></div>`;
+}
+function drawPicks() {
+  const picks = TPICK[TKIND] || [];
+  $('#tppicks').innerHTML = picks.length ? `<h4 style="margin:0 0 8px">⭐ Researched pick${picks.length > 1 ? 's' : ''} <span class="muted">(checked against the data and sources; brief included)</span></h4><div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(300px,1fr))">${picks.map((o, i) => optionCard(o, i, 'pick')).join('')}</div>` : '';
+}
+function drawOptions() {
+  const o = TOPT[TKIND] || [];
+  $('#tpopts').innerHTML = o.map((x, i) => optionCard(x, i, 'opt')).join('');
+  $('#tpgo').style.display = o.length ? 'none' : ''; $('#tpreroll').style.display = o.length ? '' : 'none';
+}
+function watchBatch(k, bid) {
+  if (TBATCH === bid && TPPOLL) return;
+  clearInterval(TPPOLL); TBATCH = bid;
+  const busy = on => { if (k === TKIND) { $('#tpgo').disabled = on; $('#tpreroll').disabled = on; } };
+  const say = m => { if (k === TKIND) $('#tpstatus').innerHTML = m; };
+  busy(true); say(`<span class="spin">⟳</span> The agent is adapting the best performers into ${k === 'long' ? 'long-video ' : ''}ideas for your channel… (usually 30–90 s)`);
+  TPPOLL = setInterval(async () => {
+    let b;
+    try { b = await api('/api/topics/batch/' + bid, {silent: true}); }
+    catch (e) { clearInterval(TPPOLL); TPPOLL = null; TBATCH = null; busy(false); say('Lost track of that request (the studio restarted?). Press the button to try again.'); return; }
+    if (b.status === 'running') { say(`<span class="spin">⟳</span> The agent is adapting the best performers into ideas… ${b.seconds}s`); return; }
+    clearInterval(TPPOLL); TPPOLL = null; TBATCH = null; TOPT[k] = b.options; busy(false); say('');
+    if (k === TKIND) drawOptions();
+  }, 2000);
+}
+async function getIdeas() {
+  const k = TKIND;
+  $('#tpgo').disabled = true; $('#tpreroll').disabled = true;
+  let r; try { r = await api('/api/topics/options', {method: 'POST', body: {kind: k}}); } catch (e) { $('#tpgo').disabled = false; $('#tpreroll').disabled = false; return; }
+  watchBatch(k, r.batch);
+}
+const LENGTH_LABEL = {0: 'Let the agent decide (recommended): as long as this topic needs, usually 30 to 50 seconds (no outro)', 30: 'Fixed: 30 seconds of voiceover (~93 words) · fastest, punchy', 40: 'Fixed: 40 seconds of voiceover (~124 words)', 50: 'Fixed: 50 seconds of voiceover (~155 words)', 60: 'Fixed: 60 seconds of voiceover (~186 words) · Shorts maximum'};
+const MIN_LABEL = {5: '5 minutes (~930 words)', 7: '7 minutes (~1,300 words) · the sweet spot for this style', 9: '9 minutes (~1,670 words)', 12: '12 minutes (~2,230 words)'};
+function openWizard(src, i) {
+  if (ME && ME.language === 'Hindi') return openHindiWizard(src, i);
+  const long = TKIND === 'long', o = (src === 'pick' ? TPICK : TOPT)[TKIND][i];
+  const near = long ? ([5, 7, 9, 12].reduce((a, b) => Math.abs(b - (o.runtime_min || 7)) < Math.abs(a - (o.runtime_min || 7)) ? b : a)) : 40;
+  $('#wizbox').innerHTML = `<h2 style="margin:0 0 4px">${long ? 'Make this long video' : 'Make this video'}</h2><p class="muted" style="margin:0">${long
+      ? 'A few questions, then the agent writes the script chapter by chapter, fact-checks every claim against sources, times the chapters from the real voiceover, draws and renders the 16:9 video, and makes the upload sheet. This is a long job (it can take an hour or more of the agent\'s time); watch it in Videos.'
+      : 'A few questions, then the agent writes the script, fact-checks it, draws and renders the video, and makes the thumbnail and upload sheet. You can watch it in Videos.'}</p>
+    <label>Title</label><input type="text" id="w_title" value="${esc(o.title)}">
+    <label>Length</label>${long
+      ? `<select id="w_min">${META.lengths.long.map(x => x / 60).map(m => `<option value="${m}" ${m === near ? 'selected' : ''}>${MIN_LABEL[m] || m + ' minutes'}</option>`).join('')}</select>`
+      : `<select id="w_dur">${[0, ...META.lengths.short].map(x => `<option value="${x}" ${x === 0 ? 'selected' : ''}>${LENGTH_LABEL[x] || x + ' seconds'}</option>`).join('')}</select>`}
+    ${long ? `<label>Structure</label><select id="w_struct"><option ${o.type === 'Ranking' ? 'selected' : ''}>a ranked countdown, from least to most effective</option><option>one story told in chapters</option><option>a myth-busting tour: claim, test, verdict</option><option ${o.type !== 'Ranking' ? 'selected' : ''}>as in the research brief or the topic's chapters</option></select>` : ''}
+    <label>Voice</label><select id="w_voice">${VOICES.map(([v, l]) => `<option value="${v}">${l}</option>`).join('')}</select>
+    <label>Speaking pace <span class="muted" id="w_spv">1.0×</span></label><input type="range" id="w_speed" min="0.9" max="1.15" step="0.05" value="1" style="width:100%" oninput="$('#w_spv').textContent = this.value + '×'">
+    <label>Tone</label><select id="w_tone"><option>dry and deadpan, the channel default</option><option>playful and energetic</option><option>calm and curious</option><option>dramatic and suspenseful</option></select>
+    <label>Characters</label><select id="w_cast"><option value="new">The topic itself: its real things drawn as themselves, beans only where they help</option><option value="host">Our red host bean in it as the narrator, plus the topic's real things</option></select>
+    <label>Ending</label><select id="w_end"><option>a punchy callback line</option><option>a question to the viewer for the comments</option><option>a teaser for the next bad idea</option></select>
+    ${long ? `<div class="row" style="margin-top:12px"><label style="margin:0"><input type="checkbox" id="w_caps"> Burned-in captions <span class="muted">(not the long-form standard: YouTube's own captions come from the uploaded .srt)</span></label></div>` : ''}
+    <div class="row" style="margin-top:12px"><label style="margin:0"><input type="checkbox" id="w_music" checked> Background music <span class="muted">(follows the script's mood)</span></label>${long ? `<label style="margin:0"><input type="checkbox" id="w_outro" checked> Channel outro (14.8 s)</label>` : ''}</div>
+    <label>Quality <span class="muted">(the video itself renders on your computer for free; this is the AI that writes and draws it)</span></label>
+    <label class="muted">Look <select id="w_theme" title="Auto: the planner picks the look from the topic's genre. Noir is dark and dreadful, sepia old and warm, soft gentle, hype loud."><option value="">Auto: match the topic</option><option value="classic">Classic (bright)</option><option value="noir">Noir (dark)</option><option value="sepia">Sepia (old)</option><option value="soft">Soft (gentle)</option><option value="hype">Hype (loud)</option></select></label>
+    <select id="w_model"><option value="">Auto: Opus plans (hook, script, shots), Sonnet builds (code, render)</option><option value="opus">Opus for everything: the most usage</option><option value="sonnet">Sonnet for everything: the least usage</option></select>
+    <div class="row" style="margin-top:10px"><label style="margin:0"><input type="checkbox" id="w_window"> 🪟 Open in its own Claude window so I can watch every step (it may ask for permissions)</label></div>
+    ${long ? `<label style="margin-top:12px">Thumbnail <span class="muted">(a long video: pick when it is drawn)</span></label><select id="w_thumbmode"><option value="later">Later: from the Better thumbnail button (three ideas, you pick one)</option><option value="now">Now: drawn after the video, with the long-thumbnail skill</option></select><input type="hidden" id="w_thumb" value="">` : `<label>Thumbnail text <span class="muted">(optional, up to 3 words; blank = the agent chooses)</span></label><input type="text" id="w_thumb" maxlength="24" placeholder="e.g. TOO TALL?">`}<label style="margin-top:12px">Describe the thumbnail yourself <span class="muted">(optional: the agent draws exactly this${long ? "; a long video is then drawn now" : ""})</span></label><textarea id="w_thumbdesc" rows="3" placeholder="e.g. a huge coffee mug with a worried bean peeking over the rim, big words WHY CAN'T I SLEEP?"></textarea>
+    <label>Anything else? <span class="muted">(optional)</span></label><textarea id="w_notes" rows="3" placeholder="e.g. keep it gentle, include the 1982 lawn chair story, avoid mentioning X"></textarea>
+    <div class="row" style="margin-top:16px; justify-content:flex-end"><button class="act sec" onclick="closeWizard()">Cancel</button><button class="act red" id="wizgo" onclick="makeVideo('${src}', ${i})">${long ? '🎬 Make the long video' : '🎬 Make the video'}</button></div>`;
+  $('#wiz').classList.add('on');
+}
+function closeWizard() { $('#wiz').classList.remove('on'); }
+function hindiTopic(src, i) {
+  if (src === 'ana') { const a = TANA[i], g = (a.tests || {}).gap || {}; return {title: (a.titles || [a.topic])[0], format: a.format, angle: a.angle, assumption: g.assumption, gap: g.truth, chapters: a.chapters, runtime_min: a.runtime_min, covered_by: (a.covered_by || []).map(c => `${c.channel}: ${c.title}${c.views ? ' (' + c.views.toLocaleString() + ')' : ''}`)}; }
+  return (src === 'pick' ? TPICK : TOPT)[TKIND][i];
+}
+function openHindiWizard(src, i) {
+  const o = hindiTopic(src, i), fm = {economics: 'Economics of owning X', story: 'Company rise, split or fall', person: "A person's story", compare: 'Two people, one decision'};
+  $('#wizbox').innerHTML = `<h2 style="margin:0 0 4px">Write this script</h2><p class="muted" style="margin:0">Opus writes the script with the hindi-case-study skill (research file, hook, chapters, a shot plan marking each line hero / still / card, the checker report). It lands in a new <b>Pipeline</b> project; voice, images and video are the next buttons there. Nothing is published.</p>
+    <label>Title</label><input type="text" id="w_title" value="${esc(o.title)}">
+    <label>Format</label><select id="w_fmt">${Object.entries(fm).map(([k, v]) => `<option value="${k}" ${k === o.format ? 'selected' : ''}>${v}</option>`).join('')}</select>
+    <label>Length</label><select id="w_min">${[10, 12, 13, 15].map(m => `<option value="${m}" ${m === (o.runtime_min >= 10 ? o.runtime_min : 12) ? 'selected' : ''}>${m} minutes (~${Math.round(m * 150)} Hindi words) · about $${Math.round(m * 1.75)} to make at the middle plan</option>`).join('')}</select>
+    <label>Anything else? <span class="muted">(optional)</span></label><textarea id="w_notes" rows="3" placeholder="e.g. keep Ramesh and Ankit as the two characters, end on a hopeful note"></textarea>
+    <div class="row" style="margin-top:16px; justify-content:flex-end"><button class="act sec" onclick="closeWizard()">Cancel</button><button class="act red" id="wizgo" onclick="makeHindi('${src}', ${i})">✍ Write the script (Opus)</button></div>`;
+  $('#wiz').classList.add('on');
+}
+async function makeHindi(src, i) {
+  const o = Object.assign({}, hindiTopic(src, i), {title: $('#w_title').value.trim()});
+  const btn = $('#wizgo'), label = btn.textContent; btn.disabled = true; btn.textContent = 'Starting…';
+  try { await api('/api/topics/make', {method: 'POST', body: {kind: 'long', topic: o, answers: {minutes: +$('#w_min').value, format: $('#w_fmt').value, notes: $('#w_notes').value.trim()}}}); closeWizard(); show('pipeline'); }
+  finally { btn.disabled = false; btn.textContent = label; }
+}
+// the topic analyzer (Hindi channel)
+const VERDICT = {go: ['#1b7f3b', '✅ Go'], sharpen: ['#b7791f', '✏ Sharpen it'], skip: ['#c0262d', '⛔ Skip']};
+function drawAnalyses() {
+  $('#tpanaout').innerHTML = TANA.map((a, i) => { const v = VERDICT[a.verdict] || VERDICT.sharpen, t = a.tests || {};
+    return `<div class="card" style="margin-top:10px;border-left:5px solid ${v[0]}"><div class="row" style="justify-content:space-between"><b style="color:${v[0]}">${v[1]}</b><span class="muted">${esc(a.topic)}</span></div>
+      <div style="margin:4px 0">${esc(a.verdict_line || '')}</div>
+      <ul style="margin:4px 0;font-size:13px"><li>${t.picture && t.picture.ok ? '✔' : '✘'} Picture it: ${esc((t.picture || {}).note || '')}</li><li>${t.gap && t.gap.ok ? '✔' : '✘'} Gap: everyone assumes “${esc((t.gap || {}).assumption || '')}”, the truth is “${esc((t.gap || {}).truth || '')}”</li><li>${t.money_or_conflict && t.money_or_conflict.ok ? '✔' : '✘'} Money math or conflict: ${esc((t.money_or_conflict || {}).note || '')}</li></ul>
+      <div style="font-size:13px"><b>Demand:</b> ${esc(a.demand_note || '')}</div>
+      ${(a.covered_by || []).length ? `<div style="font-size:13px;margin-top:4px"><b>Covered by:</b> ${a.covered_by.map(c => `<a href="${esc(c.url)}" target="_blank">${esc(c.channel)}: ${esc(c.title)}</a>${c.views ? ' (' + c.views.toLocaleString() + ')' : ''}`).join(' · ')}</div>` : ''}
+      <div style="font-size:13px;margin-top:4px"><b>Our angle:</b> ${esc(a.angle || '')}</div>
+      <div style="font-size:13px;margin-top:4px"><b>Titles:</b> ${(a.titles || []).map(x => '“' + esc(x) + '”').join(' · ')} <span class="muted">· thumbnail words: ${(a.thumbnail_words || []).map(esc).join(' / ')}</span></div>
+      ${(a.chapters || []).length ? `<div class="muted" style="font-size:12px;margin-top:4px">⏱ ~${a.runtime_min} min · ${a.chapters.map(esc).join(' › ')}</div>` : ''}
+      ${(a.facts_to_check || []).length ? `<div class="muted" style="font-size:12px">facts: ${esc(a.fact_risk)} · check: ${a.facts_to_check.map(esc).join('; ')}</div>` : ''}
+      <div class="row" style="justify-content:flex-end;margin-top:8px"><button class="act red" ${a.verdict === 'skip' ? 'title="The analyzer says skip"' : ''} onclick="openHindiWizard('ana', ${i})">Make this →</button></div></div>`; }).join('');
+}
+async function loadAnalyses() { if (!(ME && ME.language === 'Hindi')) return; const r = await api('/api/topics/analyses', {silent: true}); TANA = r.analyses || []; drawAnalyses(); }
+async function analyzeTopic() {
+  const topic = $('#tpanatopic').value.trim(); if (!topic) return;
+  $('#tpanago').disabled = true; $('#tpanastatus').innerHTML = '<span class="spin">⟳</span> Opus is checking the idea and searching YouTube… (usually 1 to 2 minutes)';
+  let r; try { r = await api('/api/topics/analyze', {method: 'POST', body: {topic}}); } catch (e) { $('#tpanago').disabled = false; $('#tpanastatus').textContent = ''; return; }
+  clearInterval(ANAPOLL);
+  ANAPOLL = setInterval(async () => {
+    let b; try { b = await api('/api/topics/analysis/' + r.analysis, {silent: true}); } catch (e) { clearInterval(ANAPOLL); $('#tpanago').disabled = false; $('#tpanastatus').textContent = 'Lost track of that run (the studio restarted?). Press Analyze again.'; return; }
+    if (b.status === 'running') { $('#tpanastatus').innerHTML = `<span class="spin">⟳</span> Opus is checking the idea and searching YouTube… ${b.seconds}s`; return; }
+    clearInterval(ANAPOLL); $('#tpanago').disabled = false;
+    if (b.status === 'ready') { $('#tpanastatus').textContent = ''; TANA = [b.result, ...TANA.filter(x => x.id !== b.result.id)].slice(0, 8); drawAnalyses(); }
+    else $('#tpanastatus').textContent = 'The analyzer did not produce an answer. Try again, or shorten the topic.';
+  }, 2500);
+}
+async function makeVideo(src, i) {
+  if (ME && ME.language === 'Hindi') return makeHindi(src, i);
+  const long = TKIND === 'long';
+  const o = Object.assign({}, (src === 'pick' ? TPICK : TOPT)[TKIND][i], {title: $('#w_title').value.trim()});
+  const answers = {voice: $('#w_voice').value, speed: +$('#w_speed').value, tone: $('#w_tone').value, cast: $('#w_cast').value, ending: $('#w_end').value,
+    music: $('#w_music').checked, outro: long ? $('#w_outro').checked : false, thumb_text: $('#w_thumb').value.trim(), thumb_desc: $('#w_thumbdesc').value.trim(), thumb_now: long && $('#w_thumbmode').value === 'now', notes: $('#w_notes').value.trim(),
+    model: $('#w_model').value, theme: $('#w_theme').value || null, window: $('#w_window').checked, captions: long && $('#w_caps').checked,
+    ...(long ? {minutes: +$('#w_min').value, structure: $('#w_struct').value} : {duration: +$('#w_dur').value})};
+  const btn = $('#wizgo'), label = btn.textContent; btn.disabled = true; btn.textContent = 'Starting…';          // a second click would start a second video
+  try { await api('/api/topics/make', {method: 'POST', body: {kind: TKIND, topic: o, answers}}); closeWizard(); show('projects'); }
+  finally { btn.disabled = false; btn.textContent = label; }
+}
+
+// ---------- a better thumbnail: three ideas, pick one, it is drawn ----------
+let THPOLL;
+function drawThumbIdeas(name, ideas) {
+  window.THIDEAS = ideas;
+  $('#wizbox').innerHTML = `<h2 style="margin:0 0 4px">Pick a thumbnail</h2><p class="muted" style="margin:0 0 10px">Best first. The old thumbnail is kept as <code>${name}-thumbnail-prev.png</code>. Nothing is uploaded.</p>` + ideas.map((o, k) => `
+    <div class="card" style="margin-bottom:10px"><div class="row" style="justify-content:space-between"><b>${k + 1}. ${esc(o.name)}</b><span class="chip">${esc(o.trigger)}</span></div>
+      ${o.words ? `<div style="font-size:22px;font-weight:800;margin:6px 0">“${esc(o.words)}”</div>` : ''}
+      <div>${esc(o.concept)}</div><div class="muted" style="margin-top:4px"><b>Why it clicks:</b> ${esc(o.why)}</div>${o.risk ? `<div class="muted"><b>Watch out:</b> ${esc(o.risk)}</div>` : ''}
+      <div class="row" style="justify-content:flex-end;margin-top:8px"><button class="act red" onclick="thumbMake('${name}', ${k})">Draw this one</button></div></div>`).join('') +
+    `<div class="row" style="justify-content:flex-end"><button class="act sec" onclick="closeThumb()">Close</button><button class="act sec" title="Skip the ideas: describe the thumbnail yourself" onclick="thumbDescribe('${name}')">✏ Describe my own</button><button class="act sec" title="Throw these away and analyse again for three new ideas" onclick="thumbIdeas('${name}', true)">↻ Reroll</button></div>`;
+}
+async function thumbIdeas(name, reroll = false) {
+  const box = $('#wizbox'); $('#wiz').classList.add('on');
+  if (!reroll) {                                                              // already analysed: show the saved five, don't start another run
+    box.innerHTML = '<p class="muted"><span class="spin">⟳</span> Opening…</p>';
+    const saved = await api(`/api/thumbnail/ideas/${name}`, {silent: true}).catch(() => null);
+    if (saved && saved.ideas && saved.ideas.length) { drawThumbIdeas(name, saved.ideas); return; }
+  }
+  box.innerHTML = `<h2 style="margin:0 0 4px">A better thumbnail</h2><p class="muted" id="thstatus"><span class="spin">⟳</span> The agent is studying the script and the current thumbnail, then writing three ideas built on different click triggers… (usually 1–2 minutes)</p><div class="row" style="justify-content:flex-end"><button class="act sec" onclick="closeThumb()">Cancel</button></div>`;
+  let r; try { r = await api('/api/thumbnail/ideas', {method: 'POST', body: {project: name}}); } catch (e) { closeWizard(); return; }
+  clearInterval(THPOLL);
+  THPOLL = setInterval(async () => {
+    let b; try { b = await api(`/api/thumbnail/ideas/${name}?job=${r.job}`, {silent: true}); } catch (e) { clearInterval(THPOLL); $('#thstatus').textContent = 'Lost track of that request. Close this and try again.'; return; }
+    if (b.status === 'running') return;
+    clearInterval(THPOLL);
+    if (!b.ideas.length) { box.innerHTML = `<h2 style="margin:0 0 4px">A better thumbnail</h2><p>The agent did not produce usable ideas (your earlier ideas, if any, are kept).</p><div class="row" style="justify-content:flex-end"><button class="act sec" onclick="closeThumb()">Close</button><button class="act" onclick="thumbIdeas('${name}')">Open saved / try again</button></div>`; return; }
+    drawThumbIdeas(name, b.ideas);
+  }, 2500);
+}
+function closeThumb() { clearInterval(THPOLL); closeWizard(); }
+function thumbDescribe(name) {
+  clearInterval(THPOLL); $('#wiz').classList.add('on');
+  $('#wizbox').innerHTML = `<h2 style="margin:0 0 4px">Describe your thumbnail</h2><p class="muted" style="margin:0 0 10px">Say what you want to see: who, doing what, with which object, which words. The agent draws exactly that, checks it at feed size, and keeps the old thumbnail as <code>${name}-thumbnail-prev.png</code>. Nothing is uploaded.</p>
+    <label>What it should look like</label><textarea id="thdesc" rows="5" placeholder="e.g. a worried bean peeking over the rim of a giant coffee mug, a clock showing midnight behind it, bright yellow background"></textarea>
+    <label style="margin-top:10px">Words on the picture <span class="muted">(optional; blank = the agent chooses)</span></label><input type="text" id="thwords" maxlength="60" placeholder="e.g. WHY CAN'T I SLEEP?">
+    <div class="row" style="justify-content:flex-end;margin-top:12px"><button class="act sec" onclick="closeThumb()">Close</button><button class="act red" onclick="thumbDrawMine('${name}')">Draw my description</button></div>`;
+}
+async function thumbDrawMine(name) {
+  const concept = $('#thdesc').value.trim();
+  if (concept.length < 10) { toast('Describe it in a sentence or two first.'); return; }
+  const j = await api('/api/thumbnail/make', {method: 'POST', body: {project: name, custom: true, idea: {name: 'Your description', concept, words: $('#thwords').value.trim()}}});
+  closeWizard(); show('jobs'); watch(j.id);
+}
+async function thumbMake(name, k) {
+  const j = await api('/api/thumbnail/make', {method: 'POST', body: {project: name, idea: window.THIDEAS[k]}});
+  closeWizard(); show('jobs'); watch(j.id);
+}
+
+// ---------- small helpers ----------
+function ago(iso) {
+  if (!iso) return 'never';
+  const m = Math.round((Date.now() - new Date(iso)) / 60000);
+  return m < 1 ? 'just now' : m < 90 ? `${m} min ago` : m < 2880 ? `${Math.round(m / 60)} h ago` : `${Math.round(m / 1440)} days ago`;
+}
+
+// ---------- settings ----------
+async function loadCfg() { $('#cfg').value = JSON.stringify(await api('/api/config'), null, 2); }
+async function saveCfg() {
+  let v; try { v = JSON.parse($('#cfg').value); } catch (e) { return toast('That is not valid JSON: ' + e.message); }
+  const r = await api('/api/config', {method: 'PUT', body: v}); $('#cfgmsg').textContent = r.note; toast(r.note);
+}
+
+// ---------- channels: one tab per YouTube channel; each has its own videos, numbers, topics, sign-in and tools ----------
+async function initChannels() {
+  const d = await api('/api/channels');
+  CHANNELS = d.channels;
+  if (!CHANNELS.some(c => c.id === CH)) CH = d.home;
+  const me = CHANNELS.find(c => c.id === CH);
+  document.documentElement.style.setProperty('--chc', me.color);
+  document.querySelector('header').style.background = me.color;
+  document.title = me.name + ' · Bean Studio';
+  ME = me; applyKinds();
+  $('#chbar').innerHTML = CHANNELS.map(c => `<button class="ch ${c.id === CH ? 'on' : ''}" style="--chc:${esc(c.color)}" onclick="switchChannel('${esc(c.id)}')">${esc(c.emoji)} ${esc(c.name)}<small>${esc(c.language)}${c.connected ? '' : ' · not signed in'}</small></button>`).join('') +
+    '<button class="act sec add" onclick="addChannelForm()">+ Add channel</button>';
+  document.querySelectorAll('nav button').forEach(b => b.style.display = me.tools.includes(b.dataset.tab) ? '' : 'none');   // only this channel's tools
+  const note = $('#chnote'); note.style.display = me.note ? '' : 'none'; note.textContent = me.note;
+}
+function switchChannel(id) {
+  try { localStorage.setItem('bean.channel', id); } catch (e) {}
+  location.reload();                  // the simplest way to be sure no other channel's lists are left on the page
+}
+function addChannelForm() {
+  $('#wizbox').innerHTML = `<h2>Add a channel</h2>
+    <p class="muted">It gets its own folders (<code>channels/&lt;name&gt;/</code>), its own planner, numbers and YouTube sign-in. Topics stay off until it has a video skill.</p>
+    <label>Channel name</label><input type="text" id="nc_name" placeholder="e.g. Bean Hindi">
+    <label>Language</label><input type="text" id="nc_lang" value="Hindi">
+    <label>Icon (one emoji)</label><input type="text" id="nc_emoji" value="🪔" maxlength="4">
+    <label>Colour</label><input type="color" id="nc_color" value="#c0262d">
+    <div class="row" style="margin-top:16px; justify-content:flex-end"><button class="act sec" onclick="closeWizard()">Cancel</button><button class="act blue" onclick="addChannel()">Add channel</button></div>`;
+  $('#wiz').classList.add('on');
+}
+async function addChannel() {
+  const body = {name: $('#nc_name').value, language: $('#nc_lang').value, emoji: $('#nc_emoji').value, color: $('#nc_color').value};
+  const r = await api('/api/channels', {method: 'POST', body}); closeWizard(); switchChannel(r.id);
+}
+
+initMeta().then(initChannels).then(loadProjects);
+</script>
+</body>
+</html>

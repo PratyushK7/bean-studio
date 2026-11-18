@@ -309,7 +309,8 @@ function plCard(p) {
     const head = `<div class="row" style="gap:10px;cursor:pointer;padding:6px 0" onclick="plToggle('${n}','${s.key}')">
       <span style="width:22px;text-align:center;font-weight:700;color:${fail ? '#c0262d' : state ? '#1b7f3b' : '#999'}">${dot}</span>
       <b style="${state || open ? '' : 'color:#888'}">${i + 1}. ${esc(info[0])}</b>
-      <span class="muted" style="${fail ? 'color:#c0262d' : ''}">${esc(state || s.note || (s.built ? '' : 'coming next'))}</span><span style="flex:1"></span>${open ? '' : chips}</div>`;
+      <span class="muted" style="${fail ? 'color:#c0262d' : ''}">${esc(state || s.note || (s.built ? '' : 'coming next'))}</span><span style="flex:1"></span>${open ? '' : chips}
+      ${state || s.note ? `<button class="act sec" style="padding:3px 10px;font-size:12px" onclick="event.stopPropagation();plShow('${n}','${s.key}')" title="See what this step made">👁 Show</button>` : ''}</div>`;
     return `<div style="border-top:1px solid #eee">${head}${open ? `<div style="margin:0 0 10px 32px;padding:10px 12px;background:#faf7f0;border-radius:8px">
       <div class="row" style="margin-bottom:6px;gap:6px">${chips}</div>
       <div class="muted" style="margin-bottom:8px">${p.new ? info[1] : esc(info[1])}</div>${p.new ? plActions2(p, s) : plActions(p, s)}</div>` : ''}</div>`;
@@ -344,6 +345,42 @@ function plActions(p, s) {
     default: return '<div class="muted">After the video is built.</div>';
   }
 }
+// ---------- 👁 Show: what a step has made (the script, the plan, the pictures, the voices, the videos...) ----------
+const SHOW_NAME = {script: 'The script', plan: 'The visual plan', prompts: 'The picture prompts', images: 'The pictures', review: 'The picture check',
+  upscale: 'The sharpened pictures', music: 'The music plan', cast: 'The voice cast', voice: 'The voice', sound: 'The sound mix', clips: 'The clips',
+  sample: 'The sample', video: 'The full video', render: 'The video', sheet: 'The upload sheet'};
+async function plShow(n, stage) {
+  $('#wizbox').style.width = 'min(1200px,100%)';
+  $('#wizbox').innerHTML = `<div class="row"><h2 style="margin:0">${esc(SHOW_NAME[stage] || stage)}</h2><span class="muted">${esc(n)}</span><span style="flex:1"></span><button class="act sec" onclick="closeWizard()">✕ Close</button></div><div id="shbody" class="muted" style="margin-top:12px">Loading…</div>`;
+  $('#wiz').classList.add('on');
+  let d; try { d = await api(`/api/pipeline/${n}/show/${stage}?channel=${encodeURIComponent(CH)}`); } catch (e) { $('#shbody').textContent = 'Could not load it.'; return; }
+  const texts = d.blocks.filter(b => b.type === 'text'), rest = d.blocks.filter(b => b.type !== 'text');
+  const pre = 'white-space:pre-wrap;word-break:break-word;max-height:62vh;overflow:auto;background:#fff;border:2px solid var(--ink);border-radius:10px;padding:12px;font:13px/1.6 Poppins,system-ui,sans-serif;margin:0';
+  const h = b => b.name ? `<h3 style="margin:16px 0 6px">${esc(b.name)}</h3>` : '';
+  const block = b => {
+    if (b.type === 'note') return `<div style="margin:6px 0"><b>${esc(b.text)}</b></div>`;
+    if (b.type === 'table') return h(b) + `<div style="max-height:62vh;overflow:auto;border:2px solid var(--ink);border-radius:10px;background:#fff"><table style="border-collapse:collapse;width:100%;font-size:13px">
+      <tr>${b.columns.map(c => `<th style="position:sticky;top:0;background:var(--soft);text-align:left;padding:6px 8px">${esc(c)}</th>`).join('')}</tr>
+      ${b.rows.map(r => `<tr>${r.map(x => `<td lang="hi" style="border-top:1px solid #eee;padding:6px 8px;vertical-align:top">${esc(x ?? '')}</td>`).join('')}</tr>`).join('')}</table></div>`;
+    if (b.type === 'pics') return h(b) + `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(${b.wide ? 420 : 210}px,1fr));gap:10px">${b.items.map(i => `<div class="card" style="padding:6px;box-shadow:2px 2px 0 var(--ink)">
+      <img src="${esc(i.url)}" loading="lazy" style="width:100%;border-radius:6px;cursor:zoom-in;display:block" onclick="window.open(this.src)">
+      <div style="font-size:12px;margin-top:4px"><b>${esc(i.label || '')}</b> ${i.note ? `<span class="chip ${i.note === 'approved' ? 'y' : ''}">${esc(i.note)}</span>` : ''}</div>
+      ${i.text ? `<div lang="hi" class="muted" style="font-size:12px">${esc(i.text)}</div>` : ''}</div>`).join('')}</div>`;
+    if (b.type === 'audio') return h(b) + b.items.map(i => `<div style="margin:8px 0"><b>${esc(i.label)}</b><br><audio controls preload="none" src="${esc(i.url)}" style="width:100%"></audio></div>`).join('');
+    if (b.type === 'video') return h(b) + `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(${b.items.length > 2 ? 300 : 520}px,1fr));gap:12px">${b.items.map(i => `<div>
+      <b style="font-size:13px">${esc(i.label)}</b> ${i.note ? `<span class="chip">${esc(i.note)}</span>` : ''}<video controls preload="none" src="${esc(i.url)}" style="width:100%;border-radius:8px;border:2px solid var(--ink);background:#000;margin-top:4px"></video></div>`).join('')}</div>`;
+    return '';
+  };
+  const tabs = texts.length > 1 ? `<div class="row" style="gap:6px;flex-wrap:wrap;margin:6px 0">${texts.map((t, i) => `<button class="act ${i ? 'sec' : ''}" style="padding:4px 10px;font-size:12px" onclick="shTab(${i})">${esc(t.name)}</button>`).join('')}</div>` : (texts[0] ? h(texts[0]) : '');
+  const textBox = texts.length ? tabs + texts.map((t, i) => `<pre class="shtext" lang="hi" style="${pre};${i ? 'display:none' : ''}">${esc(t.text)}</pre>`).join('') : '';
+  $('#shbody').className = '';
+  $('#shbody').innerHTML = (d.blocks.length ? rest.map(block).join('') + textBox : '<p class="muted">Nothing made for this step yet.</p>');
+}
+function shTab(i) {
+  document.querySelectorAll('#shbody .shtext').forEach((el, k) => el.style.display = k === i ? '' : 'none');
+  document.querySelectorAll('#shbody > .row button').forEach((el, k) => el.classList.toggle('sec', k !== i));
+}
+
 // ---------- + New video: each video gets its own Claude window (session), reopened from its card ----------
 let SESS = {};
 function nvOpen() {
@@ -862,7 +899,7 @@ function openWizard(src, i) {
     <div class="row" style="margin-top:16px; justify-content:flex-end"><button class="act sec" onclick="closeWizard()">Cancel</button><button class="act red" id="wizgo" onclick="makeVideo('${src}', ${i})">${long ? '🎬 Make the long video' : '🎬 Make the video'}</button></div>`;
   $('#wiz').classList.add('on');
 }
-function closeWizard() { $('#wiz').classList.remove('on'); }
+function closeWizard() { $('#wiz').classList.remove('on'); $('#wizbox').style.width = ''; }
 function hindiTopic(src, i) {
   if (src === 'ana') { const a = TANA[i], g = (a.tests || {}).gap || {}; return {title: (a.titles || [a.topic])[0], format: a.format, angle: a.angle, assumption: g.assumption, gap: g.truth, chapters: a.chapters, runtime_min: a.runtime_min, covered_by: (a.covered_by || []).map(c => `${c.channel}: ${c.title}${c.views ? ' (' + c.views.toLocaleString() + ')' : ''}`)}; }
   return (src === 'pick' ? TPICK : TOPT)[TKIND][i];

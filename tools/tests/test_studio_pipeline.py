@@ -107,6 +107,20 @@ def new_video_opens_its_own_claude_session_and_its_card_reopens_it():
     assert set(cl.get("/api/sessions").get_json()["sessions"]) == {slug, "old-video"}
 
 
+@test
+def show_buttons_return_what_each_step_made_and_serve_only_safe_files():
+    sys.path.insert(0, str(ROOT / "app")); import server
+    c = server.app.test_client(); H = {"X-Channel": "hindi"}; name = JEW.name
+    kinds = {}
+    for st in ("script", "plan", "prompts", "images", "review", "upscale", "music", "cast", "voice", "clips", "sample", "video", "sheet"):
+        r = c.get(f"/api/pipeline/{name}/show/{st}", headers=H); assert r.status_code == 200, (st, r.status_code)
+        kinds[st] = {b["type"] for b in r.get_json()["blocks"]}
+    assert "text" in kinds["script"] and "table" in kinds["plan"] and "pics" in kinds["images"] and "audio" in kinds["voice"] and "video" in kinds["sample"], kinds
+    assert c.get(f"/api/pipeline/{name}/show/nothing", headers=H).status_code == 400
+    assert c.get(f"/api/pipeline/{name}/file/script.json", headers=H).status_code == 400, "only sound, video and pictures"
+    assert c.get(f"/api/pipeline/{name}/file/..%2F..%2Fsecret.mp3", headers=H).status_code in (400, 404), "never outside the project"
+
+
 if __name__ == "__main__":
     for name, st, why in results: print(f"{st:4s} {name}" + (f"\n     {why}" if why else ""))
     bad = [r for r in results if r[1] != "ok"]

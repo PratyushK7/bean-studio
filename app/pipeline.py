@@ -435,11 +435,11 @@ def register(app, ROOT, cfg, start_agent, JOBS, start_job):
 
     @app.get("/api/pipeline/<name>/pic/<int:n>")
     def pipeline_pic(name, n):
-        """a 960 px preview of images/NNN.* (the originals are 2 MB each; the page shows many at once)"""
-        p = pdir(name)
-        src = next((f for f in (p / "images").glob(f"{n:03d}.*") if f.suffix.lower() in IMG), None)
+        """a 960 px preview of images/NNN.* (the originals are 2 MB each; the page shows many at once); ?hd=1 previews images-hd/NNN.png"""
+        p = pdir(name); hd = request.args.get("hd") == "1"
+        src = next((f for f in (p / ("images-hd" if hd else "images")).glob(f"{n:03d}.*") if f.suffix.lower() in IMG), None)
         if not src: abort(404, "no such picture")
-        out = p / "review" / "thumbs" / f"{n:03d}.jpg"
+        out = p / "review" / "thumbs" / f"{'hd-' if hd else ''}{n:03d}.jpg"
         if not out.exists() or out.stat().st_mtime < src.stat().st_mtime:
             out.parent.mkdir(parents=True, exist_ok=True)
             r = subprocess.run(["ffmpeg", "-y", "-v", "error", "-i", str(src), "-vf", "scale=960:-2", "-q:v", "4", str(out)], capture_output=True, text=True)
@@ -454,6 +454,103 @@ def register(app, ROOT, cfg, start_agent, JOBS, start_job):
         f = p / sub / fname
         if not f.is_file(): abort(404)
         return send_file(f)
+
+    SHOW_FILE = re.compile(r"^(?:(?:clips|voices|qa|review)/)?[\w.-]+\.(mp3|mp4|wav|jpg|png)$")
+
+    @app.get("/api/pipeline/<name>/file/<path:rel>")
+    def pipeline_file(name, rel):
+        """a sound, clip or picture a step made, for the Show panel (only these types, only inside the project)"""
+        p = pdir(name)
+        if not SHOW_FILE.match(rel): abort(400)
+        f = (p / rel).resolve()
+        if p.resolve() not in f.parents or not f.is_file(): abort(404)
+        return send_file(f, conditional=True)
+
+    @app.get("/api/pipeline/<name>/show/<stage>")
+    def pipeline_show(name, stage):
+        """what a step has made, as blocks the page draws: text, table, pics, audio, video. Read-only."""
+        p = pdir(name); n = p.name; ch = request.args.get("channel", "")
+        url = lambda rel: f"/api/pipeline/{name}/file/{rel}?channel={ch}"
+        pic = lambda k, hd=False: f"/api/pipeline/{name}/pic/{k}?channel={ch}" + ("&hd=1" if hd else "")
+        txt = lambda f: f.read_text(encoding="utf-8", errors="replace") if f.is_file() else None
+        script = _j(p / "script.json", {}) or {}; lines = script.get("lines", [])
+        hi = lambda i: (lines[i - 1].get("hi", "") if 0 < i <= len(lines) else "")
+        idx = _j(p / "images-index.json", []) or []; review = _j(p / "review.json", {}) or {}
+        B = []
+        def docs(names):
+            for label, f in names:
+                t = txt(f)
+                if t: B.append({"type": "text", "name": label, "text": t})
+        def pics(folder_hd=False, only=None):
+            have = {int(f.stem) for f in (p / ("images-hd" if folder_hd else "images")).glob("*") if f.stem.isdigit() and f.suffix.lower() in IMG} if (p / ("images-hd" if folder_hd else "images")).is_dir() else set()
+            rows = [e for e in idx if e.get("n") in have and (only is None or only(e))] or [{"n": k} for k in sorted(have)]
+            return [{"url": pic(e["n"], folder_hd), "label": f"#{e['n']}" + (f" · {e.get('shot') or e.get('name') or ''}" if e.get("shot") or e.get("name") else ""),
+                     "note": (review.get(str(e["n"])) or {}).get("status", ""), "text": " ".join(hi(i) for i in e.get("lines", [])[:2])} for e in rows]
+        if stage == "script":
+            docs([("The script", p / f"{n}-script.md"), ("Checker report", p / f"{n}-check.txt"), ("Editorial check", p / f"{n}-score.md"),
+                  ("Research", p / f"{n}-research.md"), ("Engine", p / f"{n}-engine.md"), ("Beat sheet", p / f"{n}-beats.md"), ("Hooks", p / f"{n}-hooks.md")])
+            comp = p / "research" / "competitors" / "competitors.json"
+            if comp.exists():
+                c = _j(comp, {}) or {}
+                B.append({"type": "table", "name": "Top videos on this topic", "columns": ["Views", "Channel", "Title", "Uploaded", "Length", "Transcript"],
+                          "rows": [[r.get("views"), r.get("channel"), r.get("title"), r.get("uploaded"), r.get("duration"), r.get("transcript")] for r in c.values()]})
+            if not B and lines: B.append({"type": "text", "name": "The script", "text": "\n".join(l.get("hi", "") for l in lines)})
+        elif stage == "plan":
+            plan = _j(p / "visual-plan.json", {}) or {}
+            B.append({"type": "table", "name": f"{len(plan.get('shots', []))} shots", "columns": ["Shot", "Lines", "Kind", "What we see", "Camera"],
+                      "rows": [[s.get("id"), ",".join(map(str, s.get("lines", []))), s.get("kind") or s.get("size"),
+                                (s.get("action") or json.dumps(s.get("graphic", {}), ensure_ascii=False))[:220], (s.get("camera") or {}).get("move", "")] for s in plan.get("shots", [])]})
+            if plan.get("characters"):
+                B.append({"type": "table", "name": "Characters", "columns": ["Who", "Looks"],
+                          "rows": [[k, (v.get("look") or v.get("description") or json.dumps(v, ensure_ascii=False))[:260] if isinstance(v, dict) else str(v)[:260]]
+                                   for k, v in (plan["characters"].items() if isinstance(plan["characters"], dict) else enumerate(plan["characters"]))]})
+        elif stage == "prompts":
+            docs([(f.name, f) for f in _files(p, "prompts/*.txt")])
+        elif stage in ("images", "review"):
+            items = pics()
+            if stage == "review":
+                cnt = {}
+                for it in items: cnt[it["note"] or "waiting"] = cnt.get(it["note"] or "waiting", 0) + 1
+                B.append({"type": "note", "text": " · ".join(f"{v} {k}" for k, v in sorted(cnt.items()))})
+                sheets = sorted((p / "review").glob("*.jpg")) if (p / "review").is_dir() else []
+                if sheets: B.append({"type": "pics", "name": "Contact sheets", "items": [{"url": url(f"review/{f.name}"), "label": f.stem} for f in sheets], "wide": True})
+            B.append({"type": "pics", "name": f"{len(items)} pictures", "items": items})
+        elif stage == "upscale":
+            items = pics(True); B.append({"type": "pics", "name": f"{len(items)} sharpened pictures", "items": items})
+        elif stage == "music":
+            mp = _j(p / "audio" / "music-plan.json", {}) or {}; mm = (_j(p / "audio" / "music-map.json", {}) or {}).get("moods", {})
+            B.append({"type": "table", "name": f"{len(mp.get('cues', []))} music cues", "columns": ["Line", "Mood", "Why", "The line"],
+                      "rows": [[c.get("line"), c.get("mood"), c.get("why"), hi(c.get("line") or 0)[:120]] for c in mp.get("cues", [])]})
+            if mm: B.append({"type": "table", "name": "Tracks per mood", "columns": ["Mood", "Tracks"], "rows": [[k, ", ".join(v.get("tracks", []))] for k, v in mm.items()]})
+        elif stage == "cast":
+            cast = _j(p / "voice-cast.json", {}) or {}
+            B.append({"type": "table", "name": "Who speaks in which voice", "columns": ["Who", "Sarvam (pro)", "Kokoro (free)"],
+                      "rows": [[k, " ".join(f"{a}={b}" for a, b in (v.get("sarvam") or {}).items()), " ".join(f"{a}={b}" for a, b in (v.get("kokoro") or {}).items())]
+                               for k, v in cast.items() if not k.startswith("_") and isinstance(v, dict)]})
+            au = [{"url": url(f"voices/{f}"), "label": lab} for f, lab in (("cast-free.mp3", "Free cast sample"), ("cast-sample.mp3", "Sarvam cast sample")) if (p / "voices" / f).exists()]
+            if au: B.append({"type": "audio", "items": au})
+        elif stage in ("voice", "sound"):
+            au = [{"url": url(f), "label": lab} for f, lab in (("voice.mp3", "Sarvam voice (pro)"), ("preview-local.mp3", "Free voice (Kokoro)"), ("mix.mp3", "Voice with music"), ("preview-mixed.mp3", "Free voice with music")) if (p / f).exists()]
+            if au: B.append({"type": "audio", "items": au})
+            docs([(f.name, f) for f in _files(p, "*.srt")][:1])
+        elif stage == "clips":
+            cl = [f for f in _files(p, "clips/*.mp4") if not f.stem.endswith("-48")]
+            if cl: B.append({"type": "video", "items": [{"url": url(f"clips/{f.name}"), "label": f.name} for f in cl]})
+            cp = _j(p / "clips-plan.json", {}) or {}
+            if cp.get("clips"): B.append({"type": "table", "name": "Planned clips", "columns": ["Clip", "Details"], "rows": [[str(c.get("n") or c.get("id") or i + 1), json.dumps(c, ensure_ascii=False)[:240]] for i, c in enumerate(cp["clips"])]})
+        elif stage in ("sample", "video", "render"):
+            want = (lambda f: f.name == "sample.mp4") if stage == "sample" else (lambda f: re.fullmatch(r"v\d+\.mp4", f.name) or f.name.startswith("video") and "-prev-" not in f.name)
+            vids = sorted((f for f in p.glob("*.mp4") if want(f)), key=lambda f: -f.stat().st_mtime)
+            if vids: B.append({"type": "video", "items": [{"url": url(f.name), "label": f"{f.name} · {round(f.stat().st_size / 1e6)} MB", "note": (_qa_for(p, f).get("verdict") or "")} for f in vids]})
+            for f in vids[:1]:
+                qs = [x for x in (f"qa/{f.stem}-shots.jpg", f"qa/{f.stem}-strips.jpg") if (p / x).exists()]
+                if qs: B.append({"type": "pics", "name": "QA sheets", "items": [{"url": url(x), "label": x[3:]} for x in qs], "wide": True})
+                docs([("QA report", p / "qa" / f"{f.stem}-report.md")])
+            if stage == "sample": docs([("Gate 2", p / "gate2.json")])
+        elif stage == "sheet":
+            docs([("Upload sheet", p / f"{n}-youtube.txt")])
+        else: abort(400, "unknown step")
+        return jsonify(stage=stage, blocks=B)
 
     @app.get("/api/pipeline/<name>/outputs")
     def pipeline_outputs(name):

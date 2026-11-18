@@ -333,6 +333,9 @@ acceleration. Do not claim them as working until a run proves them.
 `python app/server.py` (port 5173), choose the Decoding Vyapaar channel, open **Pipeline**. Each video shows its steps in order;
 only the current one is open, with plain words, who does it (Opus, automatic, you), what it costs, and its button. The steps read
 their state from the files, so the page cannot go stale, and a file made for an older script shows a warning.
+Every step that has made something has a **👁 Show** button that opens what it made: the script and its reports, the plan's shots,
+the prompts, the pictures with their review status, the sharpened pictures, the music cues, the cast with its samples, the voices,
+the clips, the sample and videos with their QA sheets, and the upload sheet (`/api/pipeline/<name>/show/<step>`, read-only).
 
 | Step | Button | What runs | Cost |
 |---|---|---|---|
