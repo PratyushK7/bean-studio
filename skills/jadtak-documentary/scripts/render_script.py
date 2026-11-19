@@ -42,7 +42,7 @@ def main():
         if cues: out.append(f"   - cues: {cues}")
     if doc.get("sources"): out += ["", "## Sources", ""] + [f"- {s}" for s in doc["sources"]]
     (folder / f"{slug}-script.md").write_text("\n".join(out) + "\n", encoding="utf-8")
-    (folder / f"{slug}-voice.txt").write_text("\n".join(l["text"] for l in lines) + "\n", encoding="utf-8")
+    (folder / f"{slug}-voice.txt").write_text("\n".join(l.get("say") or l["text"] for l in lines) + "\n", encoding="utf-8")
     print(folder / f"{slug}-script.md"); print(folder / f"{slug}-voice.txt")
 
 

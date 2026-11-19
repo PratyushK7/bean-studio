@@ -76,9 +76,10 @@ twice in the whole video**. The ledger holds the detail; the narration holds the
 
 - "आप" always; "सोचिए", "ध्यान दीजिए", "अब ज़रा रुककर सोचिए" at most 3 or 4 times a video, at real turns.
 - No "दोस्तों", no "चलिए शुरू करते हैं", no "वीडियो को अंत तक देखिए".
-- **CTA only at the end** (RZ and SM do the same): one question about the viewer's own experience or opinion tied to the
-  subject, then one line to subscribe, then stop. Optional in Long videos: one soft comment question at the act seam near
-  the middle, only after a payoff, never inside suspense. No "लाइक और शेयर कीजिए" before the last 30 seconds.
+- **One call to action, only at the end** (script-base, owner's rule 2026-11-20). Point to another Jad Tak video with
+  hook, curiosity, action: one more surprise, the gap that video fills, "yeh video dekhiye". Use "subscribe" only when
+  the channel has no other video to point to, and then use it alone. Never stack a comment question and subscribe
+  together. Never put a call to action mid-video.
 
 ## Writing for the voice (TTS and human)
 
@@ -88,6 +89,23 @@ twice in the whole video**. The ledger holds the detail; the narration holds the
 - Quotation marks only around recorded words (see `anecdote-engine.md`); the narrator says "उन्होंने कहा" before them.
 - Avoid two words that sound alike back to back; read every chapter aloud once (or listen to the scratch narration) before
   the evaluation.
+
+### What Sarvam (bulbul:v3) gets wrong, from the Neem Karoli Baba take (2026-11-19)
+
+Whisper flagged about 30 of 319 lines on the first take. A re-read fixed most of them. These patterns failed all three
+tries and had to be reworded:
+- **A short word followed by "का" or "को" can merge into one word:** "छत का" came out as "छटका". Add a comma, or switch to
+  a longer verb phrase ("एक छत से जुड़ा है").
+- **Retroflex clusters:** in "बूढ़े साधु को ढूँढ" the "बूढ़े" and "ढूँढ" blurred together. Use simpler words ("उसी साधु को खोज रहा था").
+- **Very short questions as their own sentence** ("मैं कौन हूँ?") came out garbled. Give them a lead-in word: "आख़िर, मैं कौन हूँ?".
+- **A Hindi word right before an English title** ("किताब छपी, बी हियर नाउ") came out mangled. Write the English title in
+  Devanagari, and put a little room before it ("एक किताब आई, "बी हियर नाउ"").
+
+**Rewording a failed line:**
+- Keep it **one sentence** in both `text` and `say`. An extra sentence becomes an extra line, which shifts every line
+  number in `audio-cues.json` (holds and music cues).
+- If you remove a comma, check the cues that point at a comma part of that line (`"at": "part:1"`). Move them to
+  `"at": "start"` with an `offset` in seconds.
 
 ## Smooth paragraphs
 

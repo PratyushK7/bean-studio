@@ -11,7 +11,7 @@ writes the readable `<slug>-script.md` and the voice text).
   "title": "नीम करोली बाबा: ...",
   "alt_titles": ["...", "..."],
   "channel": "jadtak",
-  "language": "hi",
+  "language": "hi-Latn (Hinglish on screen, Devanagari to the voice)",
   "band": "standard",
   "target_minutes": 20,
   "question": "क्या ...?",
@@ -29,7 +29,9 @@ writes the readable `<slug>-script.md` and the voice text).
 
 | Field | Required | Notes |
 |---|---|---|
-| `text` | yes | The Hindi narration, exactly as spoken, one sentence. |
+| `text` | yes | The narration in Hinglish (Latin script), one sentence: what the script, the cards and the subtitles show. |
+| `say` | yes | The same sentence in Devanagari, exactly as the voice speaks it. Same sentence count as `text` (the checker fails a mismatch). |
+| `cont` | set by the build | `true` on every part of a split source line except the last, so the voice gives it a short inner pause. |
 | `kind` | yes | `still`, `archive`, `card`, `map` |
 | `visual` | yes | English, what is on screen (see `references/visual-direction.md`). |
 | `prompt` | for a new AI still | composition only; no labels, disclaimers or Devanagari |
@@ -37,7 +39,7 @@ writes the readable `<slug>-script.md` and the voice text).
 | `credit` | for `archive` | on-screen credit |
 | `card` | for `card` and `map` | `{"type": ..., "props": {...}}` |
 | `camera`, `sound` | optional | editing and sound cues |
-| `chapter` | first line of each chapter | the on-screen chapter title, in Hindi, 3 to 6 words |
+| `chapter` | first line of each chapter | the on-screen chapter title, in Hinglish, 3 to 6 words |
 | `act` | first line of each act (Long band) | "Act 3: …" (English, for the plan) |
 | `facts` | every line that states a fact | ledger ids, e.g. `["F12", "RZ07"]` |
 | `beat` | recommended | one of `hook`, `promise`, `name`, `question`, `stamp`, `setup`, `escalation`, `rehook`, `reveal`, `payoff`, `explainer`, `attribution`, `maxim`, `handoff`, `callback`, `method`, `cta` |
@@ -45,9 +47,17 @@ writes the readable `<slug>-script.md` and the voice text).
 | `anecdote` | optional | the inventory id, e.g. `"A3"` |
 
 The checker uses `beat` to measure re-hook spacing (`hook`, `rehook`, `reveal`, `question`, `handoff`, `promise` count as
-pulls), `opens`/`closes` for the loop audit, and `facts` against the ledger.
+pulls), `opens`/`closes` for the loop audit, and `facts` against the ledger. Its narration rules (words, attribution,
+sentence length) read `say`.
+
+Card text is Hinglish too. Cards whose heading is a Hindi word take a `head` prop (`"head": "Kitab"` on a source card,
+`"head": "Matlab"` on a define card). With `"language": "hi-Latn…"`, `make_timeline.py` sets the chapter labels to
+"Shuruaat" and "Adhyay n".
 
 ## Example lines (the barber anecdote)
+
+Older scripts were Devanagari-only (`text` only); new scripts add a Hinglish `text` and move the Devanagari to `say`, e.g.
+`{"text": "Us aadmi ke chehre par saabun laga tha.", "say": "उस आदमी के चेहरे पर साबुन लगा था।", ...}`.
 
 ```json
 [

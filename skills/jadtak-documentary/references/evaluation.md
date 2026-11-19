@@ -56,7 +56,7 @@ not a score.
 7. No complete anecdote and no promise by the band's deadline (Short 1:30, Standard 0:05, Long 0:05).
 8. An open loop never closed (including a story mentioned and not told).
 9. More than 2 attribution phrases in any 30-second window, or more than 2 disclaimer phrases in the whole script.
-10. A CTA before the last 10% of the video (except the optional soft comment question in Long videos).
+10. A call to action before the last 10% of the video, or more than one call to action at the end (script-base).
 
 ## The evaluation file: `<slug>-eval.md`
 

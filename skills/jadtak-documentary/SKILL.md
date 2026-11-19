@@ -17,6 +17,12 @@ description: >-
 at a time. Jad Tak has the accessibility, curiosity, suspense, story density, simple explanations and pacing of the three
 reference documentaries, and a research trail none of them has.
 
+**The base (owner's rule, 2026-11-20):** read `~/.claude/skills/script-base/SKILL.md` first, before writing, rewriting
+or rating any script. It is the base of every Jad Tak script: title first and the questions it raises, a 30-second hook
+that proves the click, points that rise in importance joined by open loops, somebody wanted, but, so, then for the whole
+video, one call to action, and a read-aloud edit. This skill adds research, the ledger, Hindi and Hinglish narration and
+production on top. Where a structure rule here conflicts with script-base, script-base wins.
+
 **Two standards, both required.** A factually careful but boring script fails. An exciting script with one invented detail
 fails. The research lives in the ledger; the narration lives in the story.
 
@@ -76,6 +82,19 @@ a consequence decades later). Keep the extraordinary anecdotes: their evidence s
 whether.
 
 ### 5. Design the opening and the chapters
+Fill script-base's framework sheet in the plan first: the title, the 4 or 5 questions it raises, the one-sentence
+essence, one "somebody wanted, but, so, then" for the whole video, and the ending emotion. Then:
+- **Every story must answer one of the title's questions.** Cut a story that doesn't, however famous or surprising.
+  (In the Neem Karoli Baba v5 script, Steve Jobs, Zuckerberg, the visitor count and the train-name origin pulled away
+  from "was he Hanuman?" and made the video read like a list.)
+- **Order the stories by rising importance toward the answer**, in time order unless a jump earns its place. Don't hop
+  between decades from chapter to chapter.
+- **Few sections:** Short 3, Standard 4 to 5, Long 6 to 7. No "Adhyay" cards on screen unless the story has real acts;
+  the YouTube chapters in the description are enough. A teaser line at the end of every section reads as manufactured:
+  use an open loop only where the next part really is bigger.
+- **The hook proves the click within 30 seconds:** the title's subject and question are in the narration by then. Don't
+  spend three minutes on a side character first.
+
 Pick the central question, its honest answer and the takeaway. Choose the cold open, the best story's slot, the seed and
 its payoff, the emotional low, and the callback. Lay the chapters on the band's template
 (`references/runtime-templates.md`). Every chapter answers a question and hands over a new one. List what is withheld.
@@ -94,18 +113,32 @@ Write `script.json` (`templates/script-schema.md`), one spoken sentence per line
   appears once, near the end, if the evidence is thin.
 - Every fact-bearing line carries its ledger ids in `facts`; every line carries a `beat`; loops use `opens`/`closes`.
 - Long band: write act by act and re-read each act against the plan before the next.
+- **Write the Hinglish first, the way a person talks** (owner's rule, 2026-11-20). Say "Second World War ke time", "UN ka
+  doctor" and "request ki", not "Dwitiya Vishwa Yudh ka samay", "Sanyukt Rashtra ke doctor" and "vinti ki". Then make
+  the Devanagari `say` from the Hinglish. Never transliterate a formal Hindi draft: the v5 script did, and it sounded
+  bookish. Vary sentence openings: no more than about 1 line in 15 should start with "Aur", "Lekin" or "Phir". Use a
+  one-word dramatic line at most once a section.
+- **Language (owner's rule, 2026-11-19):** everything shown is Hinglish in Latin script: the script the owner reads, the
+  cards and the subtitles. Each line's `text` is Hinglish, and its `say` is the same sentence in Devanagari for the
+  narrator, because Sarvam reads Devanagari reliably. Keep two aligned source files (pattern: `build_v5.py` in
+  `videos/neem-karoli-baba-hanuman-ansh`) with the same sentences in the same order.
 
 ### 8. Add the visual directions
 For every line: `kind`, an English `visual`, and as needed a `prompt` (composition only: no labels, disclaimers or
 Devanagari), a `card` from the Remotion catalogue, `camera` and `sound` (`references/visual-direction.md`). Never present
 an AI image as archival.
+Reuse an existing picture only if it shows what the line says: the right person, age, time of day and action. A boy's
+line gets a boy, a "burning heat" line doesn't get a night scene, and a skeptic doesn't get a praying man. Otherwise
+write a new prompt and generate the picture in ChatGPT.
 
 ### 9. Evaluate
 ```bash
 python ~/.claude/skills/jadtak-documentary/scripts/scriptcheck.py channels/jadtak/videos/<slug> --out channels/jadtak/videos/<slug>/<slug>-check.md
 ```
-Fix every hard fail. Then score both scorecards in `references/evaluation.md` as an independent editor, with evidence, and
-fix until both pass (average ≥ 8, no dimension < 7). Write `<slug>-eval.md`.
+Fix every hard fail. Then score script-base's 10-point review, and both scorecards in `references/evaluation.md`, as an
+independent editor with evidence (line numbers). Fix until the 10-point review is at least 8/10 and both scorecards pass
+(average ≥ 8, no dimension < 7). Below 8/10, rewrite rather than patch. Write all three into `<slug>-eval.md`. Then do
+script-base's edit: rest it, comment line by line, read it aloud, check the flow.
 
 ### 10. Deliver
 ```bash
@@ -143,6 +176,12 @@ A few lines, then stop:
 - **Edit:** the Remotion project `channels/jadtak/remotion/` (`make_timeline.py <slug>` reads `frame`, `card`, `credit`
   and `chapter` from `script.json`; `npx remotion render`).
 - **Voice:** the scratch narration is free; any paid voice (Sarvam or others) waits for the owner's OK on the cost.
+  `channels/jadtak/voice/make_voice.py <slug>` reads one line per request, so line times are exact. The pause after each
+  line comes from its beat (`voice.json` "pauses": escalation runs on; reveal, payoff and question get room). Whisper
+  (free, local) then listens to every line, and a line with dropped or garbled words is re-recorded up to twice. Lines
+  that still fail are listed in `voice/voice-check.md`; reword them and re-run. `make_timeline.py` refuses a take that
+  hasn't passed. Never use `--chunks`: reading many lines per request dropped words and put pauses mid-sentence (the
+  Neem Karoli Baba take, 2026-11-19).
 - Subtitles are never burned in.
 
 ## References

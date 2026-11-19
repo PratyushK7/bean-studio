@@ -42,7 +42,7 @@ Model: RZ (four stories, one death question, fast transitions). Fast, story-to-s
 | 8:10 to 10:00 | 290 | **Story 4: the turning point or the ending** | Date stamp; contradiction + question (D7); the detailed chain of events; belief/record pair (D18). |
 | 10:00 to 10:35 | 90 | **Present day + answer** | "आज भी ..." (D20). Answer the central question in two sentences: what the record shows, what belief holds. |
 | 10:35 to 10:50 | 40 | **Callback** | Return to the first image with its new meaning (D17). |
-| 10:50 to 11:00 | 30 | **CTA** | One question about the viewer's own experience; subscribe in one line. |
+| 10:50 to 11:00 | 30 | **CTA** | One call to action: the next Jad Tak video (hook, curiosity, action). |
 
 Rules for this band: transitions are one sentence; no chapter recaps; no method note longer than one sentence (place it
 inside the answer); at most one concept explainer per story.
@@ -66,7 +66,7 @@ Model: SM's shape (a complete outsider story as the cold open, then the life) wi
 | 16:00 to 18:15 | 360 | **Ch 6: The ending** | Foreboding signs (only if sourced), the dated chain of events, the belief/record pair (D18). |
 | 18:15 to 19:30 | 200 | **Ch 7: Legacy** | The poignant near-miss (D16), one or two modern connections with sources, the present day (D20). |
 | 19:30 to 19:50 | 55 | **Payoff** | Answer the central question; the one sentence worth remembering. |
-| 19:50 to 20:00 | 30 | **Callback + CTA** | The cold open's image with its new meaning; one viewer question; subscribe. |
+| 19:50 to 20:00 | 30 | **Callback + CTA** | The cold open's image with its new meaning; one call to action to the next video. |
 
 Rules: every chapter seam has a re-hook (the last line of a chapter opens the next); one mid-chapter re-hook every ~90 s;
 re-orient with a date stamp when time jumps; one method note, at most two sentences, in the payoff.
@@ -95,7 +95,7 @@ Choose one spine and say it in the outline:
 | 30:30 to 33:30 | 480 | **Act 6: The ending** | Sourced foreboding, the dated chain, the belief/record pair, a callback line to an Act 3 miracle (D17). |
 | 33:30 to 36:30 | 480 | **Act 7: Legacy** | Near-miss story (D16), modern connections, then "अब ज़रा रुककर सोचिए" (D19). |
 | 36:30 to 37:45 | 200 | **Resolution** | The honest answer to the central question; the method note in two sentences (D22); the callback that gives the cold open its new meaning (D17). |
-| 37:45 to 38:00 | 40 | **Closing line + CTA** | One closing line in the narrator's words, a viewer question, subscribe. |
+| 37:45 to 38:00 | 40 | **Closing line + CTA** | One closing line in the narrator's words, then one call to action to the next video. |
 
 Rules: each act opens with a date-place stamp or a time jump and a one-line re-orientation ("अब तक हमने देखा ... अब ..."
 only at act seams, never inside an act); each act ends with a handoff line; no more than two acts in a row with the same

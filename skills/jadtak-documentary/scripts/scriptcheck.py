@@ -6,15 +6,16 @@ Hard fails exit with code 1. No API, no cost.
 Reads the ledger named in script.json ("ledger"), plus any --ledger files, plus this skill's references/reference-claims.md
 (so the reference-video ids RZ.., SM.., AG.. resolve). Times come from scratch/scratch-narration-lines.json when it matches the
 script, otherwise from 160 words a minute."""
+from collections import Counter
 import json, re, sys, unicodedata
 from pathlib import Path
 
 SKILL = Path(__file__).resolve().parent.parent
 WPM = 160
-BANDS = {  # words, re-hook gap (s), a reveal must land by (s), chapters
-    "short": {"words": (1600, 1900), "gap": 60, "reveal_by": 90, "chapters": 4},
-    "standard": {"words": (2900, 3500), "gap": 90, "reveal_by": 180, "chapters": 6},
-    "long": {"words": (5600, 6400), "gap": 120, "reveal_by": 240, "chapters": 9},
+BANDS = {  # words, re-hook gap (s), a reveal must land by (s), most sections (script-base: few sections, one story)
+    "short": {"words": (1600, 1900), "gap": 60, "reveal_by": 90, "chapters": 3},
+    "standard": {"words": (2900, 3500), "gap": 90, "reveal_by": 180, "chapters": 5},
+    "long": {"words": (5600, 6400), "gap": 120, "reveal_by": 240, "chapters": 7},
 }
 KINDS = {"still", "archive", "card", "map"}
 PULLS = {"hook", "rehook", "reveal", "question", "handoff", "promise", "stamp"}
@@ -59,6 +60,12 @@ def ledger_rows(paths):
     return rows
 
 
+
+def said(l):
+    """the words the narrator speaks: the Devanagari `say` of a Hinglish script, else `text`"""
+    return l.get("say") or l.get("text", "")
+
+
 def main():
     args = sys.argv[1:]
     if not args: sys.exit(__doc__)
@@ -81,11 +88,22 @@ def main():
     if not times:
         times, s = [], 0.0
         for l in lines:
-            d = len(l.get("text", "").split()) / WPM * 60 + 0.35; times.append((s, s + d)); s += d
+            d = len(said(l).split()) / WPM * 60 + 0.35; times.append((s, s + d)); s += d
         info.append("timings estimated at 160 words a minute (no matching scratch narration)")
     total = times[-1][1] if times else 0
     mmss = lambda s: f"{int(s // 60)}:{int(s % 60):02d}"
-    words = sum(len(l.get("text", "").split()) for l in lines)
+    words = sum(len(said(l).split()) for l in lines)
+
+    # H1b Hinglish scripts: `text` is shown (Latin), `say` is spoken (Devanagari); both must be the same sentences
+    if any(l.get("say") for l in lines):
+        for n, l in enumerate(lines, 1):
+            t, v = l.get("text", ""), l.get("say", "")
+            if not v: hard.append(f"L{n}: no 'say' (every line needs the Devanagari text when any line has one)"); continue
+            if re.search(r"[ऀ-ॿ]", t): warn.append(f"L{n}: Devanagari in the shown Hinglish text")
+            if len(re.findall(r"[.?!]+", t)) != len(re.findall(r"[।?!]+", v)):
+                hard.append(f"L{n}: 'text' and 'say' have different sentence counts")
+            if re.search(r"[ऀ-ॿ]", json.dumps(l.get("card", {}).get("props", {}), ensure_ascii=False)):
+                warn.append(f"L{n}: Devanagari on a card in a Hinglish script")
 
     # H1 schema
     for n, l in enumerate(lines, 1):
@@ -99,7 +117,7 @@ def main():
         for i in ids:
             if i not in rows: hard.append(f"L{n}: fact id {i} is not in the ledger")
         sts = [rows.get(i, "") for i in ids]
-        text = l.get("text", "")
+        text = said(l)
         if re.search(r'["“”]', text):
             if not any(s in QUOTE_OK for s in sts):
                 hard.append(f"L{n}: quotation without a quotable ledger row (needs established/reported/account): {ids or 'no ids'}")
@@ -121,7 +139,7 @@ def main():
             if NFD(b) in shown: hard.append(f"L{n}: on-screen label '{b}' in the card (no footnotes on screen)")
 
     # H6 opening
-    first = " ".join(l.get("text", "") for l in lines[:2])
+    first = " ".join(said(l) for l in lines[:2])
     for b in OPENING_BAN:
         if b in first: hard.append(f"opening: '{b}' in the first two lines (open inside a story)")
     if lines and lines[0].get("beat") in ("cta", "method"): hard.append("opening: the first line is a CTA or a method note")
@@ -145,20 +163,20 @@ def main():
     # H8 attribution density, disclaimers
     hits = []
     for n, l in enumerate(lines):
-        c = len(ATTRIB_RE.findall(NFD(l.get("text", ""))))
+        c = len(ATTRIB_RE.findall(NFD(said(l))))
         if c: hits += [times[n][0]] * c
     for i in range(len(hits)):
         win = [h for h in hits if hits[i] <= h < hits[i] + 30]
         if len(win) > 2:
             hard.append(f"attribution: {len(win)} source phrases within 30 s from {mmss(hits[i])} (limit 2)"); break
     if total and len(hits) / (total / 60) > 1.0: warn.append(f"attribution: {len(hits)} phrases in {mmss(total)} (more than one a minute)")
-    disc = [(n + 1, d) for n, l in enumerate(lines) for d in DISCLAIM if d in l.get("text", "")]
+    disc = [(n + 1, d) for n, l in enumerate(lines) for d in DISCLAIM if d in said(l)]
     if len(disc) > 2: hard.append(f"disclaimers: {len(disc)} in the script (limit 2): " + ", ".join(f"L{n} '{d}'" for n, d in disc))
 
     # H9 CTA position
     for n, l in enumerate(lines):
         if times[n][0] < 0.9 * total:
-            t = l.get("text", "")
+            t = said(l)
             if any(c in t for c in CTA_HARD): hard.append(f"L{n + 1}: like/share/subscribe before the last 10% ({mmss(times[n][0])})")
             elif "कमेंट" in t:
                 (warn if doc.get("band") == "long" else hard).append(f"L{n + 1}: comment prompt before the last 10% ({mmss(times[n][0])})")
@@ -166,18 +184,18 @@ def main():
     # warnings: length, sentences, words, rhythm
     lo, hi = band["words"]
     if not lo <= words <= hi: warn.append(f"length: {words} words for band '{doc.get('band', 'standard')}' ({lo} to {hi})")
-    long_s = [(n, len(l["text"].split())) for n, l in enumerate(lines, 1) if len(l.get("text", "").split()) > 22]
+    long_s = [(n, len(said(l).split())) for n, l in enumerate(lines, 1) if len(said(l).split()) > 22]
     for n, w in long_s: warn.append(f"L{n}: {w} words in one sentence (ceiling 22)")
     for n, l in enumerate(lines, 1):
-        t = l.get("text", "")
+        t = said(l)
         for f in FORMAL:
             if f in t: warn.append(f"L{n}: formal word '{f}'")
         if re.search(r"[A-Za-z]", t): warn.append(f"L{n}: Latin letters in narration (the voice reads Devanagari)")
         if re.search(r"[/%&()\[\]]|डॉ\.|किमी", t): warn.append(f"L{n}: symbol or abbreviation in narration")
         if l.get("kind") == "still" and not (l.get("frame") or l.get("prompt")): warn.append(f"L{n}: still with no frame and no prompt")
         if l.get("kind") in ("card", "map") and not l.get("card"): warn.append(f"L{n}: {l['kind']} with no card spec")
-    if sum(l.get("text", "").count("दोस्तों") for l in lines) > 1: warn.append("'दोस्तों' more than once")
-    qpm = sum(l.get("text", "").count("?") for l in lines) / max(total / 60, 1)
+    if sum(said(l).count("दोस्तों") for l in lines) > 1: warn.append("'दोस्तों' more than once")
+    qpm = sum(said(l).count("?") for l in lines) / max(total / 60, 1)
     if qpm > 2: warn.append(f"{qpm:.1f} questions a minute (aim for 2 or fewer)")
     pulls = [times[n][0] for n, l in enumerate(lines) if l.get("beat") in PULLS] + [total]
     prev = 0.0
@@ -185,12 +203,17 @@ def main():
         if t - prev > band["gap"]: warn.append(f"re-hook gap {mmss(prev)} to {mmss(t)} ({int(t - prev)} s; band limit {band['gap']} s)")
         prev = t
     starts = [n for n, l in enumerate(lines) if l.get("chapter")]
-    if len(starts) < band["chapters"]: warn.append(f"{len(starts)} chapters (band expects about {band['chapters']}+)")
+    if len(starts) > band["chapters"]: warn.append(f"{len(starts)} chapters (band allows {band['chapters']}; each one breaks the story)")
     for b in starts[1:]:
         if lines[b - 1].get("beat") not in ("handoff", "rehook", "question", "reveal"):
             warn.append(f"L{b}: last line of a chapter is not a handoff/rehook/question/reveal")
-    cta_end = any(any(c in l.get("text", "") for c in CTA_HARD + ["कमेंट"]) for l in lines[-4:])
-    if not cta_end: warn.append("no CTA in the last lines")
+    kinds = {k for l in lines[-4:] for k, ws in (("subscribe", CTA_HARD), ("comment", ["कमेंट"])) if any(w in said(l) for w in ws)}
+    if len(kinds) > 1: hard.append("more than one call to action at the end (script-base: one, ideally the next video)")
+    if not any(l.get("beat") == "cta" for l in lines[-4:]): warn.append("no call to action in the last lines")
+    opens = Counter(said(l).split()[0].strip(",") for l in lines if said(l).split())
+    for w, c in opens.items():
+        if w in ("और", "लेकिन", "फिर") and c > len(lines) / 15:
+            warn.append(f"{c} lines start with '{w}' (aim for at most {len(lines) // 15}; vary the openings)")
 
     rep = [f"# scriptcheck: {doc.get('title', sj.name)}", "",
            f"{len(lines)} lines · {words} words · about {mmss(total)} · band {doc.get('band', 'standard')} · ledger ids known: {len(rows)}", "",

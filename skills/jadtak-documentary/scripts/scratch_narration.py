@@ -18,9 +18,10 @@ k = Kokoro(str(KIT / "models/kokoro-v1.0.onnx"), str(KIT / "models/voices-v1.0.b
 SR, voice, speed = 24000, "hm_omega", 1.0
 chunks, times, t, t0 = [], [], 0.0, time.time()
 for i, l in enumerate(lines):
-    spoken = l["text"].replace("।", ".")   # Kokoro reads the danda aloud ("purn viram"); a full stop gives the pause
+    said = l.get("say") or l["text"]   # a Hinglish script's spoken text is the Devanagari `say`
+    spoken = said.replace("।", ".")   # Kokoro reads the danda aloud ("purn viram"); a full stop gives the pause
     a, sr = k.create(spoken, voice=voice, speed=speed, lang="hi"); a = a.astype("float32"); assert sr == SR
-    pause = 0.9 if l.get("chapter") and i else (0.45 if l["text"].rstrip().endswith(("?", "।", ".", "!")) else 0.3)
+    pause = 0.9 if l.get("chapter") and i else (0.45 if said.rstrip().endswith(("?", "।", ".", "!")) else 0.3)
     times.append({"i": i + 1, "start": round(t, 2), "end": round(t + len(a) / SR, 2), "chapter": l.get("chapter", "")})
     chunks += [a, np.zeros(int(SR * pause), dtype="float32")]; t += len(a) / SR + pause
     if (i + 1) % 15 == 0: print(f"{i + 1}/{len(lines)} lines, {t / 60:.1f} min audio, {time.time() - t0:.0f}s elapsed", flush=True)

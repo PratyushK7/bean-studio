@@ -5,6 +5,8 @@ description: Makes a long, narrated, funny explainer video (16:9, 1920x1080, 4 t
 
 # line-boil-wide
 
+**The script base (owner's rule, 2026-11-20):** read `~/.claude/skills/script-base/SKILL.md` before writing, rewriting or rating the narration of any long video. Use it for: title first and the questions it raises, a 30-second hook that proves the click, points that rise in importance joined by open loops, somebody wanted, but, so, then, one call to action, and a read-aloud edit. Rate every script with its 10-point review (rewrite below 8/10). This skill adds what is specific to line-boil long videos on top; where its structure rules conflict with script-base, script-base wins.
+
 A topic in, a finished `<project>/<project>.mp4` (1920x1080) plus its `.srt`, `-chapters.txt`, `-thumbnail.png` (1280x720) and
 `-youtube.txt` out. It is **the same engine as line-boil**, in a 16:9 format. Read these first, because everything in them still applies
 and this file only adds what is different for a long video:

@@ -18,6 +18,8 @@ description: >-
 
 # Decoding Vyapaar: the script architect
 
+**The script base (owner's rule, 2026-11-20):** read `~/.claude/skills/script-base/SKILL.md` before writing, rewriting or rating a Decoding Vyapaar script. Use it for: title first and the questions it raises, a 30-second hook that proves the click, points that rise in importance joined by open loops, somebody wanted, but, so, then, one call to action, and a read-aloud edit. Rate every script with its 10-point review (rewrite below 8/10). This skill adds what is specific to Decoding Vyapaar on top; where its structure rules conflict with script-base, script-base wins.
+
 **Core principle: one video is one central question, one clear storyline and one useful takeaway, told as a story.** Every
 fact arrives as something that happens to someone. Each chapter teaches one thing and leaves the viewer wanting the next.
 Clarity beats completeness: a research finding that does not help answer the central question stays in the research file.

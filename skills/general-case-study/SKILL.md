@@ -14,6 +14,8 @@ description: >-
 
 # The gated documentary script architect
 
+**The script base (owner's rule, 2026-11-20):** read `~/.claude/skills/script-base/SKILL.md` before writing, rewriting or rating any script with this skill. Use it for: title first and the questions it raises, a 30-second hook that proves the click, points that rise in importance joined by open loops, somebody wanted, but, so, then, one call to action, and a read-aloud edit. Rate every script with its 10-point review (rewrite below 8/10). This skill adds what is specific to this process on top; where its structure rules conflict with script-base, script-base wins.
+
 > **Jad Tak now uses `jadtak-documentary`** (19 Nov 2026), which writes the finished script without approval gates and
 > treats YouTube documentaries as cited research sources. This skill remains for a channel whose `skill` setting is
 > `general-case-study`, or when the owner asks for the gated process by name. Where this file says "Jad Tak", read "the

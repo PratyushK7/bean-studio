@@ -5,6 +5,8 @@ description: Makes a narrated, funny explainer video in a hand-drawn cartoon sty
 
 # line-boil
 
+**The script base (owner's rule, 2026-11-20):** read `~/.claude/skills/script-base/SKILL.md` before writing, rewriting or rating the narration of any Short. Use it for: title first and the questions it raises, a 30-second hook that proves the click, points that rise in importance joined by open loops, somebody wanted, but, so, then, one call to action, and a read-aloud edit. Rate every script with its 10-point review (rewrite below 8/10). This skill adds what is specific to line-boil Shorts on top; where its structure rules conflict with script-base, script-base wins.
+
 A topic in, a finished `<project>/<project>.mp4` out. Every picture is drawn in code with an ink engine that makes
 the whole frame boil. A worked example, "Why is the sky blue?", ships in `engine/example`. Its `web/shots.js` is
 the best reference for how a reel is put together, so read it before writing your first shots.
