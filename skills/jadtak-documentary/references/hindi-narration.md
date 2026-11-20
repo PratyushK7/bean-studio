@@ -76,10 +76,16 @@ twice in the whole video**. The ledger holds the detail; the narration holds the
 
 - "आप" always; "सोचिए", "ध्यान दीजिए", "अब ज़रा रुककर सोचिए" at most 3 or 4 times a video, at real turns.
 - No "दोस्तों", no "चलिए शुरू करते हैं", no "वीडियो को अंत तक देखिए".
-- **One call to action, only at the end** (script-base, owner's rule 2026-11-20). Point to another Jad Tak video with
-  hook, curiosity, action: one more surprise, the gap that video fills, "yeh video dekhiye". Use "subscribe" only when
-  the channel has no other video to point to, and then use it alone. Never stack a comment question and subscribe
-  together. Never put a call to action mid-video.
+- **Calls to action, owner's channel rule (2026-11-20; see script-base §7):**
+  - **One clever mid-video subscribe ask** (beat `midroll`), about halfway, right after an open loop. Tie it to "har
+    kahani ki jad tak", then hand back to the story in the same breath. Never inside suspense, never twice.
+  - **A graceful closing after the final payoff:**
+    1. one comment question tied to the video's question
+    2. like and subscribe in one warm line
+    3. a sign-off, e.g. "Agli kahani mein phir milenge, ek naye sawal ke saath. Tab tak ke liye, Ram Ram." (fit the greeting to the subject)
+    4. a 15 to 20 s end screen with music (`"end_screen": 20` in script.json)
+
+    When another Jad Tak video exists, the like-and-subscribe line also points to it ("yeh video dekhiye").
 
 ## Writing for the voice (TTS and human)
 

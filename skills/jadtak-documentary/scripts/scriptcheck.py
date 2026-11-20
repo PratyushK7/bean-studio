@@ -173,9 +173,13 @@ def main():
     disc = [(n + 1, d) for n, l in enumerate(lines) for d in DISCLAIM if d in said(l)]
     if len(disc) > 2: hard.append(f"disclaimers: {len(disc)} in the script (limit 2): " + ", ".join(f"L{n} '{d}'" for n, d in disc))
 
-    # H9 CTA position
+    # H9 CTA position: only the one mid-video ask (beat "midroll", owner's rule 2026-11-20) may come before the last 10%
+    mids = [n + 1 for n, l in enumerate(lines) if l.get("beat") == "midroll"]
+    if len(mids) > 1: hard.append(f"{len(mids)} mid-video subscribe asks (one only): lines {mids}")
+    for n in mids:
+        if not 0.3 * total <= times[n - 1][0] <= 0.75 * total: warn.append(f"L{n}: mid-video ask at {mmss(times[n - 1][0])} (aim for the middle third, after an open loop)")
     for n, l in enumerate(lines):
-        if times[n][0] < 0.9 * total:
+        if times[n][0] < 0.9 * total and l.get("beat") != "midroll":
             t = said(l)
             if any(c in t for c in CTA_HARD): hard.append(f"L{n + 1}: like/share/subscribe before the last 10% ({mmss(times[n][0])})")
             elif "कमेंट" in t:
@@ -207,8 +211,10 @@ def main():
     for b in starts[1:]:
         if lines[b - 1].get("beat") not in ("handoff", "rehook", "question", "reveal"):
             warn.append(f"L{b}: last line of a chapter is not a handoff/rehook/question/reveal")
-    kinds = {k for l in lines[-4:] for k, ws in (("subscribe", CTA_HARD), ("comment", ["कमेंट"])) if any(w in said(l) for w in ws)}
-    if len(kinds) > 1: hard.append("more than one call to action at the end (script-base: one, ideally the next video)")
+    end = [l for l in lines[-6:] if l.get("beat") in ("cta", "signoff")]
+    if not any("कमेंट" in said(l) for l in end): warn.append("closing: no comment question (owner's closing sequence: comment, like and subscribe, sign-off)")
+    if not any(l.get("beat") == "signoff" for l in end): warn.append("closing: no sign-off line (beat 'signoff')")
+    if not doc.get("end_screen"): warn.append("closing: no end_screen seconds in script.json (15 to 20 s for YouTube's end screen)")
     if not any(l.get("beat") == "cta" for l in lines[-4:]): warn.append("no call to action in the last lines")
     opens = Counter(said(l).split()[0].strip(",") for l in lines if said(l).split())
     for w, c in opens.items():

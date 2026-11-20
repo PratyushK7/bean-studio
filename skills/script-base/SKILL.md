@@ -5,7 +5,8 @@ description: >-
   or any other), taken from the owner's chosen course, "Full YouTube Script Writing Course (1+ Hour)". Title first; the
   questions the title raises; a 30-second hook that proves the click was right; a body of points that each matter more
   than the last, joined by open loops and answering why, what and how; real storytelling (somebody wanted, but, so,
-  then; contrast; start with the end in mind); one call to action; and a ruthless edit read aloud. Ends with a 10-point
+  then; contrast; start with the end in mind); one clever mid-video subscribe ask and a graceful closing (the owner's
+  channel rule); and a ruthless edit read aloud. Ends with a 10-point
   review used to rate any script out of 10. Read this before writing, rewriting or rating any video script. The channel's
   own skill (jadtak-documentary, hindi-case-study, general-case-study, line-boil, line-boil-wide) then adds its research,
   facts and production rules on top.
@@ -146,6 +147,22 @@ about 250 words, 1 to 2 minutes. It must still be about the title.
 
 ## 7. The outro and the call to action
 
+**The owner's channel rule (2026-11-20) overrides the course here:**
+- **One clever subscribe ask in the middle,** about halfway, placed right after an open loop. The viewer wants the next
+  part, so the ask is short. Tie it to the channel's promise, then hand straight back to the story.
+  > "Us aadmi ki kahani se pehle, bas ek chhoti si baat. Jad Tak par hum har kahani ko uski jad tak le jaate hain, aur
+  > agar yeh safar aapko achha lag raha hai, toh channel ko subscribe kar lijiye. Kyunki ab jo gawahi aa rahi hai, woh is
+  > kahani ki sabse ajeeb gawahi hai."
+
+  Mark it with the beat `midroll`. Never put it inside suspense, and never twice.
+- **A graceful closing sequence after the final payoff:**
+  1. one comment question tied to the video's question
+  2. like and subscribe in one warm sentence
+  3. a sign-off ("Agli kahani mein phir milenge…")
+  4. a 15 to 20 second end screen with music, for YouTube's end-screen elements (`"end_screen"` in script.json)
+
+The course's rules below still apply to everything else.
+
 - **One call to action only.** More than one confuses the viewer.
 - **Point to another video** with **hook, curiosity, action**: catch the viewer's attention once more just before the
   end, open a knowledge gap the next video fills, then tell them to watch it. The course says this lifts end-screen
@@ -192,7 +209,8 @@ Ending emotion:
 Hook: first line (type) + backing lines + context, stakes, payoff (answers the questions)
 Body, for each point (in rising importance):
   open loop -> why / what / how (or: the scene / why it matters / what it proves) -> example, evidence, visual -> payoff
-Call to action: the point that links to this video -> the curiosity gap -> watch this next video
+Mid-video ask: after which open loop (about halfway), tied to the channel's promise
+Closing: comment question -> like and subscribe (+ next video if one exists) -> sign-off -> end screen 15 to 20 s
 Edit: rested, commented, read aloud, flow checked, grammar checked
 ```
 
@@ -209,8 +227,8 @@ Score each item 1 (done), 0.5 (partly) or 0 (missing), and give evidence (line n
 7. **Every point answers why, what and how** (or scene, why it matters, what it proves) with evidence, shown not told.
 8. **It is a story:** someone wants something, against an obstacle, with contrast between states. Somebody, wanted,
    but, so, then holds for the whole video.
-9. **The ending was planned first:** the final emotion lands, and there is one call to action, made with hook,
-   curiosity, action.
+9. **The ending was planned first:** the final emotion lands; one clever mid-video subscribe ask sits after an open
+   loop; the closing is a comment question, like and subscribe, a sign-off and a 15 to 20 s end screen (§7).
 10. **It is edited:** logical flow line to line, every line earns its place, it reads aloud cleanly, and it passes
     "would I pay to watch this?".
 
