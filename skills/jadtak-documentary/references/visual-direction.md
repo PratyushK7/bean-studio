@@ -35,6 +35,18 @@ Real people: a likeness is allowed where the owner has decided so (Jad Tak: the 
 recently living public figures (business leaders, actors, cricketers) are shown from licensed photos or as unidentifiable
 figures (back view, silhouette, hands), never as generated faces.
 
+**The same person looks the same in every picture (owner's rule, 2026-11-20).** In the Neem Karoli Baba video one still
+(n38) showed "the Baba" as a long-haired, long-white-bearded sadhu in white, and another (n15) gave the young Baba an
+unrelated face; the owner caught both after the render. So:
+- Write one **look line** per recurring person and paste it word for word into every prompt that shows them (for the
+  saint: bald or close-cropped, short white beard, round heavy build, checked woollen blanket). A prompt that names the
+  person without the look line is a fail.
+- An "old saint" or "guru" in a scene about him is him: never a generic sadhu, even far in the background.
+- A younger version of the person (childhood, early years) is shown without a clear face: from behind, far away, hands,
+  or the place alone. An invented young face reads as somebody else.
+- **Before the timeline:** open a contact sheet of every still used, and check each face of each recurring person
+  against their look line. Replace a mismatch with a picture that fits the line (or with no person) before rendering.
+
 ## Prompts: composition only
 
 A prompt describes what a camera would see. **It never contains** labels, disclaimers, narration or editorial notes:
