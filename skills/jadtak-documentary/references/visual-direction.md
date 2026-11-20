@@ -46,6 +46,9 @@ unrelated face; the owner caught both after the render. So:
   or the place alone. An invented young face reads as somebody else.
 - **Before the timeline:** open a contact sheet of every still used, and check each face of each recurring person
   against their look line. Replace a mismatch with a picture that fits the line (or with no person) before rendering.
+- **The picture shows who the line names.** A line that puts the person "among devotees" (bhakton ke beech) or in a crowd
+  shows a crowd, not a two-person scene. A crowd in a period scene wears period clothes (no hoodies or jeans in 1968),
+  and no one in it may be mistakable for the main person.
 
 ## Prompts: composition only
 

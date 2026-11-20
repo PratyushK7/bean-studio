@@ -122,6 +122,8 @@ Write `script.json` (`templates/script-schema.md`), one spoken sentence per line
   cards and the subtitles. Each line's `text` is Hinglish, and its `say` is the same sentence in Devanagari for the
   narrator, because Sarvam reads Devanagari reliably. Keep two aligned source files (pattern: `build_v5.py` in
   `videos/neem-karoli-baba-hanuman-ansh`) with the same sentences in the same order.
+- **Hinglish spelling, the way the owner writes it (2026-11-20):** short vowels as people type them in chats: "puchho",
+  "puchha", "puchhte" (never "poochho"). Spell a word the same way everywhere, cards and subtitles included.
 
 ### 8. Add the visual directions
 For every line: `kind`, an English `visual`, and as needed a `prompt` (composition only: no labels, disclaimers or
